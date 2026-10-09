@@ -249,12 +249,13 @@ Type Typechecker::resolveArraySize(Expr& sizeExpr, Type elementType, Location lo
     return BasicType::getArray(elementType, size.getSExtValue(), location, endLocation);
 }
 
-Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, bool foldArraySizes) {
+Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, bool foldArraySizes, bool markFunctionTypesExtern) {
     llvm::SmallPtrSet<const TypeAliasDecl*, 8> resolving;
-    return resolveTypeAliases(std::move(type), userAccessLevel, resolving, foldArraySizes);
+    return resolveTypeAliases(std::move(type), userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
 }
 
-Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes) {
+Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes,
+                                     bool markFunctionTypesExtern) {
     if (!type) return type;
 
     switch (type.getKind()) {
@@ -273,7 +274,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
 
             checkHasAccess(*alias, type.location, userAccessLevel);
             markReferenced(alias);
-            Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving, foldArraySizes);
+            Type resolved = resolveTypeAliases(alias->aliasedType, userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
             resolving.erase(alias);
 
             // Outermost alias wins: inner resolution already attached its own
@@ -287,7 +288,7 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
 
         auto genericArgs = map(basicType->genericArgs, [&](GenericArg arg) {
             if (!arg.isType()) return arg;
-            arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving, foldArraySizes);
+            arg.type = resolveTypeAliases(arg.type, userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
             return arg;
         });
         Type rebuilt = BasicType::get(basicType->name, genericArgs, type.location, type.endLocation);
@@ -321,26 +322,32 @@ Type Typechecker::resolveTypeAliases(Type type, AccessLevel userAccessLevel, llv
         return rebuilt;
     }
     case TypeKind::ArrayPointerType: {
-        auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving, foldArraySizes);
+        auto elementType = resolveTypeAliases(type.getElementType(), userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
         if (elementType == type.getElementType()) return type;
         return ArrayPointerType::get(elementType, type.location, type.endLocation);
     }
     case TypeKind::AnonymousStructType: {
         auto elements = mapAst(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) {
-            return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving, foldArraySizes)};
+            return AnonymousStructElement{element.name, resolveTypeAliases(element.type, userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern)};
         });
         if (llvm::equal(elements, type.getAnonymousStructElements())) return type;
         return AnonymousStructType::get(std::move(elements), type.location, type.endLocation);
     }
     case TypeKind::FunctionType: {
-        auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving, foldArraySizes);
-        auto paramTypes =
-            mapAst(type.getParamTypes(), [&](Type paramType) { return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes); });
-        if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes())) return type;
-        return FunctionType::get(returnType, std::move(paramTypes), llvm::cast<FunctionType>(type.typeBase)->isVariadic, type.location, type.endLocation);
+        auto* functionType = llvm::cast<FunctionType>(type.typeBase);
+        // Function types in extern signatures use the C ABI: nested cx
+        // functions passed in get a wrapper, and values coming back from C
+        // are called without a context.
+        bool isExtern = functionType->isExtern || markFunctionTypesExtern;
+        auto returnType = resolveTypeAliases(type.getReturnType(), userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
+        auto paramTypes = mapAst(type.getParamTypes(), [&](Type paramType) {
+            return resolveTypeAliases(paramType, userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
+        });
+        if (returnType == type.getReturnType() && llvm::equal(paramTypes, type.getParamTypes()) && isExtern == functionType->isExtern) return type;
+        return FunctionType::get(returnType, std::move(paramTypes), functionType->isVariadic, type.location, type.endLocation, isExtern);
     }
     case TypeKind::PointerType: {
-        auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving, foldArraySizes);
+        auto pointeeType = resolveTypeAliases(type.getPointee(), userAccessLevel, resolving, foldArraySizes, markFunctionTypesExtern);
         if (pointeeType == type.getPointee()) return type;
         return PointerType::get(pointeeType, type.getPointerKind(), type.location, type.endLocation);
     }
@@ -1234,9 +1241,10 @@ void Typechecker::typecheckFunctionSignature(FunctionDecl& decl) {
     setDeclContext(decl);
     try {
         for (auto& param : decl.proto.params) {
-            param.type = resolveTypeAliases(param.type, decl.accessLevel, /*foldArraySizes=*/true);
+            param.type = resolveTypeAliases(param.type, decl.accessLevel, /*foldArraySizes=*/true, /*markFunctionTypesExtern=*/decl.isExtern());
         }
-        decl.proto.returnType = resolveTypeAliases(decl.proto.returnType, decl.accessLevel, /*foldArraySizes=*/true);
+        decl.proto.returnType =
+            resolveTypeAliases(decl.proto.returnType, decl.accessLevel, /*foldArraySizes=*/true, /*markFunctionTypesExtern=*/decl.isExtern());
 
         if (decl.hasPack()) {
             ERROR_RANGE(decl.getPackParam()->getLocation(), getIdentifierEndLocation(*decl.getPackParam()), "variadic parameter requires a generic function");
@@ -2357,7 +2365,11 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     // Checked on every exit, including errors (like signatures): the error
     // reports once and later uses see the partial state instead of rechecking.
     llvm::scope_exit markChecked([&decl] { decl.checkState = Decl::CheckState::Checked; });
-    decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true);
+    // Globals without an initializer are extern declarations, so their
+    // function types use the C ABI like extern signatures do.
+    bool isExternGlobal = decl.isGlobal() && !decl.initializer;
+    decl.type = resolveTypeAliases(decl.type, decl.isGlobal() ? decl.accessLevel : AccessLevel::None, /*foldArraySizes=*/true,
+                                   /*markFunctionTypesExtern=*/isExternGlobal);
     if (!decl.isGlobal()) {
         localVarDecls.push_back(&decl);
     }

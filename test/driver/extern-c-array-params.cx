@@ -17,7 +17,7 @@ extern int c_sum8(int[8] vals);
 
 int plain_sum(int[2] vals) {
 // Calls within cx keep by-value arrays.
-// CHECK: define {{.*}} @{{.*}}plain{{.*}}([2 x i32] %vals)
+// CHECK: define {{.*}} @{{.*}}plain{{.*}}(ptr {{.*}}, [2 x i32] %vals)
     return vals[0] + vals[1];
 }
 
@@ -31,5 +31,5 @@ void main() {
     println(c_sum8(big));
 // CHECK: call {{.*}} @c_sum8(ptr %big.load)
     println(plain_sum(vals));
-// CHECK: call {{.*}} @{{.*}}plain{{.*}}([2 x i32] {{%vals.load[0-9]*}})
+// CHECK: call {{.*}} @{{.*}}plain{{.*}}(ptr {{.*}}, [2 x i32] {{%vals.load[0-9]*}})
 }

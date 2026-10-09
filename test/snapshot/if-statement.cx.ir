@@ -4,17 +4,18 @@ extern void foo()
 extern void bar()
 
 int32 main() {
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     br bool false, if.then, if.else
 
 if.then:
-    void _0 = call foo()
+    void _1 = call foo()
     br if.end
 
 if.else:
-    void _1 = call bar()
+    void _2 = call bar()
     br if.end
 
 if.end:
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

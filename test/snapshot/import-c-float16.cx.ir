@@ -1,34 +1,35 @@
 
 int32 main() {
-    c_int _0 = call plain(c_int 41)
-    void _1 = call _CX1N3std7printlnIM3std6c__intEE4void1_M3std6c__int(c_int _0)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    c_int _1 = call plain(c_int 41)
+    void _2 = call _CX1N3std7printlnIM3std6c__intEE4void1_M3std6c__int(Context* _0, c_int _1)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N3std7printlnIM3std6c__intEE4void1_M3std6c__int(c_int value) {
+void _CX1N3std7printlnIM3std6c__intEE4void1_M3std6c__int(Context* __context, c_int value) {
     c_int* value_0 = alloca c_int
     store value to value_0
-    void _0 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* value_0)
-    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    void _0 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* __context, c_int* value_0)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(Context* __context, char 10)
     return void
 }
 
-void _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* value) {
+void _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* __context, c_int* value) {
     c_int** value_0 = alloca c_int*
     OutputStream* stream = alloca OutputStream
     store value to value_0
-    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(Context* __context, OutputStream* stream)
     c_int* value.load = load value_0
-    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(c_int* value.load, OutputStream* stream)
+    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(Context* __context, c_int* value.load, OutputStream* stream)
     return void
 }
 
-void _CX1N3std5printIM3std4charEE4void1_M3std4char(char value) {
+void _CX1N3std5printIM3std4charEE4void1_M3std4char(Context* __context, char value) {
     char* value_0 = alloca char
     OutputStream* stream = alloca OutputStream
     store value to value_0
-    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
-    void _1 = call _CX1N3stdM3std4char5printE4void1_RM3std12OutputStream(char* value_0, OutputStream* stream)
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(Context* __context, OutputStream* stream)
+    void _1 = call _CX1N3stdM3std4char5printE4void1_RM3std12OutputStream(Context* __context, char* value_0, OutputStream* stream)
     return void
 }

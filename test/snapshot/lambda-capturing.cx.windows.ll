@@ -11,7 +11,7 @@
 @3 = private unnamed_addr constant [47 x i8] c"integer overflow at lambda-capturing.cx:13:30\0A\00", align 1
 @4 = private unnamed_addr constant [47 x i8] c"integer overflow at lambda-capturing.cx:13:34\0A\00", align 1
 
-define void @_CX1N4main13capturesParamE4void1_M3std5int32(i32 %p) #0 !dbg !4 {
+define void @_CX1N4main13capturesParamE4void1_M3std5int32(ptr %__context, i32 %p) #0 !dbg !4 {
   %p1 = alloca i32, align 4
   %d = alloca i32, align 4
   %b = alloca %__closure0, align 8
@@ -36,11 +36,11 @@ define void @_CX1N4main13capturesParamE4void1_M3std5int32(i32 %p) #0 !dbg !4 {
   %4 = load i32, ptr %3, align 4
   %5 = getelementptr inbounds %__closure0, ptr %b.load, i32 0, i32 2
   %6 = load i32, ptr %5, align 4
-  %7 = call i32 %2(i32 %4, i32 %6, i32 1), !dbg !7
+  %7 = call i32 %2(ptr %__context, i32 %4, i32 %6, i32 1), !dbg !7
   ret void
 }
 
-define i32 @_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32(i32 %__capture_p, i32 %__capture_d, i32 %c) #0 !dbg !8 {
+define i32 @_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32(ptr %__context, i32 %__capture_p, i32 %__capture_d, i32 %c) #0 !dbg !8 {
   %__capture_p1 = alloca i32, align 4
   %__capture_d2 = alloca i32, align 4
   %c3 = alloca i32, align 4
@@ -57,7 +57,7 @@ define i32 @_CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @0), !dbg !9
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr %__context, ptr @0), !dbg !9
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -70,7 +70,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @1), !dbg !9
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr %__context, ptr @1), !dbg !9
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success
@@ -83,16 +83,17 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr no
 ; Function Attrs: nocallback nocreateundeforpoison nofree nosync nounwind speculatable willreturn memory(none)
 declare { i32, i1 } @llvm.sadd.with.overflow.i32(i32, i32) #2
 
-declare %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr) #0
+declare %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr, ptr) #0
 
 define i32 @main() #0 !dbg !10 {
   %1 = call ptr @_set_thread_local_invalid_parameter_handler(ptr @__cx_noop_invalid_parameter_handler), !dbg !11
   %s = alloca %S, align 8
   %a = alloca i32, align 4
   %b = alloca %__closure2, align 8
-  call void @_CX1N4main13capturesParamE4void1_M3std5int32(i32 100), !dbg !12
-  call void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %s, i32 5), !dbg !13
-  %2 = call i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %s, i32 1), !dbg !14
+  %2 = call ptr @_CX1N3std11ambientRootERM3std7Context0_(ptr null), !dbg !11
+  call void @_CX1N4main13capturesParamE4void1_M3std5int32(ptr %2, i32 100), !dbg !12
+  call void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %2, ptr %s, i32 5), !dbg !13
+  %3 = call i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %2, ptr %s, i32 1), !dbg !14
   store i32 1, ptr %a, align 4
   %a.load = load i32, ptr %a, align 4
   %insert.alloca = alloca %__closure2, align 8
@@ -102,12 +103,12 @@ define i32 @main() #0 !dbg !10 {
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b, ptr align 8 %insert.alloca, i64 16, i1 false)
   %b.load = alloca %__closure2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 8 %b.load, ptr align 8 %b, i64 16, i1 false)
-  %3 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 0
-  %4 = load ptr, ptr %3, align 8
-  %5 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 1
-  %6 = load i32, ptr %5, align 4
-  %7 = call i32 %4(i32 %6, i32 2), !dbg !15
-  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !11
+  %4 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 0
+  %5 = load ptr, ptr %4, align 8
+  %6 = getelementptr inbounds %__closure2, ptr %b.load, i32 0, i32 1
+  %7 = load i32, ptr %6, align 4
+  %8 = call i32 %5(ptr %2, i32 %7, i32 2), !dbg !15
+  call void @_CX1N3std10checkLeaksE4void0_(ptr %2), !dbg !11
   ret i32 0
 }
 
@@ -117,7 +118,9 @@ define private void @__cx_noop_invalid_parameter_handler(ptr %0, ptr %1, ptr %2,
 
 declare ptr @_set_thread_local_invalid_parameter_handler(ptr)
 
-define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !dbg !16 {
+declare ptr @_CX1N3std11ambientRootERM3std7Context0_(ptr) #0
+
+define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %__context, ptr %this, i32 %d) #0 !dbg !16 {
   %this1 = alloca ptr, align 8
   %d2 = alloca i32, align 4
   store ptr %this, ptr %this1, align 8
@@ -129,7 +132,7 @@ define void @_CX1N4mainM4main1S4initE4void1_M3std5int32(ptr %this, i32 %d) #0 !d
   ret void
 }
 
-define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %this, i32 %c) #0 !dbg !17 {
+define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %__context, ptr %this, i32 %c) #0 !dbg !17 {
   %this1 = alloca ptr, align 8
   %c2 = alloca i32, align 4
   %b = alloca %__closure1, align 8
@@ -154,11 +157,11 @@ define i32 @_CX1N4mainM4main1S3getEM3std5int321_M3std5int32(ptr %this, i32 %c) #
   %4 = load i32, ptr %3, align 4
   %5 = getelementptr inbounds %__closure1, ptr %b.load, i32 0, i32 2
   %6 = load ptr, ptr %5, align 8
-  %7 = call i32 %2(i32 %4, ptr %6, i32 1), !dbg !18
+  %7 = call i32 %2(ptr %__context, i32 %4, ptr %6, i32 1), !dbg !18
   ret i32 %7
 }
 
-define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %__capture_a, i32 %c) #0 !dbg !19 {
+define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(ptr %__context, i32 %__capture_a, i32 %c) #0 !dbg !19 {
   %__capture_a1 = alloca i32, align 4
   %c2 = alloca i32, align 4
   store i32 %__capture_a, ptr %__capture_a1, align 4
@@ -173,16 +176,16 @@ define i32 @_CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(i32 %
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @2), !dbg !20
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr %__context, ptr @2), !dbg !20
   unreachable
 
 overflow.success:                                 ; preds = %0
   ret i32 %2
 }
 
-declare void @_CX1N3std10checkLeaksE4void0_() #0
+declare void @_CX1N3std10checkLeaksE4void0_(ptr) #0
 
-define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !21 {
+define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(ptr %__context, i32 %__capture_c, ptr %__capture_this, i32 %x) #0 !dbg !21 {
   %__capture_c1 = alloca i32, align 4
   %__capture_this2 = alloca ptr, align 8
   %x3 = alloca i32, align 4
@@ -199,7 +202,7 @@ define i32 @_CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4mai
   br i1 %overflow.condition, label %overflow.fail, label %overflow.success
 
 overflow.fail:                                    ; preds = %0
-  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @3), !dbg !22
+  %5 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr %__context, ptr @3), !dbg !22
   unreachable
 
 overflow.success:                                 ; preds = %0
@@ -214,7 +217,7 @@ overflow.success:                                 ; preds = %0
   br i1 %overflow.condition4, label %overflow.fail5, label %overflow.success6
 
 overflow.fail5:                                   ; preds = %overflow.success
-  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr @4), !dbg !22
+  %10 = call %never @_CX1N3std10assertFailEM3std5never1_PM3std4char(ptr %__context, ptr @4), !dbg !22
   unreachable
 
 overflow.success6:                                ; preds = %overflow.success

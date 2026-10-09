@@ -1,5 +1,5 @@
 
-c_int _CX1N4main1fEM3std6c__int1_M3std6c__int(c_int a) {
+c_int _CX1N4main1fEM3std6c__int1_M3std6c__int(Context* __context, c_int a) {
     c_int* a_0 = alloca c_int
     store a to a_0
     c_int a.load = load a_0
@@ -7,9 +7,16 @@ c_int _CX1N4main1fEM3std6c__int1_M3std6c__int(c_int a) {
 }
 
 int32 main() {
-    void _0 = call foo(c_int(c_int)* _CX1N4main1fEM3std6c__int1_M3std6c__int)
-    void _1 = call bar(c_int(c_int)* _CX1N4main1fEM3std6c__int1_M3std6c__int)
-    void _2 = call baz(c_int(c_int)* _CX1N4main1fEM3std6c__int1_M3std6c__int)
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call foo(c_int(c_int)* _CX1N4main1fEM3std6c__int1_M3std6c__int__cxcb)
+    void _2 = call bar(c_int(c_int)* _CX1N4main1fEM3std6c__int1_M3std6c__int__cxcb)
+    void _3 = call baz(c_int(c_int)* _CX1N4main1fEM3std6c__int1_M3std6c__int__cxcb)
+    void _4 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
+}
+
+c_int _CX1N4main1fEM3std6c__int1_M3std6c__int__cxcb(c_int a) {
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    c_int _1 = call _CX1N4main1fEM3std6c__int1_M3std6c__int(Context* _0, c_int a)
+    return _1
 }

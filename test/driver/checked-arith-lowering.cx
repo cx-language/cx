@@ -12,7 +12,7 @@
 // CHECK: call { i64, i1 } @llvm.sadd.with.overflow.i64(i64 {{.*}}, i64 {{.*}})
 // C: _checked_arith{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) + ((uint64_t){{.*}})));
 // C: _arith_overflow{{[0-9]+}} = (((({{.*}} ^ {{.*}}) & ({{.*}} ^ {{.*}})) & ((uint64_t)1 << 63)) != 0);
-// C-DISPATCH: _CX1N4main6sadd64EM3std5int642_M3std5int64M3std5int64(int64_t a, int64_t b) {
+// C-DISPATCH: _CX1N4main6sadd64EM3std5int642_M3std5int64M3std5int64(struct _M3std7Context* __context, int64_t a, int64_t b) {
 // C-DISPATCH: int64_t _checked_arith{{[0-9]+}};
 // C-DISPATCH: _Bool _arith_overflow{{[0-9]+}};
 // C-DISPATCH: _checked_arith{{[0-9]+}} = ((int64_t)(((uint64_t){{.*}}) + ((uint64_t){{.*}})));

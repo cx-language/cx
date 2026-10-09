@@ -1,5 +1,5 @@
 
-void _CX1N4main3fooE4void1_OPM3std5int32(int32* p) {
+void _CX1N4main3fooE4void1_OPM3std5int32(Context* __context, int32* p) {
     int32** p_0 = alloca int32*
     store p to p_0
     return void
@@ -8,11 +8,12 @@ void _CX1N4main3fooE4void1_OPM3std5int32(int32* p) {
 int32 main() {
     int32* i = alloca int32
     int32** x = alloca int32*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 42 to i
     store i to x
     int32* x.load = load x
-    void _0 = call _CX1N4main3fooE4void1_OPM3std5int32(int32* x.load)
-    void _1 = call _CX1N4main3fooE4void1_OPM3std5int32(int32* i)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N4main3fooE4void1_OPM3std5int32(Context* _0, int32* x.load)
+    void _2 = call _CX1N4main3fooE4void1_OPM3std5int32(Context* _0, int32* i)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

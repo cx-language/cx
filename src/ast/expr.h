@@ -443,6 +443,7 @@ struct ImplicitCastExpr : Expr {
         AutoDereference,
         NumericWiden,
         UserConversion,
+        FunctionTrampoline,
     };
 
     ImplicitCastExpr(Expr* operand, Type targetType, Kind kind, const FunctionDecl* conversionDecl = nullptr)

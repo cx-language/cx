@@ -4,26 +4,27 @@ int32 main() {
     int32* b = alloca int32
     uint32* c = alloca uint32
     uint32* d = alloca uint32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     int32 a.load = load a
     int32 b.load = load b
-    int32 _0 = a.load & b.load
+    int32 _1 = a.load & b.load
     int32 a.load_0 = load a
     int32 b.load_0 = load b
-    int32 _1 = a.load_0 | b.load_0
+    int32 _2 = a.load_0 | b.load_0
     int32 a.load_1 = load a
     int32 b.load_1 = load b
-    int32 _2 = a.load_1 ^ b.load_1
+    int32 _3 = a.load_1 ^ b.load_1
     int32 a.load_2 = load a
     int32 b.load_2 = load b
-    int32 _3 = a.load_2 << b.load_2
+    int32 _4 = a.load_2 << b.load_2
     int32 a.load_3 = load a
     int32 b.load_3 = load b
-    int32 _4 = a.load_3 >> b.load_3
+    int32 _5 = a.load_3 >> b.load_3
     uint32 c.load = load c
     uint32 d.load = load d
-    uint32 _5 = c.load >> d.load
+    uint32 _6 = c.load >> d.load
     int32 a.load_4 = load a
-    int32 _6 = ~a.load_4
-    void _7 = call _CX1N3std10checkLeaksE4void0_()
+    int32 _7 = ~a.load_4
+    void _8 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

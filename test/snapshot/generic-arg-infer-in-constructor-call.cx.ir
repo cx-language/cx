@@ -3,15 +3,16 @@ int32 main() {
     Foo<int32>* i = alloca Foo<int32>
     Foo<string>* b = alloca Foo<string>
     string* __str = alloca string
-    void _0 = call _CX1N4mainM4main3FooIM3std5int32E4initE4void1_M3std5int32(Foo<int32>* i, int32 42)
-    void _1 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "", int32 0)
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main3FooIM3std5int32E4initE4void1_M3std5int32(Context* _0, Foo<int32>* i, int32 42)
+    void _2 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(Context* _0, string* __str, char* "", int32 0)
     string __str.load = load __str
-    void _2 = call _CX1N4mainM4main3FooIM3std6stringE4initE4void1_M3std6string(Foo<string>* b, string __str.load)
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    void _3 = call _CX1N4mainM4main3FooIM3std6stringE4initE4void1_M3std6string(Context* _0, Foo<string>* b, string __str.load)
+    void _4 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main3FooIM3std5int32E4initE4void1_M3std5int32(Foo<int32>* this, int32 t) {
+void _CX1N4mainM4main3FooIM3std5int32E4initE4void1_M3std5int32(Context* __context, Foo<int32>* this, int32 t) {
     Foo<int32>** this_0 = alloca Foo<int32>*
     int32* t_0 = alloca int32
     store this to this_0
@@ -23,7 +24,7 @@ void _CX1N4mainM4main3FooIM3std5int32E4initE4void1_M3std5int32(Foo<int32>* this,
     return void
 }
 
-void _CX1N4mainM4main3FooIM3std6stringE4initE4void1_M3std6string(Foo<string>* this, string t) {
+void _CX1N4mainM4main3FooIM3std6stringE4initE4void1_M3std6string(Context* __context, Foo<string>* this, string t) {
     Foo<string>** this_0 = alloca Foo<string>*
     string* t_0 = alloca string
     store this to this_0

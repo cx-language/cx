@@ -2,34 +2,35 @@ global _CX1G4main3fooE = int32[3] _0
 
 int32 main() {
     int32[1]* qux = alloca int32[1]
-    int32[1] _0 = insertvalue int32[1] undefined, 0, int32 42
-    store _0 to qux
-    uint64 _1 = cast int32 0 to uint64
-    bool _2 = _1 < uint64 3
-    bool bounds.condition = _2 == bool false
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    int32[1] _1 = insertvalue int32[1] undefined, 0, int32 42
+    store _1 to qux
+    uint64 _2 = cast int32 0 to uint64
+    bool _3 = _2 < uint64 3
+    bool bounds.condition = _3 == bool false
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at variable-of-array-type.cx:7:9
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "index out of bounds at variable-of-array-type.cx:7:9
 ")
     unreachable
 
 bounds.success:
-    int32* _4 = getelementptr _CX1G4main3fooE, int32 0, int32 0
-    store int32 3 to _4
-    uint64 _5 = cast int32 1 to uint64
-    bool _6 = _5 < uint64 3
-    bool bounds.condition_0 = _6 == bool false
+    int32* _5 = getelementptr _CX1G4main3fooE, int32 0, int32 0
+    store int32 3 to _5
+    uint64 _6 = cast int32 1 to uint64
+    bool _7 = _6 < uint64 3
+    bool bounds.condition_0 = _7 == bool false
     br bounds.condition_0, bounds.fail, bounds.success
 
 bounds.fail_0:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at variable-of-array-type.cx:8:9
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "index out of bounds at variable-of-array-type.cx:8:9
 ")
     unreachable
 
 bounds.success_0:
-    int32* _8 = getelementptr _CX1G4main3fooE, int32 0, int32 1
-    uint64 _9 = call _CX1N3stdM3std5int324hashEM3std6uint640_(int32* _8)
-    void _10 = call _CX1N3std10checkLeaksE4void0_()
+    int32* _9 = getelementptr _CX1G4main3fooE, int32 0, int32 1
+    uint64 _10 = call _CX1N3stdM3std5int324hashEM3std6uint640_(Context* _0, int32* _9)
+    void _11 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

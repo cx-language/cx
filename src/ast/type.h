@@ -175,6 +175,7 @@ struct Type {
     llvm::ArrayRef<GenericArg> getGenericArgs() const;
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
+    bool isExternFunctionType() const;
     Type getPointee() const;
     PointerKind getPointerKind() const;
     Type getWrappedType() const;
@@ -328,12 +329,13 @@ public:
 
 struct FunctionType : TypeBase {
     std::vector<ParamDecl> getParamDecls(Location location = Location()) const;
-    static Type get(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, Location location = Location(), Location endLocation = Location());
+    static Type get(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, Location location = Location(), Location endLocation = Location(),
+                    bool isExtern = false);
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::FunctionType; }
 
 private:
-    FunctionType(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic)
-    : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)), isVariadic(isVariadic) {}
+    FunctionType(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, bool isExtern)
+    : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)), isVariadic(isVariadic), isExtern(isExtern) {}
 
 public:
     Type returnType;
@@ -341,6 +343,10 @@ public:
 
 public:
     bool isVariadic = false;
+    // True for C/C++ ABI function types (extern declarations, C header
+    // imports). cx functions take a hidden context parameter; extern ones
+    // don't, so the two are distinct types needing a wrapper to convert.
+    bool isExtern = false;
 };
 
 struct PointerType : TypeBase {

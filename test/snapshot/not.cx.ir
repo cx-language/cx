@@ -1,10 +1,11 @@
 
 int32 main() {
     bool* b = alloca bool
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store bool false to b
     bool b.load = load b
-    bool _0 = !b.load
-    store _0 to b
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    bool _1 = !b.load
+    store _1 to b
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

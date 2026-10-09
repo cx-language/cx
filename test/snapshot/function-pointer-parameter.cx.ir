@@ -1,9 +1,9 @@
 
-void _CX1N4main1fE4void0_() {
+void _CX1N4main1fE4void0_(Context* __context) {
     return void
 }
 
-int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
+int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(Context* __context, int32 a, bool b) {
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0
@@ -12,20 +12,20 @@ int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
     return a.load
 }
 
-void _CX1N4main1gE4void1_F0_4void(void()* p) {
-    void()** p_0 = alloca void()*
+void _CX1N4main1gE4void1_F0_4void(Context* __context, void(Context*)* p) {
+    void(Context*)** p_0 = alloca void(Context*)*
     store p to p_0
-    void()* p.load = load p_0
-    void _0 = call p.load()
+    void(Context*)* p.load = load p_0
+    void _0 = call p.load(Context* __context)
     return void
 }
 
-void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* p) {
-    int32(int32, bool)** p_0 = alloca int32(int32, bool)*
+void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(Context* __context, int32(Context*, int32, bool)* p) {
+    int32(Context*, int32, bool)** p_0 = alloca int32(Context*, int32, bool)*
     int32* a = alloca int32
     store p to p_0
-    int32(int32, bool)* p.load = load p_0
-    int32 _0 = call p.load(int32 42, bool false)
+    int32(Context*, int32, bool)* p.load = load p_0
+    int32 _0 = call p.load(Context* __context, int32 42, bool false)
     int32 _1 = checkedarith + _0, int32 1
     bool _2 = overflow _1
     bool _3 = !_2
@@ -33,7 +33,7 @@ void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at function-pointer-parameter.cx:12:26
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at function-pointer-parameter.cx:12:26
 ")
     unreachable
 
@@ -43,8 +43,9 @@ overflow.success:
 }
 
 int32 main() {
-    void _0 = call _CX1N4main1gE4void1_F0_4void(void()* _CX1N4main1fE4void0_)
-    void _1 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4main1gE4void1_F0_4void(Context* _0, void(Context*)* _CX1N4main1fE4void0_)
+    void _2 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(Context* _0, int32(Context*, int32, bool)* _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

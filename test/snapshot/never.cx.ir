@@ -1,24 +1,24 @@
 
-never _CX1N4main1fEM3std5never0_() {
-    never _0 = call _CX1N4main1fEM3std5never0_()
+never _CX1N4main1fEM3std5never0_(Context* __context) {
+    never _0 = call _CX1N4main1fEM3std5never0_(Context* __context)
     unreachable
 }
 
-never _CX1N4main1gEM3std5never0_() {
-    never _0 = call _CX1N3std4todoEM3std5never0_()
+never _CX1N4main1gEM3std5never0_(Context* __context) {
+    never _0 = call _CX1N3std4todoEM3std5never0_(Context* __context)
     unreachable
 }
 
-never _CX1N4main1hEM3std5never0_() {
+never _CX1N4main1hEM3std5never0_(Context* __context) {
     unreachable
 }
 
-void _CX1N4main1iE4void0_() {
-    never _0 = call _CX1N4main1fEM3std5never0_()
+void _CX1N4main1iE4void0_(Context* __context) {
+    never _0 = call _CX1N4main1fEM3std5never0_(Context* __context)
     return void
 }
 
-int32 _CX1N4main1iEM3std5int321_M3std5int32(int32 x) {
+int32 _CX1N4main1iEM3std5int321_M3std5int32(Context* __context, int32 x) {
     int32* x_0 = alloca int32
     store x to x_0
     int32 x.load = load x_0
@@ -30,7 +30,7 @@ switch.case.0:
     return int32 1
 
 switch.default:
-    never _0 = call _CX1N4main1fEM3std5never0_()
+    never _0 = call _CX1N4main1fEM3std5never0_(Context* __context)
     br switch.end
 
 switch.end:

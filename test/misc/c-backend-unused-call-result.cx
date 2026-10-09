@@ -10,12 +10,14 @@
 // CHECK-NEXT: #ifdef _WIN32
 // CHECK-NEXT:     _set_thread_local_invalid_parameter_handler(__cx_noop_invalid_parameter_handler);
 // CHECK-NEXT: #endif
-// CHECK-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(41\);$}}
-// CHECK: {{^    [_A-Za-z][_A-Za-z0-9]*\(\);$}}
+// CHECK-NEXT: {{^    struct _M3std7Context\* _call[0-9]+ = [_A-Za-z][_A-Za-z0-9]*\(NULL\);$}}
+// CHECK-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(_call[0-9]+, 41\);$}}
+// CHECK: {{^    [_A-Za-z][_A-Za-z0-9]*\(_call[0-9]+\);$}}
 
 // DISPATCH-LABEL: int32_t main(void) {
 // DISPATCH: case 0: {
-// DISPATCH-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(41\);$}}
+// DISPATCH-NEXT: {{^    _call[0-9]+ = [_A-Za-z][_A-Za-z0-9]*\(NULL\);$}}
+// DISPATCH-NEXT: {{^    [_A-Za-z][_A-Za-z0-9]*\(_call[0-9]+, 41\);$}}
 
 int f(int x) {
     return x + 1;

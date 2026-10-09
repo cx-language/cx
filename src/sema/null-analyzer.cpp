@@ -19,6 +19,19 @@ static Value* stripCasts(Value* value) {
     return value;
 }
 
+// The hidden context parameter shifts user arguments by one; extern callees have none.
+static size_t callUserArgsOffset(CallInst* call) {
+    if (auto* function = llvm::dyn_cast<Function>(call->function)) return function->hasContextParam ? 1 : 0;
+    auto* type = call->function->getType();
+    while (type->isPointerType() && !type->getPointee()->isFunctionType()) {
+        type = type->getPointee();
+    }
+    // Unresolved callees (e.g. calls through a null placeholder after an
+    // earlier error) have no function type; analyzing arg 0 keeps going.
+    auto* functionType = llvm::dyn_cast_or_null<IRFunctionType>(type->isPointerType() ? type->getPointee() : nullptr);
+    return functionType && functionType->hasContextParam ? 1 : 0;
+}
+
 // True when two address values denote the same storage: identical, or loads through the same base
 // (e.g. separate `load t_0` nodes for one spilled parameter).
 static bool valuesAlias(Value* a, Value* b) {
@@ -259,12 +272,14 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
         if (auto* call = llvm::dyn_cast<CallInst>(condition)) {
             auto* binExpr = llvm::dyn_cast_or_null<BinaryExpr>(call->expr);
             auto* callee = binExpr ? llvm::dyn_cast<FunctionDecl>(binExpr->calleeDecl) : nullptr;
-            if (binExpr && (binExpr->op == Token::Equal || binExpr->op == Token::NotEqual) && call->args.size() == 2 && binExpr->getLHS().type.isOptionalType()
-                && binExpr->getRHS().type.isOptionalType() && callee && callee->getModule() == Module::getStdlibModule()) {
+            size_t offset = callUserArgsOffset(call);
+            if (binExpr && (binExpr->op == Token::Equal || binExpr->op == Token::NotEqual) && call->args.size() == 2 + offset
+                && binExpr->getLHS().type.isOptionalType() && binExpr->getRHS().type.isOptionalType() && callee
+                && callee->getModule() == Module::getStdlibModule()) {
                 for (int s = 0; s < 2; ++s) {
-                    Value* selfSide = call->args[s];
+                    Value* selfSide = call->args[offset + size_t(s)];
                     if (selfSide != nullableValue && !selfSide->loads(nullableValue, gepIndex)) continue;
-                    auto* temp = llvm::dyn_cast<AllocaInst>(call->args[1 - s]);
+                    auto* temp = llvm::dyn_cast<AllocaInst>(call->args[offset + size_t(1 - s)]);
                     if (!temp) continue;
                     auto tag = resolveTempTag(temp, predecessor, call);
                     if (!tag || *tag != IRGenerator::getOptionalNoneTag()) continue;
@@ -380,7 +395,7 @@ void NullAnalyzer::analyze(Value* value) {
                 if (receiverType.isOptionalType()) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
                     const Expr* target = callExpr->getReceiver() ? callExpr->getReceiver() : callExpr;
-                    Value* receiver = stripCasts(call->args[0]);
+                    Value* receiver = stripCasts(call->args[callUserArgsOffset(call)]);
                     // Value-optionals pass the payload address; analyze the optional itself so tag checks apply.
                     if (!receiverType.isImplementedAsPointer()) {
                         if (auto* gep = llvm::dyn_cast<ConstGEPInst>(receiver)) {

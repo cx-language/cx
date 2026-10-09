@@ -1,5 +1,5 @@
 
-void _CX1N4main3getE4void1_PM4main3Foo(Foo* f) {
+void _CX1N4main3getE4void1_PM4main3Foo(Context* __context, Foo* f) {
     Foo** f_0 = alloca Foo*
     int32* m = alloca int32
     store f to f_0
@@ -14,13 +14,14 @@ int32 main() {
     Foo* f = alloca Foo
     Foo** rf = alloca Foo*
     int32* n = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store f to rf
     Foo* rf.load = load rf
     int32* i = getelementptr rf.load, 0
     int32 i.load = load i
     store i.load to n
     Foo* rf.load_0 = load rf
-    void _0 = call _CX1N4main3getE4void1_PM4main3Foo(Foo* rf.load_0)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N4main3getE4void1_PM4main3Foo(Context* _0, Foo* rf.load_0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

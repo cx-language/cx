@@ -2,17 +2,18 @@
 extern bool foo()
 
 int32 main() {
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     br loop.condition
 
 loop.condition:
-    bool _0 = call foo()
-    br _0, loop.body, loop.end
+    bool _1 = call foo()
+    br _1, loop.body, loop.end
 
 loop.body:
-    bool _1 = call foo()
+    bool _2 = call foo()
     br loop.condition
 
 loop.end:
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

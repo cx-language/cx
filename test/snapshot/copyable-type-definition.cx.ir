@@ -3,22 +3,23 @@ int32 main() {
     Foo* f = alloca Foo
     int32* bar = alloca int32
     bool* qux = alloca bool
-    void _0 = call _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Foo* f, int32 666, bool true)
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Context* _0, Foo* f, int32 666, bool true)
     int32* a = getelementptr f, 0
     int32 a.load = load a
-    int32 _1 = a.load + int32 1
-    store _1 to a
+    int32 _2 = a.load + int32 1
+    store _2 to a
     int32* a_0 = getelementptr f, 0
     int32 a.load_0 = load a_0
     store a.load_0 to bar
     bool* b = getelementptr f, 1
     bool b.load = load b
     store b.load to qux
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Foo* this, int32 a, bool b) {
+void _CX1N4mainM4main3Foo4initE4void2_M3std5int32M3std4bool(Context* __context, Foo* this, int32 a, bool b) {
     Foo** this_0 = alloca Foo*
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool

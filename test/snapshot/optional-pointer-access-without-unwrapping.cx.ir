@@ -4,6 +4,7 @@ int32 main() {
     int32* a = alloca int32
     int32** b = alloca int32*
     int32** c = alloca int32*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store Foo* null to f
     Foo* f.load = load f
     int32* i = getelementptr f.load, 0
@@ -18,16 +19,16 @@ int32 main() {
     int32* i_2 = getelementptr f.load_2, 0
     store i_2 to c
     Foo* f.load_3 = load f
-    void _0 = call _CX1N4mainM4main3Foo3barE4void0_(Foo* f.load_3)
+    void _1 = call _CX1N4mainM4main3Foo3barE4void0_(Context* _0, Foo* f.load_3)
     Foo* f.load_4 = load f
     Foo* f.load_5 = load f
     Foo f.load.load = load f.load_5
     store f.load.load to f.load_4
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main3Foo3barE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo3barE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     return void

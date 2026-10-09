@@ -1,13 +1,14 @@
 global _CX1G4main2spE = S* null
 
 int32 main() {
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     S* _CX1G4main2spE.load = load _CX1G4main2spE
-    void _0 = call _CX1N4main3fooE4void1_OPM4main1S(S* _CX1G4main2spE.load)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N4main3fooE4void1_OPM4main1S(Context* _0, S* _CX1G4main2spE.load)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4main3fooE4void1_OPM4main1S(S* p) {
+void _CX1N4main3fooE4void1_OPM4main1S(Context* __context, S* p) {
     S** p_0 = alloca S*
     store p to p_0
     return void

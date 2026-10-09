@@ -1,18 +1,18 @@
 
-X _CX1N4main1fEM4main1X0_() {
+X _CX1N4main1fEM4main1X0_(Context* __context) {
     X* x = alloca X
-    void _0 = call _CX1N4mainM4main1X4initE4void0_(X* x)
+    void _0 = call _CX1N4mainM4main1X4initE4void0_(Context* __context, X* x)
     X x.load = load x
     return x.load
 }
 
-void _CX1N4mainM4main1X6deinitE4void0_(X* this) {
+void _CX1N4mainM4main1X6deinitE4void0_(Context* __context, X* this) {
     X** this_0 = alloca X*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1X4initE4void0_(X* this) {
+void _CX1N4mainM4main1X4initE4void0_(Context* __context, X* this) {
     X** this_0 = alloca X*
     store this to this_0
     return void
@@ -20,9 +20,10 @@ void _CX1N4mainM4main1X4initE4void0_(X* this) {
 
 int32 main() {
     X* a = alloca X
-    X _0 = call _CX1N4main1fEM4main1X0_()
-    store _0 to a
-    void _1 = call _CX1N4mainM4main1X6deinitE4void0_(X* a)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    X _1 = call _CX1N4main1fEM4main1X0_(Context* _0)
+    store _1 to a
+    void _2 = call _CX1N4mainM4main1X6deinitE4void0_(Context* _0, X* a)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

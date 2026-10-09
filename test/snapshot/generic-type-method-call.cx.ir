@@ -1,34 +1,35 @@
 
 int32 main() {
     S<A>* x = alloca S<A>
-    void _0 = call _CX1N4mainM4main1SIM4main1AE4initE4void0_(S<A>* x)
-    void _1 = call _CX1N4mainM4main1SIM4main1AE1sE4void0_(S<A>* x)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1SIM4main1AE4initE4void0_(Context* _0, S<A>* x)
+    void _2 = call _CX1N4mainM4main1SIM4main1AE1sE4void0_(Context* _0, S<A>* x)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1SIM4main1AE4initE4void0_(S<A>* this) {
+void _CX1N4mainM4main1SIM4main1AE4initE4void0_(Context* __context, S<A>* this) {
     S<A>** this_0 = alloca S<A>*
     A* _0 = alloca A
     store this to this_0
-    void _1 = call _CX1N4mainM4main1A4initE4void0_(A* _0)
-    void _2 = call _CX1N4mainM4main1A1hE4void0_(A* _0)
+    void _1 = call _CX1N4mainM4main1A4initE4void0_(Context* __context, A* _0)
+    void _2 = call _CX1N4mainM4main1A1hE4void0_(Context* __context, A* _0)
     return void
 }
 
-void _CX1N4mainM4main1SIM4main1AE1sE4void0_(S<A>* this) {
+void _CX1N4mainM4main1SIM4main1AE1sE4void0_(Context* __context, S<A>* this) {
     S<A>** this_0 = alloca S<A>*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1A1hE4void0_(A* this) {
+void _CX1N4mainM4main1A1hE4void0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1A4initE4void0_(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     return void

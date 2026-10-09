@@ -159,11 +159,12 @@ struct CToCxConverter final : clang::ASTConsumer {
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
             auto paramTypes = mapAst(functionProtoType.getParamTypes(), [&](clang::QualType paramType) { return toCx(paramType); });
-            return FunctionType::get(toCx(functionProtoType.getReturnType()), std::move(paramTypes), functionProtoType.isVariadic());
+            return FunctionType::get(toCx(functionProtoType.getReturnType()), std::move(paramTypes), functionProtoType.isVariadic(), Location(), Location(),
+                                     true);
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
-            return FunctionType::get(toCx(functionNoProtoType.getReturnType()), {}, true);
+            return FunctionType::get(toCx(functionNoProtoType.getReturnType()), {}, true, Location(), Location(), true);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);

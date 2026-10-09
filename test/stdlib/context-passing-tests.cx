@@ -1,0 +1,81 @@
+// RUN: check_exit_status 0 %cx test -Werror %s
+// RUN: check_exit_status 0 %cx test -Werror --release %s
+// RUN: check_exit_status 0 %cx test -Werror --backend=c %s
+// RUN: check_exit_status 0 %cx test -Werror --release --backend=c %s
+
+int contextAllocs = 0;
+
+void*? countingAlloc(void*? state, c_size_t size) {
+    contextAllocs++;
+    var def = defaultAllocator();
+    return def.alloc(def.state, size);
+}
+
+void countingFree(void*? state, void* ptr) {
+    var def = defaultAllocator();
+    def.free(def.state, ptr);
+}
+
+Allocator countingAllocator() {
+    return Allocator(state = null, alloc = countingAlloc, free = countingFree);
+}
+
+void allocateOne() {
+    var p = allocate<int>(1);
+    deallocate(p);
+}
+
+@test
+void testOverrideVisibleToNestedCalls() {
+    var before = contextAllocs;
+    withAllocator(countingAllocator(), allocateOne);
+    assert(contextAllocs == before + 1);
+    allocateOne();
+    assert(contextAllocs == before + 1);
+}
+
+void nestedBody() {
+    var before = contextAllocs;
+    allocateOne();
+    assert(contextAllocs == before + 1);
+    withAllocator(defaultAllocator(), allocateOne);
+    assert(contextAllocs == before + 1);
+    allocateOne();
+    assert(contextAllocs == before + 2);
+}
+
+@test
+void testNestedOverrides() {
+    withAllocator(countingAllocator(), nestedBody);
+}
+
+@test
+void testWithAllocatorNamedArguments() {
+    var before = contextAllocs;
+    withAllocator(body = allocateOne, allocator = countingAllocator());
+    assert(contextAllocs == before + 1);
+}
+
+void installsOverride() {
+    withAllocator(countingAllocator(), allocateOne);
+}
+
+@test
+void testOverrideDoesNotLeakToCaller() {
+    var before = contextAllocs;
+    installsOverride();
+    assert(contextAllocs == before + 1);
+    allocateOne();
+    assert(contextAllocs == before + 1);
+}
+
+extern void contextBoundaryProbe() {
+    allocateOne();
+}
+
+@test
+void testExternBoundarySeesDefaultContext() {
+    var before = contextAllocs;
+    withAllocator(countingAllocator(), () => { contextBoundaryProbe(); });
+    assert(contextAllocs == before);
+}

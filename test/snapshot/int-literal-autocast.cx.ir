@@ -4,23 +4,24 @@ extern void foo(uint8)
 int32 main() {
     uint64* b = alloca uint64
     int8* c = alloca int8
-    void _0 = call foo(uint8 1)
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call foo(uint8 1)
     store uint64 42 to b
     store int8 -42 to c
     uint64 b.load = load b
-    uint64 _1 = checkedarith + b.load, uint64 1
-    bool _2 = overflow _1
-    bool _3 = !_2
-    bool overflow.condition = _3 == bool false
+    uint64 _2 = checkedarith + b.load, uint64 1
+    bool _3 = overflow _2
+    bool _4 = !_3
+    bool overflow.condition = _4 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at int-literal-autocast.cx:9:11
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "integer overflow at int-literal-autocast.cx:9:11
 ")
     unreachable
 
 overflow.success:
-    store _1 to b
-    void _5 = call _CX1N3std10checkLeaksE4void0_()
+    store _2 to b
+    void _6 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

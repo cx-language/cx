@@ -2,21 +2,22 @@
 int32 main() {
     Foo* _0 = alloca Foo
     Bar* _1 = alloca Bar
-    void _2 = call _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* _0, int32 1)
-    void _3 = call _CX1N4mainM4main3Foo7doStuffE4void0_(Foo* _0)
-    void _4 = call _CX1N4mainM4main3Bar4initE4void1_M3std5int32(Bar* _1, int32 2)
-    void _5 = call _CX1N4mainM4main3Bar7doStuffE4void0_(Bar* _1)
-    void _6 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _3 = call _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Context* _2, Foo* _0, int32 1)
+    void _4 = call _CX1N4mainM4main3Foo7doStuffE4void0_(Context* _2, Foo* _0)
+    void _5 = call _CX1N4mainM4main3Bar4initE4void1_M3std5int32(Context* _2, Bar* _1, int32 2)
+    void _6 = call _CX1N4mainM4main3Bar7doStuffE4void0_(Context* _2, Bar* _1)
+    void _7 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
     return int32 0
 }
 
-void _CX1N4mainM4main3Foo7doStuffE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo7doStuffE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* this, int32 i) {
+void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Context* __context, Foo* this, int32 i) {
     Foo** this_0 = alloca Foo*
     int32* i_0 = alloca int32
     store this to this_0
@@ -28,13 +29,13 @@ void _CX1N4mainM4main3Foo4initE4void1_M3std5int32(Foo* this, int32 i) {
     return void
 }
 
-void _CX1N4mainM4main3Bar7doStuffE4void0_(Bar* this) {
+void _CX1N4mainM4main3Bar7doStuffE4void0_(Context* __context, Bar* this) {
     Bar** this_0 = alloca Bar*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main3Bar4initE4void1_M3std5int32(Bar* this, int32 i) {
+void _CX1N4mainM4main3Bar4initE4void1_M3std5int32(Context* __context, Bar* this, int32 i) {
     Bar** this_0 = alloca Bar*
     int32* i_0 = alloca int32
     store this to this_0

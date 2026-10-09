@@ -1,5 +1,5 @@
 
-void _CX1N4main3fooE4void1_RM4main3Foo(Foo* ref_f) {
+void _CX1N4main3fooE4void1_RM4main3Foo(Context* __context, Foo* ref_f) {
     Foo** ref_f_0 = alloca Foo*
     store ref_f to ref_f_0
     return void
@@ -7,7 +7,8 @@ void _CX1N4main3fooE4void1_RM4main3Foo(Foo* ref_f) {
 
 int32 main() {
     Foo* f = alloca Foo
-    void _0 = call _CX1N4main3fooE4void1_RM4main3Foo(Foo* f)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4main3fooE4void1_RM4main3Foo(Context* _0, Foo* f)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

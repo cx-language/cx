@@ -6,7 +6,7 @@ import inputs
 // CHECK: string _CX1N4main8describeEM3std6string1_M4main6Gadget(
 // The imported main mangles as an ordinary function (only its call shows:
 // definitions in other modules are not printed).
-// CHECK: call _CX1N6inputs4mainE4void1_M3std5int32(int32 3)
+// CHECK: call _CX1N6inputs4mainE4void1_M3std5int32(Context* {{.*}}, int32 3)
 
 struct Gadget {
     int y

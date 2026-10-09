@@ -2,31 +2,32 @@
 int32 main() {
     C* _0 = alloca C
     int32[5]* _1 = alloca int32[5]
-    int32[5] _2 = insertvalue int32[5] undefined, 0, int32 0
-    int32[5] _3 = insertvalue _2, 1, int32 1
-    int32[5] _4 = insertvalue _3, 2, int32 2
-    int32[5] _5 = insertvalue _4, 3, int32 3
-    int32[5] _6 = insertvalue _5, 4, int32 4
-    store _6 to _1
-    int32* _7 = getelementptr _1, 0
-    Slice<int32> _8 = insertvalue Slice<int32> undefined, 0, _7
-    Slice<int32> _9 = insertvalue _8, 1, int32 5
-    void _10 = call _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(C* _0, Slice<int32> _9)
-    void _11 = call _CX1N4mainM4main1C3fooE4void0_(C* _0)
-    void _12 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    int32[5] _3 = insertvalue int32[5] undefined, 0, int32 0
+    int32[5] _4 = insertvalue _3, 1, int32 1
+    int32[5] _5 = insertvalue _4, 2, int32 2
+    int32[5] _6 = insertvalue _5, 3, int32 3
+    int32[5] _7 = insertvalue _6, 4, int32 4
+    store _7 to _1
+    int32* _8 = getelementptr _1, 0
+    Slice<int32> _9 = insertvalue Slice<int32> undefined, 0, _8
+    Slice<int32> _10 = insertvalue _9, 1, int32 5
+    void _11 = call _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(Context* _2, C* _0, Slice<int32> _10)
+    void _12 = call _CX1N4mainM4main1C3fooE4void0_(Context* _2, C* _0)
+    void _13 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
     return int32 0
 }
 
-void _CX1N4mainM4main1C3fooE4void0_(C* this) {
+void _CX1N4mainM4main1C3fooE4void0_(Context* __context, C* this) {
     C** this_0 = alloca C*
     store this to this_0
     C* this.load = load this_0
     Slice<int32>* a = getelementptr this.load, 0
-    int32* _0 = call _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Slice<int32>* a, int32 4)
+    int32* _0 = call _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Context* __context, Slice<int32>* a, int32 4)
     return void
 }
 
-void _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(C* this, Slice<int32> a) {
+void _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(Context* __context, C* this, Slice<int32> a) {
     C** this_0 = alloca C*
     Slice<int32>* a_0 = alloca Slice<int32>
     store this to this_0
@@ -38,7 +39,7 @@ void _CX1N4mainM4main1C4initE4void1_M3std5SliceIM3std5int32E(C* this, Slice<int3
     return void
 }
 
-int32* _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Slice<int32>* this, int32 index) {
+int32* _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Context* __context, Slice<int32>* this, int32 index) {
     Slice<int32>** this_0 = alloca Slice<int32>*
     int32* index_0 = alloca int32
     store this to this_0
@@ -50,7 +51,7 @@ int32* _CX1N3stdM3std5SliceIM3std5int32Eo2ixERM3std5int321_M3std5int32(Slice<int
 and.rhs:
     int32 index.load_0 = load index_0
     Slice<int32>* this.load = load this_0
-    int32 _1 = call _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this.load)
+    int32 _1 = call _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Context* __context, Slice<int32>* this.load)
     bool _2 = index.load_0 < _1
     br and.end(_2)
 
@@ -59,7 +60,7 @@ and.end(bool and):
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Slice index out of bounds at Slice.cx:64:9
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "Slice index out of bounds at Slice.cx:64:9
 ")
     unreachable
 
@@ -72,7 +73,7 @@ assert.success:
     return _4
 }
 
-int32 _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Slice<int32>* this) {
+int32 _CX1N3stdM3std5SliceIM3std5int32E4sizeEM3std5int320_(Context* __context, Slice<int32>* this) {
     Slice<int32>** this_0 = alloca Slice<int32>*
     store this to this_0
     Slice<int32>* this.load = load this_0

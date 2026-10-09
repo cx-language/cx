@@ -3,8 +3,9 @@ int32 main() {
     Foo* f = alloca Foo
     Foo** rf = alloca Foo*
     Foo** pf = alloca Foo*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store f to rf
     store f to pf
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

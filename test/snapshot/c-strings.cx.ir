@@ -5,34 +5,35 @@ int32 main() {
     string* _0 = alloca string
     StringBuf* _1 = alloca StringBuf
     string* __str_0 = alloca string
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     char[1024]* a = getelementptr s, 0
-    char* _2 = cast a to char*
-    void _3 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "x", int32 1)
+    char* _3 = cast a to char*
+    void _4 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(Context* _2, string* __str, char* "x", int32 1)
     string __str.load = load __str
-    bool _4 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(char* _2, string __str.load)
+    bool _5 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(Context* _2, char* _3, string __str.load)
     char[1024]* a_0 = getelementptr s, 0
-    char* _5 = cast a_0 to char*
-    void _6 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_0, char* "x", int32 1)
+    char* _6 = cast a_0 to char*
+    void _7 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(Context* _2, string* __str_0, char* "x", int32 1)
     string __str.load_0 = load __str_0
-    void _7 = call _CX1N3stdM3std9StringBuf4initE4void1_M3std6string(StringBuf* _1, string __str.load_0)
-    void _8 = call _CX1N3stdM3std6string4initE4void1_RM3std9StringBuf(string* _0, StringBuf* _1)
+    void _8 = call _CX1N3stdM3std9StringBuf4initE4void1_M3std6string(Context* _2, StringBuf* _1, string __str.load_0)
+    void _9 = call _CX1N3stdM3std6string4initE4void1_RM3std9StringBuf(Context* _2, string* _0, StringBuf* _1)
     string .load = load _0
-    bool _9 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(char* _5, string .load)
-    bool _10 = !_9
-    void _11 = call _CX1N3stdM3std9StringBuf6deinitE4void0_(StringBuf* _1)
-    void _12 = call _CX1N3std10checkLeaksE4void0_()
+    bool _10 = call _CX1N3stdo2eqEM3std4bool2_PM3std4charM3std6string(Context* _2, char* _6, string .load)
+    bool _11 = !_10
+    void _12 = call _CX1N3stdM3std9StringBuf6deinitE4void0_(Context* _2, StringBuf* _1)
+    void _13 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
     return int32 0
 }
 
-void _CX1N3stdM3std9StringBuf6deinitE4void0_(StringBuf* this) {
+void _CX1N3stdM3std9StringBuf6deinitE4void0_(Context* __context, StringBuf* this) {
     StringBuf** this_0 = alloca StringBuf*
     store this to this_0
     List<char>* characters = getelementptr this, 0
-    void _0 = call _CX1N3stdM3std4ListIM3std4charE6deinitE4void0_(List<char>* characters)
+    void _0 = call _CX1N3stdM3std4ListIM3std4charE6deinitE4void0_(Context* __context, List<char>* characters)
     return void
 }
 
-void _CX1N3stdM3std4ListIM3std4charE6deinitE4void0_(List<char>* this) {
+void _CX1N3stdM3std4ListIM3std4charE6deinitE4void0_(Context* __context, List<char>* this) {
     List<char>** this_0 = alloca List<char>*
     ArrayIterator<char>* __iterator = alloca ArrayIterator<char>
     char** element = alloca char*
@@ -45,7 +46,7 @@ void _CX1N3stdM3std4ListIM3std4charE6deinitE4void0_(List<char>* this) {
 
 if.then:
     List<char>* this.load_0 = load this_0
-    ArrayIterator<char> _1 = call _CX1N3stdM3std4ListIM3std4charE8iteratorEM3std13ArrayIteratorIM3std4charE0_(List<char>* this.load_0)
+    ArrayIterator<char> _1 = call _CX1N3stdM3std4ListIM3std4charE8iteratorEM3std13ArrayIteratorIM3std4charE0_(Context* __context, List<char>* this.load_0)
     store _1 to __iterator
     br loop.condition
 
@@ -56,40 +57,40 @@ if.end:
     return void
 
 loop.condition:
-    bool _2 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE8hasValueEM3std4bool0_(ArrayIterator<char>* __iterator)
+    bool _2 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE8hasValueEM3std4bool0_(Context* __context, ArrayIterator<char>* __iterator)
     br _2, loop.body, loop.end
 
 loop.body:
-    char* _3 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE5valueERM3std4char0_(ArrayIterator<char>* __iterator)
+    char* _3 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE5valueERM3std4char0_(Context* __context, ArrayIterator<char>* __iterator)
     store _3 to element
     br loop.increment
 
 loop.increment:
-    void _4 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE9incrementE4void0_(ArrayIterator<char>* __iterator)
+    void _4 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE9incrementE4void0_(Context* __context, ArrayIterator<char>* __iterator)
     br loop.condition
 
 loop.end:
     List<char>* this.load_1 = load this_0
     char** buffer = getelementptr this.load_1, 0
     char* buffer.load = load buffer
-    void _5 = call _CX1N3std10deallocateIM3std4charEE4void1_AM3std4char(char* buffer.load)
+    void _5 = call _CX1N3std10deallocateIM3std4charEE4void1_AM3std4char(Context* __context, char* buffer.load)
     br if.end
 }
 
-ArrayIterator<char> _CX1N3stdM3std4ListIM3std4charE8iteratorEM3std13ArrayIteratorIM3std4charE0_(List<char>* this) {
+ArrayIterator<char> _CX1N3stdM3std4ListIM3std4charE8iteratorEM3std13ArrayIteratorIM3std4charE0_(Context* __context, List<char>* this) {
     List<char>** this_0 = alloca List<char>*
     ArrayIterator<char>* _0 = alloca ArrayIterator<char>
     Slice<char>* _1 = alloca Slice<char>
     store this to this_0
     List<char>* this.load = load this_0
-    void _2 = call _CX1N3stdM3std5SliceIM3std4charE4initE4void1_RM3std4ListIM3std4charE(Slice<char>* _1, List<char>* this.load)
+    void _2 = call _CX1N3stdM3std5SliceIM3std4charE4initE4void1_RM3std4ListIM3std4charE(Context* __context, Slice<char>* _1, List<char>* this.load)
     Slice<char> .load = load _1
-    void _3 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE4initE4void1_M3std5SliceIM3std4charE(ArrayIterator<char>* _0, Slice<char> .load)
+    void _3 = call _CX1N3stdM3std13ArrayIteratorIM3std4charE4initE4void1_M3std5SliceIM3std4charE(Context* __context, ArrayIterator<char>* _0, Slice<char> .load)
     ArrayIterator<char> .load_0 = load _0
     return .load_0
 }
 
-bool _CX1N3stdM3std13ArrayIteratorIM3std4charE8hasValueEM3std4bool0_(ArrayIterator<char>* this) {
+bool _CX1N3stdM3std13ArrayIteratorIM3std4charE8hasValueEM3std4bool0_(Context* __context, ArrayIterator<char>* this) {
     ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
     store this to this_0
     ArrayIterator<char>* this.load = load this_0
@@ -102,7 +103,7 @@ bool _CX1N3stdM3std13ArrayIteratorIM3std4charE8hasValueEM3std4bool0_(ArrayIterat
     return _0
 }
 
-char* _CX1N3stdM3std13ArrayIteratorIM3std4charE5valueERM3std4char0_(ArrayIterator<char>* this) {
+char* _CX1N3stdM3std13ArrayIteratorIM3std4charE5valueERM3std4char0_(Context* __context, ArrayIterator<char>* this) {
     ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
     store this to this_0
     ArrayIterator<char>* this.load = load this_0
@@ -111,7 +112,7 @@ char* _CX1N3stdM3std13ArrayIteratorIM3std4charE5valueERM3std4char0_(ArrayIterato
     return current.load
 }
 
-void _CX1N3stdM3std13ArrayIteratorIM3std4charE9incrementE4void0_(ArrayIterator<char>* this) {
+void _CX1N3stdM3std13ArrayIteratorIM3std4charE9incrementE4void0_(Context* __context, ArrayIterator<char>* this) {
     ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
     store this to this_0
     ArrayIterator<char>* this.load = load this_0
@@ -122,25 +123,25 @@ void _CX1N3stdM3std13ArrayIteratorIM3std4charE9incrementE4void0_(ArrayIterator<c
     return void
 }
 
-void _CX1N3stdM3std13ArrayIteratorIM3std4charE4initE4void1_M3std5SliceIM3std4charE(ArrayIterator<char>* this, Slice<char> array) {
+void _CX1N3stdM3std13ArrayIteratorIM3std4charE4initE4void1_M3std5SliceIM3std4charE(Context* __context, ArrayIterator<char>* this, Slice<char> array) {
     ArrayIterator<char>** this_0 = alloca ArrayIterator<char>*
     Slice<char>* array_0 = alloca Slice<char>
     store this to this_0
     store array to array_0
     ArrayIterator<char>* this.load = load this_0
     char** current = getelementptr this.load, 0
-    char* _0 = call _CX1N3stdM3std5SliceIM3std4charE4dataEAM3std4char0_(Slice<char>* array_0)
+    char* _0 = call _CX1N3stdM3std5SliceIM3std4charE4dataEAM3std4char0_(Context* __context, Slice<char>* array_0)
     store _0 to current
     ArrayIterator<char>* this.load_0 = load this_0
     char** end = getelementptr this.load_0, 1
-    char* _1 = call _CX1N3stdM3std5SliceIM3std4charE4dataEAM3std4char0_(Slice<char>* array_0)
-    int32 _2 = call _CX1N3stdM3std5SliceIM3std4charE4sizeEM3std5int320_(Slice<char>* array_0)
+    char* _1 = call _CX1N3stdM3std5SliceIM3std4charE4dataEAM3std4char0_(Context* __context, Slice<char>* array_0)
+    int32 _2 = call _CX1N3stdM3std5SliceIM3std4charE4sizeEM3std5int320_(Context* __context, Slice<char>* array_0)
     char* _3 = getelementptr _1, _2
     store _3 to end
     return void
 }
 
-void _CX1N3stdM3std5SliceIM3std4charE4initE4void1_RM3std4ListIM3std4charE(Slice<char>* this, List<char>* list) {
+void _CX1N3stdM3std5SliceIM3std4charE4initE4void1_RM3std4ListIM3std4charE(Context* __context, Slice<char>* this, List<char>* list) {
     Slice<char>** this_0 = alloca Slice<char>*
     List<char>** list_0 = alloca List<char>*
     store this to this_0
@@ -148,12 +149,12 @@ void _CX1N3stdM3std5SliceIM3std4charE4initE4void1_RM3std4ListIM3std4charE(Slice<
     Slice<char>* this.load = load this_0
     char** data = getelementptr this.load, 0
     List<char>* list.load = load list_0
-    char* _0 = call _CX1N3stdM3std4ListIM3std4charE4dataEAM3std4char0_(List<char>* list.load)
+    char* _0 = call _CX1N3stdM3std4ListIM3std4charE4dataEAM3std4char0_(Context* __context, List<char>* list.load)
     store _0 to data
     Slice<char>* this.load_0 = load this_0
     int32* size = getelementptr this.load_0, 1
     List<char>* list.load_0 = load list_0
-    int32 _1 = call _CX1N3stdM3std4ListIM3std4charE4sizeEM3std5int320_(List<char>* list.load_0)
+    int32 _1 = call _CX1N3stdM3std4ListIM3std4charE4sizeEM3std5int320_(Context* __context, List<char>* list.load_0)
     store _1 to size
     return void
 }

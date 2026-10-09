@@ -1,19 +1,20 @@
 
 int32 main() {
     F<int32, bool>* f = alloca F<int32, bool>
-    void _0 = call _CX1N4mainM4main1FIM3std5int32M3std4boolE4initE4void0_(F<int32, bool>* f)
-    void _1 = call _CX1N4mainM4main1FIM3std5int32M3std4boolE3fooE4void0_(F<int32, bool>* f)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1FIM3std5int32M3std4boolE4initE4void0_(Context* _0, F<int32, bool>* f)
+    void _2 = call _CX1N4mainM4main1FIM3std5int32M3std4boolE3fooE4void0_(Context* _0, F<int32, bool>* f)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1FIM3std5int32M3std4boolE4initE4void0_(F<int32, bool>* this) {
+void _CX1N4mainM4main1FIM3std5int32M3std4boolE4initE4void0_(Context* __context, F<int32, bool>* this) {
     F<int32, bool>** this_0 = alloca F<int32, bool>*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1FIM3std5int32M3std4boolE3fooE4void0_(F<int32, bool>* this) {
+void _CX1N4mainM4main1FIM3std5int32M3std4boolE3fooE4void0_(Context* __context, F<int32, bool>* this) {
     F<int32, bool>** this_0 = alloca F<int32, bool>*
     store this to this_0
     return void

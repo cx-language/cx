@@ -1,0 +1,2 @@
+void f(extern int p) {
+}

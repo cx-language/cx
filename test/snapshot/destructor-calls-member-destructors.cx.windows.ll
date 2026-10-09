@@ -9,11 +9,12 @@ define i32 @main() #0 !dbg !4 {
   %1 = call ptr @_set_thread_local_invalid_parameter_handler(ptr @__cx_noop_invalid_parameter_handler), !dbg !7
   %a = alloca %A, align 8
   %c = alloca %C, align 8
-  call void @_CX1N4mainM4main1A4initE4void0_(ptr %a), !dbg !8
-  call void @_CX1N4mainM4main1C4initE4void0_(ptr %c), !dbg !9
-  call void @_CX1N4mainM4main1C6deinitE4void0_(ptr %c), !dbg !7
-  call void @_CX1N4mainM4main1A6deinitE4void0_(ptr %a), !dbg !7
-  call void @_CX1N3std10checkLeaksE4void0_(), !dbg !7
+  %2 = call ptr @_CX1N3std11ambientRootERM3std7Context0_(ptr null), !dbg !7
+  call void @_CX1N4mainM4main1A4initE4void0_(ptr %2, ptr %a), !dbg !8
+  call void @_CX1N4mainM4main1C4initE4void0_(ptr %2, ptr %c), !dbg !9
+  call void @_CX1N4mainM4main1C6deinitE4void0_(ptr %2, ptr %c), !dbg !7
+  call void @_CX1N4mainM4main1A6deinitE4void0_(ptr %2, ptr %a), !dbg !7
+  call void @_CX1N3std10checkLeaksE4void0_(ptr %2), !dbg !7
   ret i32 0
 }
 
@@ -23,29 +24,31 @@ define private void @__cx_noop_invalid_parameter_handler(ptr %0, ptr %1, ptr %2,
 
 declare ptr @_set_thread_local_invalid_parameter_handler(ptr)
 
-define void @_CX1N4mainM4main1A4initE4void0_(ptr %this) #0 !dbg !10 {
+declare ptr @_CX1N3std11ambientRootERM3std7Context0_(ptr) #0
+
+define void @_CX1N4mainM4main1A4initE4void0_(ptr %__context, ptr %this) #0 !dbg !10 {
   %this1 = alloca ptr, align 8
   store ptr %this, ptr %this1, align 8
   ret void
 }
 
-define void @_CX1N4mainM4main1C4initE4void0_(ptr %this) #0 !dbg !11 {
+define void @_CX1N4mainM4main1C4initE4void0_(ptr %__context, ptr %this) #0 !dbg !11 {
   %this1 = alloca ptr, align 8
   store ptr %this, ptr %this1, align 8
   ret void
 }
 
-define void @_CX1N4mainM4main1C6deinitE4void0_(ptr %this) #0 !dbg !12 {
+define void @_CX1N4mainM4main1C6deinitE4void0_(ptr %__context, ptr %this) #0 !dbg !12 {
   %this1 = alloca ptr, align 8
   store ptr %this, ptr %this1, align 8
   %b = getelementptr inbounds %C, ptr %this, i32 0, i32 0
   %bb = getelementptr inbounds %C, ptr %this, i32 0, i32 1
-  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %bb), !dbg !13
-  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %b), !dbg !13
+  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %bb), !dbg !13
+  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %b), !dbg !13
   ret void
 }
 
-define void @_CX1N4mainM4main1A6deinitE4void0_(ptr %this) #0 !dbg !14 {
+define void @_CX1N4mainM4main1A6deinitE4void0_(ptr %__context, ptr %this) #0 !dbg !14 {
   %this1 = alloca ptr, align 8
   store ptr %this, ptr %this1, align 8
   %b = getelementptr inbounds %A, ptr %this, i32 0, i32 0
@@ -54,22 +57,22 @@ define void @_CX1N4mainM4main1A6deinitE4void0_(ptr %this) #0 !dbg !14 {
   br i1 %1, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %bb), !dbg !16
-  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %b), !dbg !16
+  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %bb), !dbg !16
+  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %b), !dbg !16
   ret void
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %bb), !dbg !16
-  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %b), !dbg !16
+  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %bb), !dbg !16
+  call void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %b), !dbg !16
   ret void
 }
 
-declare void @_CX1N3std10checkLeaksE4void0_() #0
+declare void @_CX1N3std10checkLeaksE4void0_(ptr) #0
 
-define void @_CX1N4mainM4main1B6deinitE4void0_(ptr %this) #0 !dbg !17 {
+define void @_CX1N4mainM4main1B6deinitE4void0_(ptr %__context, ptr %this) #0 !dbg !17 {
   %this1 = alloca ptr, align 8
   store ptr %this, ptr %this1, align 8
   ret void

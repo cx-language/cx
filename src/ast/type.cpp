@@ -47,7 +47,8 @@ static llvm::hash_code hashTypeStructure(Type type) {
         for (Type paramType : type.getParamTypes()) {
             hash = llvm::hash_combine(hash, hashTypeStructure(paramType));
         }
-        return llvm::hash_combine(type.getKind(), llvm::cast<FunctionType>(type.typeBase)->isVariadic, hash);
+        auto* functionType = llvm::cast<FunctionType>(type.typeBase);
+        return llvm::hash_combine(type.getKind(), functionType->isVariadic, functionType->isExtern, hash);
     }
     case TypeKind::PointerType:
         return llvm::hash_combine(type.getKind(), static_cast<int>(type.getPointerKind()), hashTypeStructure(type.getPointee()));
@@ -238,8 +239,9 @@ Type Type::resolve(const llvm::StringMap<GenericArg>& replacements) const {
     }
     case TypeKind::FunctionType: {
         auto paramTypes = mapAst(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
-        return preserveSpelling(FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), llvm::cast<FunctionType>(typeBase)->isVariadic,
-                                                  location, endLocation));
+        auto* functionType = llvm::cast<FunctionType>(typeBase);
+        return preserveSpelling(FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), functionType->isVariadic, location, endLocation,
+                                                  functionType->isExtern));
     }
     case TypeKind::PointerType: {
         auto* base = llvm::cast<PointerType>(typeBase);
@@ -381,8 +383,8 @@ Type AnonymousStructType::get(AstVector<AnonymousStructElement>&& elements, Loca
     return getType(AnonymousStructType(std::move(elements)), location, endLocation);
 }
 
-Type FunctionType::get(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, Location location, Location endLocation) {
-    return getType(FunctionType(returnType, std::move(paramTypes), isVariadic), location, endLocation);
+Type FunctionType::get(Type returnType, AstVector<Type>&& paramTypes, bool isVariadic, Location location, Location endLocation, bool isExtern) {
+    return getType(FunctionType(returnType, std::move(paramTypes), isVariadic, isExtern), location, endLocation);
 }
 
 Type PointerType::get(Type pointeeType, PointerKind kind, Location location, Location endLocation) {
@@ -628,6 +630,10 @@ llvm::ArrayRef<Type> Type::getParamTypes() const {
     return llvm::cast<FunctionType>(typeBase)->paramTypes;
 }
 
+bool Type::isExternFunctionType() const {
+    return isFunctionType() && llvm::cast<FunctionType>(typeBase)->isExtern;
+}
+
 Type Type::getPointee() const {
     return llvm::cast<PointerType>(typeBase)->pointeeType.withLocation(location, endLocation);
 }
@@ -722,7 +728,8 @@ bool cx::operator==(Type lhs, Type rhs) {
         return lhs.getAnonymousStructElements() == rhs.getAnonymousStructElements();
     case TypeKind::FunctionType:
         return lhs.getReturnType() == rhs.getReturnType() && lhs.getParamTypes() == rhs.getParamTypes()
-            && llvm::cast<FunctionType>(lhs.typeBase)->isVariadic == llvm::cast<FunctionType>(rhs.typeBase)->isVariadic;
+            && llvm::cast<FunctionType>(lhs.typeBase)->isVariadic == llvm::cast<FunctionType>(rhs.typeBase)->isVariadic
+            && llvm::cast<FunctionType>(lhs.typeBase)->isExtern == llvm::cast<FunctionType>(rhs.typeBase)->isExtern;
     case TypeKind::PointerType:
         return lhs.getPointerKind() == rhs.getPointerKind() && lhs.getPointee() == rhs.getPointee();
     case TypeKind::UnresolvedType:
@@ -919,6 +926,7 @@ void Type::printTo(std::ostream& stream, bool canonical) const {
         stream << ")";
         break;
     case TypeKind::FunctionType:
+        if (llvm::cast<FunctionType>(typeBase)->isExtern) stream << "extern ";
         getReturnType().printTo(stream, canonical);
         stream << "(";
         for (const Type& paramType : getParamTypes()) {

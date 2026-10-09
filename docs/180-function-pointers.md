@@ -43,4 +43,22 @@ void main() {
 ```
 
 A cx function can be passed where a C function pointer is expected,
-see [Using C libraries](low-level-programming).
+see [Using C libraries](low-level-programming). Pass the function directly:
+a function pointer held in a variable can't be converted, and the callback
+sees the default context rather than the caller's.
+
+A C callback type can be named with an `extern` function type,
+which uses the C calling convention (no hidden context parameter):
+
+```cs
+using Handler = extern void(c_int);
+
+void onEvent(c_int code) {
+    _ = code;
+}
+
+void main() {
+    Handler h = onEvent;
+    h(42);
+}
+```

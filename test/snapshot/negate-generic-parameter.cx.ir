@@ -1,11 +1,12 @@
 
 int32 main() {
-    float32 _0 = call _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float32 0)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    float32 _1 = call _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(Context* _0, float32 0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-float32 _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(float32 a) {
+float32 _CX1N4main1fIM3std7float32EEM3std7float321_M3std7float32(Context* __context, float32 a) {
     float32* a_0 = alloca float32
     store a to a_0
     float32 a.load = load a_0

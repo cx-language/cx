@@ -1,5 +1,5 @@
 
-vec2 _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
+vec2 _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(Context* __context, vec2 a, vec2 b) {
     vec2* a_0 = alloca vec2
     vec2* b_0 = alloca vec2
     vec2* _0 = alloca vec2
@@ -16,7 +16,7 @@ vec2 _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at operator-overloading.cx:13:21
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at operator-overloading.cx:13:21
 ")
     unreachable
 
@@ -32,17 +32,17 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at operator-overloading.cx:13:32
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at operator-overloading.cx:13:32
 ")
     unreachable
 
 overflow.success_0:
-    void _9 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _0, int32 _1, int32 _5)
+    void _9 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(Context* __context, vec2* _0, int32 _1, int32 _5)
     vec2 .load = load _0
     return .load
 }
 
-void _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* this, int32 x, int32 y) {
+void _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(Context* __context, vec2* this, int32 x, int32 y) {
     vec2** this_0 = alloca vec2*
     int32* x_0 = alloca int32
     int32* y_0 = alloca int32
@@ -64,24 +64,25 @@ int32 main() {
     vec2* v = alloca vec2
     vec2* _0 = alloca vec2
     vec2* _1 = alloca vec2
-    void _2 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* v, int32 3, int32 2)
-    void _3 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _0, int32 2, int32 4)
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _3 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(Context* _2, vec2* v, int32 3, int32 2)
+    void _4 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(Context* _2, vec2* _0, int32 2, int32 4)
     vec2 .load = load _0
     vec2 v.load = load v
-    vec2 _4 = call _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(vec2 .load, vec2 v.load)
-    store _4 to v
+    vec2 _5 = call _CX1N4maino2mlEM4main4vec22_M4main4vec2M4main4vec2(Context* _2, vec2 .load, vec2 v.load)
+    store _5 to v
     vec2 v.load_0 = load v
-    void _5 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(vec2* _1, int32 -1, int32 3)
+    void _6 = call _CX1N4mainM4main4vec24initE4void2_M3std5int32M3std5int32(Context* _2, vec2* _1, int32 -1, int32 3)
     vec2 .load_0 = load _1
-    bool _6 = call _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(vec2 v.load_0, vec2 .load_0)
+    bool _7 = call _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(Context* _2, vec2 v.load_0, vec2 .load_0)
     int32* x = getelementptr v, 0
     int32 x.load = load x
-    int32 _7 = call _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(vec2* v, int32 x.load)
-    void _8 = call _CX1N3std10checkLeaksE4void0_()
+    int32 _8 = call _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(Context* _2, vec2* v, int32 x.load)
+    void _9 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
     return int32 0
 }
 
-bool _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
+bool _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(Context* __context, vec2 a, vec2 b) {
     vec2* a_0 = alloca vec2
     vec2* b_0 = alloca vec2
     store a to a_0
@@ -94,7 +95,7 @@ bool _CX1N4maino2eqEM3std4bool2_M4main4vec2M4main4vec2(vec2 a, vec2 b) {
     return _0
 }
 
-int32 _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(vec2* this, int32 index) {
+int32 _CX1N4mainM4main4vec2o2ixEM3std5int321_M3std5int32(Context* __context, vec2* this, int32 index) {
     vec2** this_0 = alloca vec2*
     int32* index_0 = alloca int32
     store this to this_0

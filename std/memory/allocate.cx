@@ -7,23 +7,33 @@ struct Allocator {
     void(void*?, void*) free;
 }
 
-/// The ambient context: process-wide settings implicitly used by the standard
-/// library. Like in Odin and Jai, library code allocates through the
-/// allocator found here instead of calling malloc directly.
+/// The ambient context: settings implicitly used by the standard library.
+/// Like in Odin and Jai, library code allocates through the allocator found
+/// here instead of calling malloc directly. Every cx function takes its
+/// caller's context as a hidden parameter; only context roots (the entry
+/// point, exported extern functions, C callbacks) start from the default.
 struct Context {
     Allocator allocator;
 }
 
-// The ambient context, initialized to the default context on first use.
+// The default context, created on first use.
 // ponytail: plain global, threads would need this to be thread-local instead.
 private Context? ambientContext = null;
 
-/// Returns the ambient context, creating it on first use.
-Context& context() {
+/// Returns the default context, creating it on first use. Called only by
+/// compiler-generated context roots, which pass a null context the call ignores.
+private Context& ambientRoot() {
     if ambientContext == null {
         ambientContext = Context(defaultAllocator());
     }
     return ambientContext!;
+}
+
+/// Returns the caller's ambient context. This is a compiler intrinsic:
+/// direct calls read the hidden context parameter. The body only runs for
+/// indirect calls, which cannot provide a context and abort.
+Context& context() {
+    abort("context() must be called directly");
 }
 
 /// Returns the default allocator, which allocates with malloc and frees with free.
@@ -39,13 +49,12 @@ private void defaultFree(void*? state, void* ptr) {
     free(ptr);
 }
 
-/// Runs `body` with the given allocator installed in the ambient context,
-/// restoring the previous allocator afterwards.
+/// Runs `body` with the given allocator installed in the ambient context.
+/// The override applies to `body` and everything it calls, and never leaks
+/// to the caller. This is a compiler intrinsic: direct calls push a context
+/// overriding the allocator. Indirect calls cannot do that and abort.
 void withAllocator(Allocator allocator, void() body) {
-    var old = context().allocator;
-    context().allocator = allocator;
-    body();
-    context().allocator = old;
+    abort("withAllocator() must be called directly");
 }
 
 /// Allocates through the ambient context's allocator. The returned pointer

@@ -3,13 +3,14 @@ int32 main() {
     string[2]* a = alloca string[2]
     string* __str = alloca string
     string* __str_0 = alloca string
-    void _0 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str, char* "foo", int32 3)
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(Context* _0, string* __str, char* "foo", int32 3)
     string __str.load = load __str
-    string[2] _1 = insertvalue string[2] undefined, 0, __str.load
-    void _2 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(string* __str_0, char* "bar", int32 3)
+    string[2] _2 = insertvalue string[2] undefined, 0, __str.load
+    void _3 = call _CX1N3stdM3std6string4initE4void2_PM3std4charM3std5int32(Context* _0, string* __str_0, char* "bar", int32 3)
     string __str.load_0 = load __str_0
-    string[2] _3 = insertvalue _1, 1, __str.load_0
-    store _3 to a
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    string[2] _4 = insertvalue _2, 1, __str.load_0
+    store _4 to a
+    void _5 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

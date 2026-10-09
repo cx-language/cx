@@ -2,9 +2,10 @@
 int32 main() {
     float32* f = alloca float32
     float32* g = alloca float32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store float32 42 to f
-    float32 _0 = -float32 42
-    store _0 to g
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    float32 _1 = -float32 42
+    store _1 to g
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

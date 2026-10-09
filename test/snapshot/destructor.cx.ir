@@ -5,10 +5,11 @@ int32 main() {
     Bar* b = alloca Bar
     Bar* b2 = alloca Bar
     int32* i = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     br bool false, if.then, if.else
 
 if.then:
-    void _0 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f2)
+    void _1 = call _CX1N4mainM4main3Foo6deinitE4void0_(Context* _0, Foo* f2)
     br if.end
 
 if.else:
@@ -21,53 +22,53 @@ loop.condition:
     br bool false, loop.body, loop.end
 
 loop.body:
-    void _1 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b2)
-    void _2 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
-    void _3 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    void _2 = call _CX1N4mainM4main3Bar6deinitE4void0_(Context* _0, Bar* b2)
+    void _3 = call _CX1N4mainM4main3Bar6deinitE4void0_(Context* _0, Bar* b)
+    void _4 = call _CX1N4mainM4main3Foo6deinitE4void0_(Context* _0, Foo* f)
+    void _5 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 
 loop.end:
     store int32 1 to i
-    void _5 = call _CX1N4mainM4main3Bar6deinitE4void0_(Bar* b)
-    void _6 = call _CX1N4mainM4main3Foo6deinitE4void0_(Foo* f)
-    void _7 = call _CX1N3std10checkLeaksE4void0_()
+    void _6 = call _CX1N4mainM4main3Bar6deinitE4void0_(Context* _0, Bar* b)
+    void _7 = call _CX1N4mainM4main3Foo6deinitE4void0_(Context* _0, Foo* f)
+    void _8 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main3Foo6deinitE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo6deinitE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     Foo* this.load = load this_0
     int32* i = getelementptr this.load, 0
     store int32 0 to i
     Foo* this.load_0 = load this_0
-    void _0 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this.load_0)
+    void _0 = call _CX1N4mainM4main3Foo1fE4void0_(Context* __context, Foo* this.load_0)
     Foo* this.load_1 = load this_0
-    void _1 = call _CX1N4mainM4main3Foo1fE4void0_(Foo* this.load_1)
+    void _1 = call _CX1N4mainM4main3Foo1fE4void0_(Context* __context, Foo* this.load_1)
     return void
 }
 
-void _CX1N4mainM4main3Bar6deinitE4void0_(Bar* this) {
+void _CX1N4mainM4main3Bar6deinitE4void0_(Context* __context, Bar* this) {
     Bar** this_0 = alloca Bar*
     store this to this_0
     Bar* this.load = load this_0
     int32* i = getelementptr this.load, 0
     store int32 0 to i
     Bar* this.load_0 = load this_0
-    void _0 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this.load_0)
+    void _0 = call _CX1N4mainM4main3Bar1fE4void0_(Context* __context, Bar* this.load_0)
     Bar* this.load_1 = load this_0
-    void _1 = call _CX1N4mainM4main3Bar1fE4void0_(Bar* this.load_1)
+    void _1 = call _CX1N4mainM4main3Bar1fE4void0_(Context* __context, Bar* this.load_1)
     return void
 }
 
-void _CX1N4mainM4main3Foo1fE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo1fE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main3Bar1fE4void0_(Bar* this) {
+void _CX1N4mainM4main3Bar1fE4void0_(Context* __context, Bar* this) {
     Bar** this_0 = alloca Bar*
     store this to this_0
     return void

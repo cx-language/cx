@@ -1,5 +1,5 @@
 
-int32* _CX1N4main3fooEOPM3std5int320_() {
+int32* _CX1N4main3fooEOPM3std5int320_(Context* __context) {
     return int32* null
 }
 
@@ -8,15 +8,16 @@ int32 main() {
     bool* isNonNull = alloca bool
     int32** ptr = alloca int32*
     bool** ptr2 = alloca bool*
-    int32* _0 = call _CX1N4main3fooEOPM3std5int320_()
-    bool _1 = _0 == int32* null
-    store _1 to isNull
-    int32* _2 = call _CX1N4main3fooEOPM3std5int320_()
-    bool _3 = _2 != int32* null
-    store _3 to isNonNull
-    int32* _4 = call _CX1N4main3fooEOPM3std5int320_()
-    store _4 to ptr
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    int32* _1 = call _CX1N4main3fooEOPM3std5int320_(Context* _0)
+    bool _2 = _1 == int32* null
+    store _2 to isNull
+    int32* _3 = call _CX1N4main3fooEOPM3std5int320_(Context* _0)
+    bool _4 = _3 != int32* null
+    store _4 to isNonNull
+    int32* _5 = call _CX1N4main3fooEOPM3std5int320_(Context* _0)
+    store _5 to ptr
     store bool* null to ptr2
-    void _5 = call _CX1N3std10checkLeaksE4void0_()
+    void _6 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

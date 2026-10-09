@@ -6,31 +6,32 @@ int32 main() {
     E* e = alloca E
     E* enum_0 = alloca E
     S<E>* _1 = alloca S<E>
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
-    void _2 = call _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* _0, E* null)
+    void _3 = call _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(Context* _2, S<E>* _0, E* null)
     S<E> .load = load _0
-    struct { S<E> } _3 = insertvalue struct { S<E> } undefined, 0, .load
+    struct { S<E> } _4 = insertvalue struct { S<E> } undefined, 0, .load
     union { struct { S<E> }, struct { int32[12] } }* associatedValue = getelementptr enum, 1
-    struct { S<E> }* _4 = cast associatedValue to struct { S<E> }*
-    store _3 to _4
+    struct { S<E> }* _5 = cast associatedValue to struct { S<E> }*
+    store _4 to _5
     E enum.load = load enum
     store enum.load to inner
     int32* tag_0 = getelementptr enum_0, 0
     store int32 0 to tag_0
-    void _5 = call _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* _1, E* inner)
+    void _6 = call _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(Context* _2, S<E>* _1, E* inner)
     S<E> .load_0 = load _1
-    struct { S<E> } _6 = insertvalue struct { S<E> } undefined, 0, .load_0
+    struct { S<E> } _7 = insertvalue struct { S<E> } undefined, 0, .load_0
     union { struct { S<E> }, struct { int32[12] } }* associatedValue_0 = getelementptr enum_0, 1
-    struct { S<E> }* _7 = cast associatedValue_0 to struct { S<E> }*
-    store _6 to _7
+    struct { S<E> }* _8 = cast associatedValue_0 to struct { S<E> }*
+    store _7 to _8
     E enum.load_0 = load enum_0
     store enum.load_0 to e
-    void _8 = call _CX1N3std10checkLeaksE4void0_()
+    void _9 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
     return int32 0
 }
 
-void _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(S<E>* this, E* e) {
+void _CX1N4mainM4main1SIM4main1EE4initE4void1_OPM4main1E(Context* __context, S<E>* this, E* e) {
     S<E>** this_0 = alloca S<E>*
     E** e_0 = alloca E*
     store this to this_0

@@ -263,7 +263,11 @@ std::string FunctionDecl::getQualifiedName() const {
 
 FunctionType* FunctionDecl::getFunctionType() const {
     auto paramTypes = mapAst(getParams(), [](const ParamDecl& p) -> Type { return p.type; });
-    return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes), isVariadic()));
+    // The entry point is called by the OS without a context like an extern
+    // function, so its value shares the contextless type (indirect calls to
+    // it must not pass a context either).
+    return &llvm::cast<FunctionType>(
+        *FunctionType::get(getReturnType(), std::move(paramTypes), isVariadic(), Location(), Location(), isExtern() || isEntryPoint));
 }
 
 bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceiver) const {

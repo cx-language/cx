@@ -32,6 +32,14 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
                       Parameter{ValueKind::Parameter, getIRType(PointerType::get(decl.getTypeDecl()->getType(), PointerKind::Reference)), "this"});
     }
 
+    // cx functions take the ambient context as a hidden first parameter.
+    // Extern functions keep the plain C ABI, and the entry point has no
+    // caller to pass one (it roots the chain with the default context).
+    Type contextType = !decl.isExtern() && !decl.isEntryPoint ? getContextStructType() : Type();
+    if (contextType) {
+        params.insert(params.begin(), Parameter{ValueKind::Parameter, getIRType(contextType)->getPointerTo(), "__context"});
+    }
+
     auto returnType = getIRType(decl.isEntryPoint ? Type::getInt32() : decl.getReturnType());
 
     auto signatureMatches = [&](const Function* function) {
@@ -94,6 +102,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         decl.isVariadic(),
         decl.getLocation(),
     };
+    function->hasContextParam = (bool)contextType;
     if (!conflict) {
         module->functions.push_back(function);
         functionInstantiations.push_back({&decl, function});
@@ -109,6 +118,18 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     beginScope();
 
     auto arg = function.params.begin();
+
+    // The context chain threads through every function: cx functions take
+    // the caller's context as their hidden first parameter, while context
+    // roots (the entry point, exported extern functions) start it with the
+    // default context. Restored on exit so global initializers emitted
+    // between functions never see a stale value.
+    llvm::SaveAndRestore saveContext(currentContext, currentContext);
+    if (function.hasContextParam) {
+        currentContext = &*arg++;
+    } else {
+        currentContext = emitRootContextCall(nullptr);
+    }
 
     if (decl.getTypeDecl()) {
         // Spill like every other by-reference parameter, so dereferencing reads
@@ -155,10 +176,12 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     if (decl.isDestructorDecl()) {
+        // The receiver sits after the hidden context parameter.
+        Value* self = &function.params[function.hasContextParam ? 1 : 0];
         // Enums cannot declare destructors, so this is always a synthesized
         // default destructor with an empty body; destroy the active payload.
         if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl.getTypeDecl())) {
-            emitEnumPayloadDestruction(*enumDecl, &function.params[0]);
+            emitEnumPayloadDestruction(*enumDecl, self);
         } else {
             for (auto& field : decl.getTypeDecl()->fields) {
                 if (!field.type.needsDestruction()) continue;
@@ -167,7 +190,7 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
                 // Union members overlap, so reaching here means sema let an
                 // owning member through (see Typechecker::typecheckFieldDecl).
                 ASSERT(!decl.getTypeDecl()->isUnion());
-                deferDestructorCall(emitMemberAccess(&function.params[0], &field), &field);
+                deferDestructorCall(emitMemberAccess(self, &field), &field);
             }
         }
     }
@@ -226,7 +249,7 @@ Value* IRGenerator::emitMainArgv(Value* argc, Value* argv, Type argvType, Locati
 
     setInsertPoint(body);
     Value* cString = createLoad(createGEP(argv, {index}));
-    createCall(stringInit, {createGEP(elements, {index}), cString}, nullptr);
+    createContextCall(stringInit, {createGEP(elements, {index}), cString}, nullptr);
     createStore(createBinaryOp(Token::Plus, index, createConstantInt(Type::getInt32(), 1), nullptr), indexAlloca);
     createBr(cond);
 
@@ -268,6 +291,7 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
         bool wellFormed = !decl.initializer || decl.initializer->hasType();
         auto* deadBlock = new BasicBlock("global.init");
         llvm::SaveAndRestore saveInsertBlock(insertBlock, deadBlock);
+        llvm::SaveAndRestore<Value*> saveCurrentContext(currentContext, nullptr);
         llvm::SaveAndRestore<Function*> saveCurrentFunction(currentFunction, wellFormed ? nullptr : currentFunction);
         llvm::SaveAndRestore saveEmittingGlobal(emittingGlobalInitializer, true);
 

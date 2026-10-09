@@ -6,6 +6,7 @@ int32 main() {
     int8* qux2 = alloca int8
     int32* qux3 = alloca int32
     int32* qux4 = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 -1 to foo
     store uint32 0 to bar
     store uint64 0 to qux
@@ -13,6 +14,6 @@ int32 main() {
     store int32 18446744073709551615 to qux3
     int32 qux3.load = load qux3
     store qux3.load to qux4
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

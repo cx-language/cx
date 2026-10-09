@@ -7,75 +7,76 @@ int32 main() {
     TwoUnions* t = alloca TwoUnions
     StructInUnion* s = alloca StructInUnion
     NameClash* c = alloca NameClash
-    WithAnon _0 = call makeWithAnon()
-    store _0 to w
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    WithAnon _1 = call makeWithAnon()
+    store _1 to w
     c_int* tag = getelementptr w, 0
-    void _1 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* tag)
+    void _2 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* tag)
     AnonymousRecord0* unnamed_0 = getelementptr w, 1
     c_longlong* a = cast unnamed_0 to c_longlong*
-    void _2 = call _CX1N3std5printIM3std11c__longlongEE4void1_RM3std11c__longlong(c_longlong* a)
-    OnlyUnion _3 = call makeOnlyUnion()
-    store _3 to o
+    void _3 = call _CX1N3std5printIM3std11c__longlongEE4void1_RM3std11c__longlong(Context* _0, c_longlong* a)
+    OnlyUnion _4 = call makeOnlyUnion()
+    store _4 to o
     AnonymousRecord1* unnamed_0_0 = getelementptr o, 0
     c_int* b = cast unnamed_0_0 to c_int*
-    void _4 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* b)
-    Flat _5 = call makeFlat()
-    store _5 to f
+    void _5 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* b)
+    Flat _6 = call makeFlat()
+    store _6 to f
     c_int* x = getelementptr f, 0
-    void _6 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* x)
+    void _7 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* x)
     c_int* y = getelementptr f, 1
-    void _7 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* y)
+    void _8 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* y)
     c_int* z = getelementptr f, 2
-    void _8 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* z)
-    NestedFlat _9 = call makeNestedFlat()
-    store _9 to n
+    void _9 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* z)
+    NestedFlat _10 = call makeNestedFlat()
+    store _10 to n
     c_int* z_0 = getelementptr n, 2
-    void _10 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* z_0)
-    TwoUnions _11 = call makeTwoUnions()
-    store _11 to t
+    void _11 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* z_0)
+    TwoUnions _12 = call makeTwoUnions()
+    store _12 to t
     AnonymousRecord2* unnamed_0_1 = getelementptr t, 0
     c_int* a_0 = cast unnamed_0_1 to c_int*
-    void _12 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* a_0)
+    void _13 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* a_0)
     AnonymousRecord3* unnamed_1 = getelementptr t, 1
     c_int* b_0 = cast unnamed_1 to c_int*
-    void _13 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* b_0)
-    StructInUnion _14 = call makeStructInUnion()
-    store _14 to s
+    void _14 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* b_0)
+    StructInUnion _15 = call makeStructInUnion()
+    store _15 to s
     AnonymousRecord4* unnamed_0_2 = cast s to AnonymousRecord4*
     c_int* x_0 = getelementptr unnamed_0_2, 0
-    void _15 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* x_0)
+    void _16 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* x_0)
     AnonymousRecord4* unnamed_0_3 = cast s to AnonymousRecord4*
     c_int* y_0 = getelementptr unnamed_0_3, 1
-    void _16 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* y_0)
+    void _17 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* y_0)
     c_longlong* d = cast s to c_longlong*
-    void _17 = call _CX1N3std5printIM3std11c__longlongEE4void1_RM3std11c__longlong(c_longlong* d)
-    NameClash _18 = call makeNameClash()
-    store _18 to c
+    void _18 = call _CX1N3std5printIM3std11c__longlongEE4void1_RM3std11c__longlong(Context* _0, c_longlong* d)
+    NameClash _19 = call makeNameClash()
+    store _19 to c
     AnonymousRecord5* unnamed_1_0 = getelementptr c, 0
     c_int* a_1 = cast unnamed_1_0 to c_int*
-    void _19 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* a_1)
+    void _20 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* a_1)
     c_int* unnamed_0_4 = getelementptr c, 1
-    void _20 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* unnamed_0_4)
-    void _21 = call _CX1N3std10checkLeaksE4void0_()
+    void _21 = call _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* _0, c_int* unnamed_0_4)
+    void _22 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(c_int* value) {
+void _CX1N3std5printIM3std6c__intEE4void1_RM3std6c__int(Context* __context, c_int* value) {
     c_int** value_0 = alloca c_int*
     OutputStream* stream = alloca OutputStream
     store value to value_0
-    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(Context* __context, OutputStream* stream)
     c_int* value.load = load value_0
-    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(c_int* value.load, OutputStream* stream)
+    void _1 = call _CX1N3stdM3std6c__int5printE4void1_RM3std12OutputStream(Context* __context, c_int* value.load, OutputStream* stream)
     return void
 }
 
-void _CX1N3std5printIM3std11c__longlongEE4void1_RM3std11c__longlong(c_longlong* value) {
+void _CX1N3std5printIM3std11c__longlongEE4void1_RM3std11c__longlong(Context* __context, c_longlong* value) {
     c_longlong** value_0 = alloca c_longlong*
     OutputStream* stream = alloca OutputStream
     store value to value_0
-    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(Context* __context, OutputStream* stream)
     c_longlong* value.load = load value_0
-    void _1 = call _CX1N3stdM3std11c__longlong5printE4void1_RM3std12OutputStream(c_longlong* value.load, OutputStream* stream)
+    void _1 = call _CX1N3stdM3std11c__longlong5printE4void1_RM3std12OutputStream(Context* __context, c_longlong* value.load, OutputStream* stream)
     return void
 }

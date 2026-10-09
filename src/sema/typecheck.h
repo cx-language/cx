@@ -168,8 +168,9 @@ struct Typechecker {
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true, bool allowReference = false);
-    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None, bool foldArraySizes = false);
-    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes = false);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel = AccessLevel::None, bool foldArraySizes = false, bool markFunctionTypesExtern = false);
+    Type resolveTypeAliases(Type type, AccessLevel userAccessLevel, llvm::SmallPtrSetImpl<const TypeAliasDecl*>& resolving, bool foldArraySizes = false,
+                            bool markFunctionTypesExtern = false);
     // Folds a deferred array size (or bare size name) using visible named
     // constants. Throws the specific diagnostic when it cannot.
     Type resolveArraySize(Expr& sizeExpr, Type elementType, Location location, Location endLocation, Module* homeModule);

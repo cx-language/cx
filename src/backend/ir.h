@@ -91,6 +91,8 @@ struct IRFunctionType : IRType {
     IRType* returnType;
     std::vector<IRType*> paramTypes;
     bool isVariadic;
+    // True when paramTypes[0] is the hidden context pointer cx functions take.
+    bool hasContextParam = false;
 
     static bool classof(const IRType* t) { return t->kind == IRTypeKind::IRFunctionType; }
 };
@@ -135,6 +137,9 @@ struct IRUnionType : IRType {
 };
 
 IRType* getIRType(Type astType);
+
+// The stdlib Context struct, or null without a standard library (bare-env).
+Type getContextStructType();
 /// Frees every IR value and type allocated so far and clears the type cache,
 /// so the next compilation behaves like a fresh process. The caller must have
 /// dropped all IR pointers first (IRModule shells are freed by ~IRGenerator).
@@ -426,6 +431,9 @@ struct Function : Value {
     bool declaredExternC;
     bool isVariadic;
     Location location;
+    // True when params[0] is the hidden context pointer. Last so the
+    // positional construction in IRGenerator::getFunction keeps working.
+    bool hasContextParam = false;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::Function; }
 };

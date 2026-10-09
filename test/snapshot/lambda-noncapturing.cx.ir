@@ -1,23 +1,24 @@
 
 int32 main() {
-    void _0 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32)
-    void _1 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32)
-    void _2 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32)
-    void _3 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32)
-    void _4 = call _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(void(int32, int32)* _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32)
-    void _5 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(Context* _0, int32(Context*, int32, int32)* _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32)
+    void _2 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(Context* _0, int32(Context*, int32, int32)* _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32)
+    void _3 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(Context* _0, int32(Context*, int32, int32)* _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32)
+    void _4 = call _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(Context* _0, int32(Context*, int32, int32)* _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32)
+    void _5 = call _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(Context* _0, void(Context*, int32, int32)* _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32)
+    void _6 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(int32(int32, int32)* a) {
-    int32(int32, int32)** a_0 = alloca int32(int32, int32)*
+void _CX1N4main3fooIM3std5int32EE4void1_F2_M3std5int32M3std5int32M3std5int32(Context* __context, int32(Context*, int32, int32)* a) {
+    int32(Context*, int32, int32)** a_0 = alloca int32(Context*, int32, int32)*
     store a to a_0
-    int32(int32, int32)* a.load = load a_0
-    int32 _0 = call a.load(int32 1, int32 2)
+    int32(Context*, int32, int32)* a.load = load a_0
+    int32 _0 = call a.load(Context* __context, int32 1, int32 2)
     return void
 }
 
-int32 _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32(Context* __context, int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0
@@ -31,7 +32,7 @@ int32 _CX1N4main11____lambda0EM3std5int322_M3std5int32M3std5int32(int32 a, int32
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-noncapturing.cx:8:29
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-noncapturing.cx:8:29
 ")
     unreachable
 
@@ -39,7 +40,7 @@ overflow.success:
     return _0
 }
 
-int32 _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32(Context* __context, int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0
@@ -53,7 +54,7 @@ int32 _CX1N4main11____lambda1EM3std5int322_M3std5int32M3std5int32(int32 a, int32
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-noncapturing.cx:9:31
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-noncapturing.cx:9:31
 ")
     unreachable
 
@@ -61,7 +62,7 @@ overflow.success:
     return _0
 }
 
-int32 _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda2EM3std5int322_M3std5int32M3std5int32(Context* __context, int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0
@@ -93,7 +94,7 @@ if.end:
     unreachable
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-noncapturing.cx:12:22
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-noncapturing.cx:12:22
 ")
     unreachable
 
@@ -101,7 +102,7 @@ overflow.success:
     return _1
 
 overflow.fail_0:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-noncapturing.cx:14:22
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-noncapturing.cx:14:22
 ")
     unreachable
 
@@ -109,7 +110,7 @@ overflow.success_0:
     return _4
 }
 
-int32 _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
+int32 _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32(Context* __context, int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     int32* x = alloca int32
@@ -124,7 +125,7 @@ int32 _CX1N4main11____lambda3EM3std5int322_M3std5int32M3std5int32(int32 a, int32
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-noncapturing.cx:18:19
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-noncapturing.cx:18:19
 ")
     unreachable
 
@@ -134,15 +135,15 @@ overflow.success:
     return x.load
 }
 
-void _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(void(int32, int32)* a) {
-    void(int32, int32)** a_0 = alloca void(int32, int32)*
+void _CX1N4main3fooI4voidEE4void1_F2_M3std5int32M3std5int324void(Context* __context, void(Context*, int32, int32)* a) {
+    void(Context*, int32, int32)** a_0 = alloca void(Context*, int32, int32)*
     store a to a_0
-    void(int32, int32)* a.load = load a_0
-    void _0 = call a.load(int32 1, int32 2)
+    void(Context*, int32, int32)* a.load = load a_0
+    void _0 = call a.load(Context* __context, int32 1, int32 2)
     return void
 }
 
-void _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32(int32 a, int32 b) {
+void _CX1N4main11____lambda4E4void2_M3std5int32M3std5int32(Context* __context, int32 a, int32 b) {
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
     store a to a_0

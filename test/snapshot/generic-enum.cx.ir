@@ -6,12 +6,13 @@ int32 main() {
     Opt<int32>* enum_0 = alloca Opt<int32>
     Opt<int32>* enum_1 = alloca Opt<int32>
     Opt<int32>* enum_2 = alloca Opt<int32>
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
-    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 1
+    struct { int32 } _1 = insertvalue struct { int32 } undefined, 0, int32 1
     union { struct { int32 } }* associatedValue = getelementptr enum, 1
-    struct { int32 }* _1 = cast associatedValue to struct { int32 }*
-    store _0 to _1
+    struct { int32 }* _2 = cast associatedValue to struct { int32 }*
+    store _1 to _2
     Opt<int32> enum.load = load enum
     store enum.load to a
     int32* tag_0 = getelementptr enum_0, 0
@@ -26,15 +27,15 @@ int32 main() {
     }
 
 switch.case.0:
-    union { struct { int32 } }* _2 = getelementptr a, 1
-    int32* some = cast _2 to int32*
+    union { struct { int32 } }* _3 = getelementptr a, 1
+    int32* some = cast _3 to int32*
     int32* tag_1 = getelementptr enum_1, 0
     store int32 0 to tag_1
     int32 some.load = load some
-    int32 _3 = checkedarith + some.load, int32 1
-    bool _4 = overflow _3
-    bool _5 = !_4
-    bool overflow.condition = _5 == bool false
+    int32 _4 = checkedarith + some.load, int32 1
+    bool _5 = overflow _4
+    bool _6 = !_5
+    bool overflow.condition = _6 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 switch.case.1:
@@ -45,7 +46,7 @@ switch.case.1:
     br switch.end
 
 switch.default:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "invalid value in switch over enum 'Opt' at generic-enum.cx:12:13
 ")
     unreachable
 
@@ -58,36 +59,36 @@ switch.end:
     }
 
 overflow.fail:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at generic-enum.cx:14:39
+    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "integer overflow at generic-enum.cx:14:39
 ")
     unreachable
 
 overflow.success:
-    struct { int32 } _8 = insertvalue struct { int32 } undefined, 0, _3
+    struct { int32 } _9 = insertvalue struct { int32 } undefined, 0, _4
     union { struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int32 }* _9 = cast associatedValue_0 to struct { int32 }*
-    store _8 to _9
+    struct { int32 }* _10 = cast associatedValue_0 to struct { int32 }*
+    store _9 to _10
     Opt<int32> enum.load_2 = load enum_1
     store enum.load_2 to b
     br switch.end
 
 switch.case.0_0:
-    union { struct { int32 } }* _10 = getelementptr b, 1
-    int32* some_0 = cast _10 to int32*
+    union { struct { int32 } }* _11 = getelementptr b, 1
+    int32* some_0 = cast _11 to int32*
     int32 some.load_0 = load some_0
-    void _11 = call _CX1N3std10checkLeaksE4void0_()
+    void _12 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return some.load_0
 
 switch.case.1_0:
-    void _12 = call _CX1N3std10checkLeaksE4void0_()
+    void _13 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 
 switch.default_0:
-    never _13 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
+    never _14 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "invalid value in switch over enum 'Opt' at generic-enum.cx:19:13
 ")
     unreachable
 
 switch.end_0:
-    void _14 = call _CX1N3std10checkLeaksE4void0_()
+    void _15 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

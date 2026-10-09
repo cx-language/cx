@@ -1,0 +1,43 @@
+// RUN: %not %cx -typecheck %s 2>&1 | %FileCheck %s
+
+import "inputs/c-callback.h";
+
+void onEvent(c_int code) {
+    _ = code;
+}
+
+void main() {
+    runCallback(onEvent);
+    runCallback((c_int code) => { _ = code; });
+    var f = onEvent;
+    // CHECK: [[@LINE+1]]:{{.*}}: error: invalid argument #1 type 'void(c_int)' to 'runCallback', expected 'extern void(c_int)?'
+    runCallback(f);
+    var g = (c_int code) => { _ = code; };
+    // CHECK: [[@LINE+1]]:{{.*}}: error: invalid argument #1 type 'void(c_int)' to 'runCallback', expected 'extern void(c_int)?'
+    runCallback(g);
+    callers();
+}
+
+// An extern alias names the C callback type, so values flow through wrappers
+// and only the ultimate caller needs a statically known function.
+using Handler = extern void(c_int)?;
+
+void register(Handler h) {
+    runCallback(h);
+}
+
+void callers() {
+    register(onEvent);
+    register((c_int code) => { _ = code; });
+    Handler h = onEvent;
+    register(h);
+    var f = onEvent;
+    // CHECK: [[@LINE+1]]:{{.*}}: error: invalid argument #1 type 'void(c_int)' to 'register', expected 'Handler'
+    register(f);
+    var g = (c_int code) => { _ = code; };
+    // CHECK: [[@LINE+1]]:{{.*}}: error: invalid argument #1 type 'void(c_int)' to 'register', expected 'Handler'
+    register(g);
+    var code = 0;
+    // CHECK: [[@LINE+1]]:{{.*}}: error: invalid argument #1 type '(c_int) => void' to 'register', expected 'Handler'
+    register((c_int c) => { code = c; });
+}

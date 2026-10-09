@@ -1,43 +1,44 @@
 
-int32 _CX1N4main1gEM3std5int320_() {
+int32 _CX1N4main1gEM3std5int320_(Context* __context) {
     return int32 0
 }
 
-bool _CX1N4main1hEM3std4bool0_() {
+bool _CX1N4main1hEM3std4bool0_(Context* __context) {
     return bool false
 }
 
 int32 main() {
     X* x = alloca X
-    void _0 = call _CX1N4mainM4main1X4initE4void0_(X* x)
-    int32 _1 = call _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* x, int32()* _CX1N4main1gEM3std5int320_)
-    bool _2 = call _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(X* x, bool()* _CX1N4main1hEM3std4bool0_)
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1X4initE4void0_(Context* _0, X* x)
+    int32 _2 = call _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(Context* _0, X* x, int32(Context*)* _CX1N4main1gEM3std5int320_)
+    bool _3 = call _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(Context* _0, X* x, bool(Context*)* _CX1N4main1hEM3std4bool0_)
+    void _4 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1X4initE4void0_(X* this) {
+void _CX1N4mainM4main1X4initE4void0_(Context* __context, X* this) {
     X** this_0 = alloca X*
     store this to this_0
     return void
 }
 
-int32 _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(X* this, int32()* t) {
+int32 _CX1N4mainM4main1X1fIM3std5int32EEM3std5int321_F0_M3std5int32(Context* __context, X* this, int32(Context*)* t) {
     X** this_0 = alloca X*
-    int32()** t_0 = alloca int32()*
+    int32(Context*)** t_0 = alloca int32(Context*)*
     store this to this_0
     store t to t_0
-    int32()* t.load = load t_0
-    int32 _0 = call t.load()
+    int32(Context*)* t.load = load t_0
+    int32 _0 = call t.load(Context* __context)
     return _0
 }
 
-bool _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(X* this, bool()* t) {
+bool _CX1N4mainM4main1X1fIM3std4boolEEM3std4bool1_F0_M3std4bool(Context* __context, X* this, bool(Context*)* t) {
     X** this_0 = alloca X*
-    bool()** t_0 = alloca bool()*
+    bool(Context*)** t_0 = alloca bool(Context*)*
     store this to this_0
     store t to t_0
-    bool()* t.load = load t_0
-    bool _0 = call t.load()
+    bool(Context*)* t.load = load t_0
+    bool _0 = call t.load(Context* __context)
     return _0
 }

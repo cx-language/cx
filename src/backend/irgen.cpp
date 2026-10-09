@@ -332,6 +332,30 @@ Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, con
     return insertBlock->add(new CallInst{ValueKind::CallInst, function, args, expr, ""});
 }
 
+Value* IRGenerator::createContextCall(Function* callee, llvm::ArrayRef<Value*> args, const Expr* expr) {
+    if (!callee->hasContextParam) return createCall(callee, args, expr);
+    ASSERT(currentContext);
+    llvm::SmallVector<Value*, 16> contextArgs;
+    contextArgs.push_back(currentContext);
+    llvm::append_range(contextArgs, args);
+    return createCall(callee, contextArgs, expr);
+}
+
+const FunctionDecl* IRGenerator::findStdlibFunction(const char* name) {
+    auto* stdlib = Module::getStdlibModule();
+    if (!stdlib) return nullptr;
+    return llvm::dyn_cast_or_null<FunctionDecl>(stdlib->symbolTable.findOne(name));
+}
+
+const FieldDecl* IRGenerator::findContextAllocatorField() {
+    if (Type contextType = getContextStructType()) {
+        auto* contextDecl = contextType.getDecl();
+        auto field = llvm::find_if(contextDecl->fields, [](const FieldDecl& field) { return field.getName() == "allocator"; });
+        if (field != contextDecl->fields.end()) return &*field;
+    }
+    return nullptr;
+}
+
 void IRGenerator::destroyAssignmentLHS(const Expr& lhs, Value* lvalue, bool skipDestructor, bool lhsIsLive) {
     // Assignment into a union never destroys the old value (see Expr::isInsideUnion).
     if (skipDestructor || lhs.isInsideUnion()) return;
@@ -372,7 +396,7 @@ void IRGenerator::createDestructorCall(Function* destructor, Value* receiver) {
         receiver = createTempAlloca(receiver);
     }
 
-    createCall(destructor, receiver, nullptr);
+    createContextCall(destructor, receiver, nullptr);
 }
 
 Value* IRGenerator::getFunctionForCall(const CallExpr& call) {

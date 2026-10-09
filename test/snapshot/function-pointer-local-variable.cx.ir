@@ -1,9 +1,9 @@
 
-void _CX1N4main3fooE4void0_() {
+void _CX1N4main3fooE4void0_(Context* __context) {
     return void
 }
 
-int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
+int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(Context* __context, int32 a, bool b) {
     int32* a_0 = alloca int32
     bool* b_0 = alloca bool
     store a to a_0
@@ -12,26 +12,26 @@ int32 _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool(int32 a, bool b) {
     return a.load
 }
 
-void _CX1N4main1gE4void1_F0_4void(void()* p) {
-    void()** p_0 = alloca void()*
-    void()** p2 = alloca void()*
+void _CX1N4main1gE4void1_F0_4void(Context* __context, void(Context*)* p) {
+    void(Context*)** p_0 = alloca void(Context*)*
+    void(Context*)** p2 = alloca void(Context*)*
     store p to p_0
-    void()* p.load = load p_0
+    void(Context*)* p.load = load p_0
     store p.load to p2
-    void()* p2.load = load p2
-    void _0 = call p2.load()
+    void(Context*)* p2.load = load p2
+    void _0 = call p2.load(Context* __context)
     return void
 }
 
-void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* p) {
-    int32(int32, bool)** p_0 = alloca int32(int32, bool)*
-    int32(int32, bool)** p2 = alloca int32(int32, bool)*
+void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(Context* __context, int32(Context*, int32, bool)* p) {
+    int32(Context*, int32, bool)** p_0 = alloca int32(Context*, int32, bool)*
+    int32(Context*, int32, bool)** p2 = alloca int32(Context*, int32, bool)*
     int32* a = alloca int32
     store p to p_0
-    int32(int32, bool)* p.load = load p_0
+    int32(Context*, int32, bool)* p.load = load p_0
     store p.load to p2
-    int32(int32, bool)* p2.load = load p2
-    int32 _0 = call p2.load(int32 42, bool false)
+    int32(Context*, int32, bool)* p2.load = load p2
+    int32 _0 = call p2.load(Context* __context, int32 42, bool false)
     int32 _1 = checkedarith + _0, int32 1
     bool _2 = overflow _1
     bool _3 = !_2
@@ -39,7 +39,7 @@ void _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at function-pointer-local-variable.cx:14:27
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at function-pointer-local-variable.cx:14:27
 ")
     unreachable
 
@@ -49,14 +49,15 @@ overflow.success:
 }
 
 int32 main() {
-    void()** lf = alloca void()*
-    int32(int32, bool)** lf2 = alloca int32(int32, bool)*
+    void(Context*)** lf = alloca void(Context*)*
+    int32(Context*, int32, bool)** lf2 = alloca int32(Context*, int32, bool)*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store _CX1N4main3fooE4void0_ to lf
-    void()* lf.load = load lf
-    void _0 = call _CX1N4main1gE4void1_F0_4void(void()* lf.load)
+    void(Context*)* lf.load = load lf
+    void _1 = call _CX1N4main1gE4void1_F0_4void(Context* _0, void(Context*)* lf.load)
     store _CX1N4main2f2EM3std5int322_M3std5int32M3std4bool to lf2
-    int32(int32, bool)* lf2.load = load lf2
-    void _1 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(int32(int32, bool)* lf2.load)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    int32(Context*, int32, bool)* lf2.load = load lf2
+    void _2 = call _CX1N4main2g2E4void1_F2_M3std5int32M3std4boolM3std5int32(Context* _0, int32(Context*, int32, bool)* lf2.load)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

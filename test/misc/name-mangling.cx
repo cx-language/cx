@@ -4,13 +4,13 @@
 // parameter count, and parameter types, so every overload gets its own symbol.
 
 // CHECK: global _CX1G4main7counterE = int32 0
-// CHECK: int32 _CX1N4main3addEM3std5int322_M3std5int32M3std5int32(int32 a, int32 b) {
-// CHECK: int32 _CX1N4main3addEM3std5int321_M3std5int32(int32 a) {
-// CHECK: void _CX1N4main7takePtrE4void1_PM3std5int32(int32* x) {
-// CHECK: void _CX1N4main7takeMutE4void1_M3std5int32(int32 x) {
+// CHECK: int32 _CX1N4main3addEM3std5int322_M3std5int32M3std5int32(Context* __context, int32 a, int32 b) {
+// CHECK: int32 _CX1N4main3addEM3std5int321_M3std5int32(Context* __context, int32 a) {
+// CHECK: void _CX1N4main7takePtrE4void1_PM3std5int32(Context* __context, int32* x) {
+// CHECK: void _CX1N4main7takeMutE4void1_M3std5int32(Context* __context, int32 x) {
 // CHECK: bool _CX1N4maino2eqEM3std4bool2_RM4main3BoxRM4main3Box(
-// CHECK: void _CX1N4main4moveE4void1_L1xM3std5int32(int32 x) {
-// CHECK: void _CX1N4main4moveE4void1_L1yM3std5int32(int32 y) {
+// CHECK: void _CX1N4main4moveE4void1_L1xM3std5int32(Context* __context, int32 x) {
+// CHECK: void _CX1N4main4moveE4void1_L1yM3std5int32(Context* __context, int32 y) {
 // CHECK: int32 _CX1N4main5firstEM3std5int321_T2_1aM3std5int321bM3std5int32(
 // CHECK: int32 _CX1N4main5applyEM3std5int322_F1_M3std5int32M3std5int32M3std5int32(
 // CHECK: int32 _CX1N4main8fixedSumEM3std5int321_5ArrayIM3std5int32N3_E(
@@ -19,10 +19,10 @@
 // CHECK: void _CX1N4main8borrowFnE4void1_RM3std5int32(
 // CHECK: void _CX1N4main7sliceFnE4void1_M3std5SliceIM3std5int32E(
 // CHECK: void _CX1N4main10arrayPtrFnE4void1_AM3std5int32(
-// CHECK: int32 _CX1N4main3oneEM3std5int321_M3std5int32(int32 x) {
+// CHECK: int32 _CX1N4main3oneEM3std5int321_M3std5int32(Context* __context, int32 x) {
 // CHECK: int32 main() {
 // CHECK: void _CX1N4mainM4main3Box4initE4void1_M3std5int32(
-// CHECK: int32 _CX1N4main8identityIM3std5int32EEM3std5int321_M3std5int32(int32 x) {
+// CHECK: int32 _CX1N4main8identityIM3std5int32EEM3std5int321_M3std5int32(Context* __context, int32 x) {
 // CHECK: bool _CX1N4main8identityIM3std4boolEEM3std4bool1_M3std4bool(
 // CHECK: int32 _CX1N4main{{[0-9]+}}____lambda{{[0-9]+}}EM3std5int321_M3std5int32C1_M3std5int32(
 // CHECK: int32 _CX1N4mainM4main3Box3getEM3std5int320_(

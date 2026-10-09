@@ -2196,6 +2196,21 @@ FunctionDecl* Typechecker::findUserConversion(const Expr* expr, Type source, Typ
     return targetWinner ? targetWinner : sourceWinner;
 }
 
+// True when the expression names a specific cx function, so a C-callback
+// wrapper can be generated for it: a direct function reference or a
+// non-capturing lambda (which lowers to a bare function).
+static bool isStaticallyKnownFunction(const Expr& expr) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
+        // Methods need a receiver the wrapper cannot supply.
+        if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(varExpr->decl)) return !functionDecl->isMethodDecl();
+        return false;
+    }
+    if (auto* lambda = llvm::dyn_cast<LambdaExpr>(&expr)) {
+        return lambda->functionDecl->captures.empty();
+    }
+    return false;
+}
+
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
                                           std::optional<ImplicitCastExpr::Kind>* implicitCastKind, bool diagnoseOutOfRange, bool allowOperatorBorrow,
                                           bool allowUserConversion, bool* usesUserConversion) const {
@@ -2230,7 +2245,18 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     if (source.isFunctionType() && target.isFunctionType() && source.getReturnType() == target.getReturnType()
         && llvm::equal(source.getParamTypes(), target.getParamTypes(), [](Type sourceParam, Type targetParam) { return sourceParam == targetParam; })) {
-        return source;
+        if (source.isExternFunctionType() == target.isExternFunctionType()) return source;
+        // Cross-ABI conversions go through a compiler-generated wrapper (cx
+        // function as C callback) or thunk (foreign function in a cx slot),
+        // both needing a statically known target. Probes (null expr) pass;
+        // the real conversion rechecks with the expression. Variadic shapes
+        // can't convert: neither trampoline can forward a C varargs tail.
+        auto* sourceFn = llvm::cast<FunctionType>(source.typeBase);
+        auto* targetFn = llvm::cast<FunctionType>(target.typeBase);
+        if (sourceFn->isVariadic != targetFn->isVariadic) return Type();
+        if (expr && !isStaticallyKnownFunction(*expr)) return Type();
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::FunctionTrampoline;
+        return target;
     }
 
     if (source.isPointerType() && target.isPointerType() && source.isReferenceType() == target.isReferenceType()

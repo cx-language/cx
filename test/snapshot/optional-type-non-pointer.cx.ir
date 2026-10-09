@@ -8,24 +8,25 @@ int32 main() {
     Optional<int32>* enum_1 = alloca Optional<int32>
     Optional<int32>* d = alloca Optional<int32>
     Optional<int32>* enum_2 = alloca Optional<int32>
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
     Optional<int32> enum.load = load enum
     store enum.load to a
     int32* tag_0 = getelementptr enum_0, 0
     store int32 1 to tag_0
-    struct { int32 } _0 = insertvalue struct { int32 } undefined, 0, int32 2
+    struct { int32 } _1 = insertvalue struct { int32 } undefined, 0, int32 2
     union { struct { int32 } }* associatedValue = getelementptr enum_0, 1
-    struct { int32 }* _1 = cast associatedValue to struct { int32 }*
-    store _0 to _1
+    struct { int32 }* _2 = cast associatedValue to struct { int32 }*
+    store _1 to _2
     Optional<int32> enum.load_0 = load enum_0
     store enum.load_0 to b
     int32* tag_1 = getelementptr enum_1, 0
     store int32 1 to tag_1
-    struct { int32 } _2 = insertvalue struct { int32 } undefined, 0, int32 3
+    struct { int32 } _3 = insertvalue struct { int32 } undefined, 0, int32 3
     union { struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int32 }* _3 = cast associatedValue_0 to struct { int32 }*
-    store _2 to _3
+    struct { int32 }* _4 = cast associatedValue_0 to struct { int32 }*
+    store _3 to _4
     Optional<int32> enum.load_1 = load enum_1
     store enum.load_1 to c
     int32* tag_2 = getelementptr enum_2, 0
@@ -33,10 +34,10 @@ int32 main() {
     Optional<int32> enum.load_2 = load enum_2
     store enum.load_2 to d
     Optional<int32> d.load = load d
-    int32 _4 = extractvalue d.load, 0
-    bool _5 = _4 == int32 1
-    bool _6 = !_5
-    br _6, if.then, if.else
+    int32 _5 = extractvalue d.load, 0
+    bool _6 = _5 == int32 1
+    bool _7 = !_6
+    br _7, if.then, if.else
 
 if.then:
     br if.end
@@ -46,9 +47,9 @@ if.else:
 
 if.end:
     Optional<int32> d.load_0 = load d
-    int32 _7 = extractvalue d.load_0, 0
-    bool _8 = _7 == int32 1
-    br _8, if.then, if.else
+    int32 _8 = extractvalue d.load_0, 0
+    bool _9 = _8 == int32 1
+    br _9, if.then, if.else
 
 if.then_0:
     br if.end_0
@@ -58,10 +59,10 @@ if.else_0:
 
 if.end_0:
     Optional<int32> d.load_1 = load d
-    int32 _9 = extractvalue d.load_1, 0
-    bool _10 = _9 == int32 1
-    bool _11 = !_10
-    br _11, if.then, if.else
+    int32 _10 = extractvalue d.load_1, 0
+    bool _11 = _10 == int32 1
+    bool _12 = !_11
+    br _12, if.then, if.else
 
 if.then_1:
     br if.end_1
@@ -71,9 +72,9 @@ if.else_1:
 
 if.end_1:
     Optional<int32> d.load_2 = load d
-    int32 _12 = extractvalue d.load_2, 0
-    bool _13 = _12 == int32 1
-    br _13, if.then, if.else
+    int32 _13 = extractvalue d.load_2, 0
+    bool _14 = _13 == int32 1
+    br _14, if.then, if.else
 
 if.then_2:
     br if.end_2
@@ -83,9 +84,9 @@ if.else_2:
 
 if.end_2:
     Optional<int32> d.load_3 = load d
-    int32 _14 = extractvalue d.load_3, 0
-    bool _15 = _14 == int32 1
-    br _15, if.then, if.else
+    int32 _15 = extractvalue d.load_3, 0
+    bool _16 = _15 == int32 1
+    br _16, if.then, if.else
 
 if.then_3:
     br if.end_3
@@ -95,10 +96,10 @@ if.else_3:
 
 if.end_3:
     Optional<int32> d.load_4 = load d
-    int32 _16 = extractvalue d.load_4, 0
-    bool _17 = _16 == int32 1
-    bool _18 = !_17
-    br _18, if.then, if.else
+    int32 _17 = extractvalue d.load_4, 0
+    bool _18 = _17 == int32 1
+    bool _19 = !_18
+    br _19, if.then, if.else
 
 if.then_4:
     br if.end_4
@@ -107,11 +108,11 @@ if.else_4:
     br if.end_4
 
 if.end_4:
-    void _19 = call _CX1N3std10checkLeaksE4void0_()
+    void _20 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4main1fE4void0_() {
+void _CX1N4main1fE4void0_(Context* __context) {
     Optional<int32>* a = alloca Optional<int32>
     Optional<int32>* enum = alloca Optional<int32>
     Optional<int32>* b = alloca Optional<int32>
@@ -176,7 +177,7 @@ if.end:
     br _12, if.then, if.else
 
 overflow.fail:
-    never _13 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at optional-type-non-pointer.cx:26:19
+    never _13 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at optional-type-non-pointer.cx:26:19
 ")
     unreachable
 
@@ -192,7 +193,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _19 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at optional-type-non-pointer.cx:27:15
+    never _19 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at optional-type-non-pointer.cx:27:15
 ")
     unreachable
 
@@ -209,7 +210,7 @@ overflow.success_0:
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _25 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at optional-type-non-pointer.cx:28:13
+    never _25 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at optional-type-non-pointer.cx:28:13
 ")
     unreachable
 
@@ -241,7 +242,7 @@ if.end_0:
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 __implicit_unwrap.fail:
-    never _33 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
+    never _33 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "Unwrap failed at optional-type-non-pointer.cx:33:18
 ")
     unreachable
 
@@ -249,7 +250,7 @@ __implicit_unwrap.success:
     union { struct { int32 } }* _34 = getelementptr c, 1
     int32* _35 = cast _34 to int32*
     int32 .load_3 = load _35
-    void _36 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_3)
+    void _36 = call _CX1N4main12takesNonNullE4void1_M3std5int32(Context* __context, int32 .load_3)
     Optional<int32> c.load_2 = load c
     int32 _37 = extractvalue c.load_2, 0
     bool _38 = _37 == int32 1
@@ -259,7 +260,7 @@ if.then_1:
     union { struct { int32 } }* _39 = getelementptr c, 1
     int32* _40 = cast _39 to int32*
     int32 .load_4 = load _40
-    void _41 = call _CX1N4main12takesNonNullE4void1_M3std5int32(int32 .load_4)
+    void _41 = call _CX1N4main12takesNonNullE4void1_M3std5int32(Context* __context, int32 .load_4)
     br if.end_1
 
 if.else_1:
@@ -269,13 +270,13 @@ if.end_1:
     return void
 }
 
-void _CX1N4main12takesNonNullE4void1_M3std5int32(int32 i) {
+void _CX1N4main12takesNonNullE4void1_M3std5int32(Context* __context, int32 i) {
     int32* i_0 = alloca int32
     store i to i_0
     return void
 }
 
-void _CX1N4main1gE4void0_() {
+void _CX1N4main1gE4void0_(Context* __context) {
     char*** p = alloca char**
     store char** null to p
     char** p.load = load p

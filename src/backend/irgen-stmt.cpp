@@ -12,7 +12,7 @@ void IRGenerator::emitLeakCheckIfNeeded() {
     auto* decl = llvm::dyn_cast_or_null<FunctionDecl>(stdlib->symbolTable.findOne("checkLeaks"));
     if (!decl) return;
     checkImplicitCalleeIsChecked(*decl, "checkLeaks");
-    createCall(getFunction(*decl), {}, nullptr);
+    createContextCall(getFunction(*decl), {}, nullptr);
 }
 
 void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
@@ -245,7 +245,7 @@ void IRGenerator::emitStringSwitchStmt(const SwitchStmt& switchStmt) {
         auto* nextBlock = i + 1 < switchStmt.cases.size() ? new BasicBlock("switch.test." + std::to_string(i + 1), function) : defaultBlock;
         // Case values are constants, so no temporaries can be constructed here.
         Value* caseValue = emitExprForPassing(*switchStmt.cases[i].value, stringType);
-        createCondBr(createCall(stringEquals, {condition, caseValue}, nullptr), caseBlock, nextBlock);
+        createCondBr(createContextCall(stringEquals, {condition, caseValue}, nullptr), caseBlock, nextBlock);
         caseBlocks.push_back(caseBlock);
         setInsertPoint(nextBlock);
     }

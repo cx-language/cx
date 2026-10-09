@@ -1,7 +1,8 @@
 
 int32 main() {
     int32* foo = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 35044 to foo
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

@@ -69,7 +69,7 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     }
 
     ASSERT(stringConstructor);
-    createCall(stringConstructor, {alloca, stringPtr, size}, nullptr);
+    createContextCall(stringConstructor, {alloca, stringPtr, size}, nullptr);
     return alloca;
 }
 
@@ -984,7 +984,7 @@ void IRGenerator::emitAbortWithMessage(llvm::StringRef message, Location locatio
     auto* assertFail = getFunction(*assertFailDecl);
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":", std::to_string(location.line), ":",
                                                std::to_string(location.column), "\n");
-    createCall(assertFail, createGlobalStringPtr(messageAndLocation), nullptr);
+    createContextCall(assertFail, createGlobalStringPtr(messageAndLocation), nullptr);
     createUnreachable();
 }
 
@@ -1092,17 +1092,138 @@ Value* IRGenerator::emitClosureCallExpr(const CallExpr& expr) {
 
     Value* closure = emitExpr(*expr.callee);
     Value* function = createExtractValue(closure, 0);
-    auto paramTypes = llvm::cast<IRFunctionType>(function->getType()->getPointee())->getParamTypes();
-    ASSERT(paramTypes.size() == captureCount + expr.args.size());
+    auto* functionType = llvm::cast<IRFunctionType>(function->getType()->getPointee());
+    auto paramTypes = functionType->getParamTypes();
+    size_t argOffset = functionType->hasContextParam ? 1 : 0;
+    ASSERT(paramTypes.size() == argOffset + captureCount + expr.args.size());
 
     llvm::SmallVector<Value*, 16> args;
+    if (functionType->hasContextParam) {
+        ASSERT(currentContext);
+        args.push_back(currentContext);
+    }
     for (size_t i = 0; i < captureCount; ++i) {
         args.push_back(createExtractValue(closure, i + 1));
     }
     for (size_t i = 0; i < expr.args.size(); ++i) {
-        args.push_back(emitExprForPassing(*expr.args[i].value, paramTypes[captureCount + i]));
+        args.push_back(emitExprForPassing(*expr.args[i].value, paramTypes[argOffset + captureCount + i]));
     }
     return maybeRegisterResultTemp(createCall(function, args, &expr), expr);
+}
+
+Value* IRGenerator::emitRootContextCall(const Expr* expr) {
+    auto* ambientRootFn = findStdlibFunction("ambientRoot");
+    if (!ambientRootFn) return nullptr;
+    checkImplicitCalleeIsChecked(*ambientRootFn, "ambientRoot");
+    auto* rootFunction = getFunction(*ambientRootFn);
+    if (!rootFunction->hasContextParam) return createCall(rootFunction, {}, expr);
+    // The root call bootstraps the chain, so it has no context to pass;
+    // ambientRoot and everything it calls ignore the parameter.
+    auto* nullContext = createConstantNull(getIRType(getContextStructType())->getPointerTo());
+    return createCall(rootFunction, {nullContext}, expr);
+}
+
+Value* IRGenerator::emitWithAllocatorCall(const CallExpr& expr) {
+    ASSERT(expr.args.size() == 2);
+    const Expr* allocatorArg = expr.args[0].value;
+    const Expr* bodyArg = expr.args[1].value;
+    if (expr.argParamIndices.size() == expr.args.size()) {
+        for (size_t i = 0; i < expr.args.size(); ++i) {
+            if (expr.argParamIndices[i] == 0) allocatorArg = expr.args[i].value;
+            if (expr.argParamIndices[i] == 1) bodyArg = expr.args[i].value;
+        }
+    }
+    auto* allocatorField = findContextAllocatorField();
+    ASSERT(currentContext && allocatorField);
+    // Push a context inheriting every field but the allocator, so future
+    // Context fields keep flowing through overrides without code changes.
+    Type contextType = getContextStructType();
+    auto* pushed = createEntryBlockAlloca(contextType, "__context");
+    createStore(createLoad(currentContext), pushed);
+    auto* allocator = emitExprForPassing(*allocatorArg, getIRType(allocatorField->type));
+    createStore(allocator, emitMemberAccess(pushed, allocatorField));
+
+    // Convert to the declared body type so foreign bodies (e.g. the entry
+    // point as a value) go through the context thunk like anywhere else.
+    Type bodyType = llvm::cast<FunctionDecl>(expr.calleeDecl)->getParams()[1].type;
+    Value* body = emitExprForPassing(*bodyArg, getIRType(bodyType));
+    if (auto* function = llvm::dyn_cast<Function>(body)) {
+        ASSERT(function->hasContextParam);
+    } else {
+        ASSERT(body->getType()->isPointerType() && body->getType()->getPointee()->isFunctionType());
+        ASSERT(llvm::cast<IRFunctionType>(body->getType()->getPointee())->hasContextParam);
+    }
+    return maybeRegisterResultTemp(createCall(body, {pushed}, &expr), expr);
+}
+
+static void emitTrampolineBody(IRGenerator& irGenerator, Function& trampoline, Function& target, bool needsRoot) {
+    // A C wrapper takes just the user args and roots the context for its cx
+    // target; a cx thunk takes (context, user args) like any cx function but
+    // drops the context, which its foreign target doesn't take.
+    llvm::SaveAndRestore saveFunction(irGenerator.currentFunction, &trampoline);
+    llvm::SaveAndRestore saveInsertBlock(irGenerator.insertBlock, new BasicBlock("", &trampoline));
+    llvm::SmallVector<Value*, 16> args;
+    size_t userParamsOffset = 0;
+    if (needsRoot) {
+        // Wrappers only exist with a standard library, so rooting can't fail.
+        Value* root = irGenerator.emitRootContextCall(nullptr);
+        ASSERT(root);
+        args.push_back(root);
+    } else {
+        userParamsOffset = 1;
+    }
+    for (size_t i = userParamsOffset; i < trampoline.params.size(); ++i) {
+        args.push_back(&trampoline.params[i]);
+    }
+    Value* result = irGenerator.createCall(&target, args, nullptr);
+    // The thunk returns the caller's expected type, which differs from the
+    // target's only for the entry point (IR-level int32, AST-level void).
+    if (trampoline.returnType->isVoid()) {
+        irGenerator.createReturn(nullptr);
+    } else {
+        ASSERT(!target.returnType->isVoid());
+        irGenerator.createReturn(result);
+    }
+}
+
+Function* IRGenerator::getTrampoline(const FunctionDecl& target, bool needsRoot, IRType* returnType, const Expr& expr) {
+    ASSERT(!target.isMethodDecl());
+    for (auto& trampoline : trampolines) {
+        if (trampoline.target == &target) return trampoline.function;
+    }
+    auto* targetFunction = getFunction(target);
+    std::vector<Parameter> params;
+    const char* suffix;
+    if (needsRoot) {
+        // C-ABI wrapper calling a cx function: strip the context parameter.
+        ASSERT(targetFunction->hasContextParam);
+        params.assign(targetFunction->params.begin() + 1, targetFunction->params.end());
+        returnType = targetFunction->returnType;
+        suffix = "__cxcb";
+    } else {
+        // cx-ABI thunk calling a foreign function: take a context, ignore it.
+        ASSERT(!targetFunction->hasContextParam);
+        params.push_back(Parameter{ValueKind::Parameter, getIRType(getContextStructType())->getPointerTo(), "__context"});
+        llvm::append_range(params, targetFunction->params);
+        suffix = "__cxth";
+    }
+    auto* trampoline = new Function{
+        ValueKind::Function,
+        targetFunction->mangledName + suffix,
+        targetFunction->name + suffix,
+        returnType,
+        std::move(params),
+        {},
+        /*isExtern=*/false,
+        /*declaredExternC=*/needsRoot,
+        targetFunction->isVariadic,
+        expr.location,
+    };
+    trampoline->hasContextParam = !needsRoot;
+    module->functions.push_back(trampoline);
+    trampolines.push_back({&target, trampoline});
+    emitTrampolineBody(*this, *trampoline, *targetFunction, needsRoot);
+    return trampoline;
 }
 
 // Whether a value of this type retains no borrow of whatever it was computed from: plain
@@ -1241,6 +1362,16 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
         }
     }
 
+    if (expr.calleeDecl && expr.calleeDecl == findStdlibFunction("context")) {
+        // The context() intrinsic reads the hidden parameter directly; its
+        // (abort-only, see allocate.cx) body never runs for direct calls.
+        ASSERT(currentContext);
+        return currentContext;
+    }
+    if (expr.calleeDecl && expr.calleeDecl == findStdlibFunction("withAllocator")) {
+        return emitWithAllocatorCall(expr);
+    }
+
     Value* calleeValue = getFunctionForCall(expr);
 
     if (!calleeValue) {
@@ -1248,19 +1379,30 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     std::vector<IRType*> params;
+    bool calleeHasContextParam = false;
 
     if (auto* function = llvm::dyn_cast<Function>(calleeValue)) {
         params = map(function->params, [](const Parameter& p) { return p.type; });
+        calleeHasContextParam = function->hasContextParam;
     } else {
         if (!calleeValue->getType()->getPointee()->isFunctionType()) {
             calleeValue = createLoad(calleeValue);
         }
-        params = calleeValue->getType()->getPointee()->getParamTypes();
+        auto* functionType = llvm::cast<IRFunctionType>(calleeValue->getType()->getPointee());
+        params = functionType->getParamTypes();
+        calleeHasContextParam = functionType->hasContextParam;
     }
 
     auto param = params.begin();
     llvm::SmallVector<Value*, 16> args;
     auto* calleeDecl = expr.calleeDecl;
+
+    if (calleeHasContextParam) {
+        ASSERT(currentContext);
+        args.push_back(currentContext);
+        ++param;
+    }
+    size_t thisArgIndex = args.size();
 
     if (calleeDecl->isMethodDecl()) {
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(calleeDecl)) {
@@ -1332,7 +1474,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
 
     if (calleeDecl->isConstructorDecl()) {
         createCall(calleeValue, args, &expr);
-        return args[0];
+        return args[thisArgIndex];
     } else {
         return maybeRegisterResultTemp(createCall(calleeValue, args, &expr), expr);
     }
@@ -1744,6 +1886,28 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         return createCastIfNeeded(emitExpr(*expr.operand), expr.type);
     case ImplicitCastExpr::UserConversion:
         return emitUserConversion(expr);
+    case ImplicitCastExpr::FunctionTrampoline: {
+        // Cross-ABI function conversion: without a Context type (bare-env)
+        // both ABIs coincide, so the operand passes through untouched.
+        if (!getContextStructType()) return emitExpr(*expr.operand);
+        // Sema only allows statically known targets: a direct function
+        // reference or a non-capturing lambda (which lowers to one).
+        const FunctionDecl* target = nullptr;
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.operand)) {
+            target = llvm::dyn_cast_or_null<FunctionDecl>(varExpr->decl);
+        } else if (auto* lambda = llvm::dyn_cast<LambdaExpr>(expr.operand)) {
+            ASSERT(lambda->functionDecl->captures.empty());
+            target = lambda->functionDecl;
+        }
+        bool sourceIsExtern = expr.operand->type.isExternFunctionType();
+        if (!target || target->isMethodDecl()) {
+            reportError(expr.location, sourceIsExtern ? "cannot convert foreign function value here; refer to the function directly"
+                                                      : "cannot convert function value to C callback; pass a free function or non-capturing lambda directly");
+            return createConstantNull(getIRType(expr.type));
+        }
+        if (sourceIsExtern) return getTrampoline(*target, /*needsRoot=*/false, getIRType(expr.type)->getPointee()->getReturnType(), expr);
+        return getTrampoline(*target, /*needsRoot=*/true, /*returnType=*/nullptr, expr);
+    }
     }
 
     llvm_unreachable("all implicit cast kinds handled");
@@ -1752,23 +1916,24 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
 Value* IRGenerator::emitUserConversion(const ImplicitCastExpr& expr, AllocaInst* thisAllocaForInit) {
     auto* conversion = llvm::cast<FunctionDecl>(expr.conversionDecl);
     Function* callee = getFunction(*conversion);
+    size_t userParamsOffset = callee->hasContextParam ? 1 : 0;
     if (auto* ctor = llvm::dyn_cast<ConstructorDecl>(conversion)) {
         // Mirror constructor calls: the callee initializes the local or a fresh temporary.
         auto* thisAlloca = thisAllocaForInit ? thisAllocaForInit : createEntryBlockAlloca(ctor->getTypeDecl()->getType());
         if (!thisAllocaForInit && !expr.isMovedFrom) {
             registerTempDestructor(thisAlloca, ctor->getTypeDecl()->getType());
         }
-        llvm::SmallVector<Value*, 2> args{thisAlloca, emitExprForPassing(*expr.operand, callee->params[1].type)};
-        createCall(callee, args, &expr);
+        llvm::SmallVector<Value*, 2> args{thisAlloca, emitExprForPassing(*expr.operand, callee->params[userParamsOffset + 1].type)};
+        createContextCall(callee, args, &expr);
         return thisAlloca;
     }
     // Mirror method calls: the operand becomes the receiver.
     llvm::SmallVector<Value*, 1> args;
     {
         llvm::SaveAndRestore saveEmittingReceiver(emittingReceiver, true);
-        args.push_back(emitExprForPassing(*expr.operand, callee->params[0].type));
+        args.push_back(emitExprForPassing(*expr.operand, callee->params[userParamsOffset].type));
     }
-    return maybeRegisterResultTemp(createCall(callee, args, &expr), expr);
+    return maybeRegisterResultTemp(createContextCall(callee, args, &expr), expr);
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {

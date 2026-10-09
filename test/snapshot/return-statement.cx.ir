@@ -1,11 +1,12 @@
 
 int32 main() {
-    int32 _0 = call _CX1N4main3fooEM3std5int320_()
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
-    return _0
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    int32 _1 = call _CX1N4main3fooEM3std5int320_(Context* _0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
+    return _1
 }
 
-int32 _CX1N4main3fooEM3std5int320_() {
-    int32 _0 = call _CX1N4main3fooEM3std5int320_()
+int32 _CX1N4main3fooEM3std5int320_(Context* __context) {
+    int32 _0 = call _CX1N4main3fooEM3std5int320_(Context* __context)
     return int32 42
 }

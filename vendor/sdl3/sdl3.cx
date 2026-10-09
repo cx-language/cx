@@ -6066,65 +6066,65 @@ struct SDL_hid_device_info {
 }
 
 /// Function pointer typedef for SDL_AppEvent.
-using SDL_AppEvent_func = SDL_AppResult(void*?, SDL_Event*?)?;
+using SDL_AppEvent_func = extern SDL_AppResult(void*?, SDL_Event*?)?;
 /// Function pointer typedef for SDL_AppInit.
-using SDL_AppInit_func = SDL_AppResult(void*?*?, c_int, char*?[*]?)?;
+using SDL_AppInit_func = extern SDL_AppResult(void*?*?, c_int, char*?[*]?)?;
 /// Function pointer typedef for SDL_AppIterate.
-using SDL_AppIterate_func = SDL_AppResult(void*?)?;
+using SDL_AppIterate_func = extern SDL_AppResult(void*?)?;
 /// Function pointer typedef for SDL_AppQuit.
-using SDL_AppQuit_func = void(void*?, SDL_AppResult)?;
+using SDL_AppQuit_func = extern void(void*?, SDL_AppResult)?;
 /// A callback that fires when an SDL assertion fails.
-using SDL_AssertionHandler = SDL_AssertState(SDL_AssertData*?, void*?)?;
+using SDL_AssertionHandler = extern SDL_AssertState(SDL_AssertData*?, void*?)?;
 /// SDL Audio Device instance IDs.
 using SDL_AudioDeviceID = Uint32;
 /// A callback that fires when data is about to be fed to an audio device.
-using SDL_AudioPostmixCallback = void(void*?, SDL_AudioSpec*?, float32[*]?, c_int)?;
+using SDL_AudioPostmixCallback = extern void(void*?, SDL_AudioSpec*?, float32[*]?, c_int)?;
 /// A callback that fires when data passes through an SDL_AudioStream.
-using SDL_AudioStreamCallback = void(void*?, SDL_AudioStream*?, c_int, c_int)?;
+using SDL_AudioStreamCallback = extern void(void*?, SDL_AudioStream*?, c_int, c_int)?;
 /// A callback that fires for completed SDL_PutAudioStreamDataNoCopy() data.
-using SDL_AudioStreamDataCompleteCallback = void(void*?, void*?, c_int)?;
+using SDL_AudioStreamDataCompleteCallback = extern void(void*?, void*?, c_int)?;
 /// A set of blend modes used in drawing operations.
 using SDL_BlendMode = Uint32;
 /// This is a unique ID for a camera device for the time it is connected to the system, and is never reused for the lifetime of the application.
 using SDL_CameraID = Uint32;
 /// A callback used to free resources when a property is deleted.
-using SDL_CleanupPropertyCallback = void(void*?, void*?)?;
+using SDL_CleanupPropertyCallback = extern void(void*?, void*?)?;
 /// Callback function that will be called when the clipboard is cleared, or when new data is set.
-using SDL_ClipboardCleanupCallback = void(void*?)?;
+using SDL_ClipboardCleanupCallback = extern void(void*?)?;
 /// Callback function that will be called when data for the specified mime-type is requested by the OS.
-using SDL_ClipboardDataCallback = void*?(void*?, char*?, c_size_t*?)?;
+using SDL_ClipboardDataCallback = extern void*?(void*?, char*?, c_size_t*?)?;
 /// A callback used with SDL sorting and binary search functions.
-using SDL_CompareCallback = c_int(void*?, void*?)?;
+using SDL_CompareCallback = extern c_int(void*?, void*?)?;
 /// A callback used with SDL sorting and binary search functions.
-using SDL_CompareCallback_r = c_int(void*?, void*?, void*?)?;
+using SDL_CompareCallback_r = extern c_int(void*?, void*?, void*?)?;
 /// Callback used by file dialog functions.
-using SDL_DialogFileCallback = void(void*?, char*?[*]?, c_int)?;
+using SDL_DialogFileCallback = extern void(void*?, char*?[*]?, c_int)?;
 /// This is a unique ID for a display for the time it is connected to the system, and is never reused for the lifetime of the application.
 using SDL_DisplayID = Uint32;
 /// An EGL attribute, used when creating an EGL context.
 using SDL_EGLAttrib = int64;
 /// EGL platform attribute initialization callback.
-using SDL_EGLAttribArrayCallback = SDL_EGLAttrib[*]?(void*?)?;
+using SDL_EGLAttribArrayCallback = extern SDL_EGLAttrib[*]?(void*?)?;
 /// Opaque type for an EGL config.
 using SDL_EGLConfig = void*?;
 /// Opaque type for an EGL display.
 using SDL_EGLDisplay = void*?;
 /// EGL surface/context attribute initialization callback types.
-using SDL_EGLIntArrayCallback = SDL_EGLint[*]?(void*?, SDL_EGLDisplay, SDL_EGLConfig)?;
+using SDL_EGLIntArrayCallback = extern SDL_EGLint[*]?(void*?, SDL_EGLDisplay, SDL_EGLConfig)?;
 /// Opaque type for an EGL surface.
 using SDL_EGLSurface = void*?;
 /// An EGL integer attribute, used when creating an EGL surface.
 using SDL_EGLint = c_int;
 /// Callback for directory enumeration.
-using SDL_EnumerateDirectoryCallback = SDL_EnumerationResult(void*?, char*?, char*?)?;
+using SDL_EnumerateDirectoryCallback = extern SDL_EnumerationResult(void*?, char*?, char*?)?;
 /// A callback used to enumerate all the properties in a group of properties.
-using SDL_EnumeratePropertiesCallback = void(void*?, SDL_PropertiesID, char*?)?;
+using SDL_EnumeratePropertiesCallback = extern void(void*?, SDL_PropertiesID, char*?)?;
 /// A function pointer used for callbacks that watch the event queue.
-using SDL_EventFilter = bool(void*?, SDL_Event*?)?;
+using SDL_EventFilter = extern bool(void*?, SDL_Event*?)?;
 /// A unique ID for a single finger on a touch device.
 using SDL_FingerID = Uint64;
 /// A generic function pointer.
-using SDL_FunctionPointer = void()?;
+using SDL_FunctionPointer = extern void()?;
 /// An opaque handle to an OpenGL context.
 using SDL_GLContext = SDL_GLContextState*?;
 /// Possible flags to be set for the SDL_GL_CONTEXT_FLAGS attribute.
@@ -6154,9 +6154,9 @@ using SDL_HapticEffectType = Uint16;
 /// This is a unique ID for a haptic device for the time it is connected to the system, and is never reused for the lifetime of the application.
 using SDL_HapticID = Uint32;
 /// A callback used to send notifications of hint value changes.
-using SDL_HintCallback = void(void*?, char*?, char*?, char*?)?;
+using SDL_HintCallback = extern void(void*?, char*?, char*?, char*?)?;
 /// Callback used for hit-testing.
-using SDL_HitTest = SDL_HitTestResult(SDL_Window*?, SDL_Point*?, void*?)?;
+using SDL_HitTest = extern SDL_HitTestResult(SDL_Window*?, SDL_Point*?, void*?)?;
 /// Initialization flags for SDL_Init and/or SDL_InitSubSystem.
 using SDL_InitFlags = Uint32;
 /// This is a unique ID for a joystick for the time it is connected to the system, and is never reused for the lifetime of the application.
@@ -6168,9 +6168,9 @@ using SDL_Keycode = Uint32;
 /// Valid key modifiers (possibly OR'd together).
 using SDL_Keymod = Uint16;
 /// The prototype for the log output callback function.
-using SDL_LogOutputFunction = void(void*?, c_int, SDL_LogPriority, char*?)?;
+using SDL_LogOutputFunction = extern void(void*?, c_int, SDL_LogPriority, char*?)?;
 /// Callback run on the main thread.
-using SDL_MainThreadCallback = void(void*?)?;
+using SDL_MainThreadCallback = extern void(void*?)?;
 /// SDL_MessageBoxButtonData flags.
 using SDL_MessageBoxButtonFlags = Uint32;
 /// Message box flags.
@@ -6182,9 +6182,9 @@ using SDL_MouseButtonFlags = Uint32;
 /// This is a unique ID for a mouse for the time it is connected to the system, and is never reused for the lifetime of the application.
 using SDL_MouseID = Uint32;
 /// A callback used to transform mouse motion delta from raw values.
-using SDL_MouseMotionTransformCallback = void(void*?, Uint64, SDL_Window*?, SDL_MouseID, float32*?, float32*?)?;
+using SDL_MouseMotionTransformCallback = extern void(void*?, Uint64, SDL_Window*?, SDL_MouseID, float32*?, float32*?)?;
 /// Function prototype for the nanosecond timer callback function.
-using SDL_NSTimerCallback = Uint64(void*?, SDL_TimerID, Uint64)?;
+using SDL_NSTimerCallback = extern Uint64(void*?, SDL_TimerID, Uint64)?;
 /// SDL pen instance IDs.
 using SDL_PenID = Uint32;
 /// Pen input flags, as reported by various pen events' `pen_state` field.
@@ -6192,7 +6192,7 @@ using SDL_PenInputFlags = Uint32;
 /// An ID that represents a properties set.
 using SDL_PropertiesID = Uint32;
 /// A callback to be used with SDL_RequestAndroidPermission.
-using SDL_RequestAndroidPermissionCallback = void(void*?, char*?, bool)?;
+using SDL_RequestAndroidPermissionCallback = extern void(void*?, char*?, bool)?;
 /// This is a unique ID for a sensor for the time it is connected to the system, and is never reused for the lifetime of the application.
 using SDL_SensorID = Uint32;
 /// An atomic spinlock.
@@ -6200,23 +6200,23 @@ using SDL_SpinLock = c_int;
 /// The flags on an SDL_Surface.
 using SDL_SurfaceFlags = Uint32;
 /// The callback used to cleanup data passed to SDL_SetTLS.
-using SDL_TLSDestructorCallback = void(void*?)?;
+using SDL_TLSDestructorCallback = extern void(void*?)?;
 /// Thread local storage ID.
 using SDL_TLSID = SDL_AtomicInt;
 /// The function passed to SDL_CreateThread() as the new thread's entry point.
-using SDL_ThreadFunction = c_int(void*?)?;
+using SDL_ThreadFunction = extern c_int(void*?)?;
 /// A unique numeric ID that identifies a thread.
 using SDL_ThreadID = Uint64;
 /// SDL times are signed, 64-bit integers representing nanoseconds since the Unix epoch (Jan 1, 1970).
 using SDL_Time = Sint64;
 /// Function prototype for the millisecond timer callback function.
-using SDL_TimerCallback = Uint32(void*?, SDL_TimerID, Uint32)?;
+using SDL_TimerCallback = extern Uint32(void*?, SDL_TimerID, Uint32)?;
 /// Definition of the timer ID type.
 using SDL_TimerID = Uint32;
 /// A unique ID for a touch device.
 using SDL_TouchID = Uint64;
 /// A callback that is invoked when a tray entry is selected.
-using SDL_TrayCallback = void(void*?, SDL_TrayEntry*?)?;
+using SDL_TrayCallback = extern void(void*?, SDL_TrayEntry*?)?;
 /// Flags that control the creation of system tray entries.
 using SDL_TrayEntryFlags = Uint32;
 /// The flags on a window.
@@ -6224,23 +6224,23 @@ using SDL_WindowFlags = Uint64;
 /// This is a unique ID for a window.
 using SDL_WindowID = Uint32;
 /// A callback to be used with SDL_SetWindowsMessageHook. Takes a Win32 MSG pointer, spelled void* so this module stays mixable with a windows.h import.
-using SDL_WindowsMessageHook = bool(void*?, void*?)?;
+using SDL_WindowsMessageHook = extern bool(void*?, void*?)?;
 /// A callback to be used with SDL_SetX11EventHook.
-using SDL_X11EventHook = bool(void*?, XEvent*?)?;
+using SDL_X11EventHook = extern bool(void*?, XEvent*?)?;
 /// A callback used to implement SDL_calloc().
-using SDL_calloc_func = void*?(c_size_t, c_size_t)?;
+using SDL_calloc_func = extern void*?(c_size_t, c_size_t)?;
 /// A callback used to implement SDL_free().
-using SDL_free_func = void(void*?)?;
+using SDL_free_func = extern void(void*?)?;
 /// A callback to be used with SDL_SetiOSAnimationCallback.
-using SDL_iOSAnimationCallback = void(void*?)?;
+using SDL_iOSAnimationCallback = extern void(void*?)?;
 /// An opaque handle representing string encoding conversion state.
 using SDL_iconv_t = SDL_iconv_data_t*?;
 /// The prototype for the application's main() function.
-using SDL_main_func = c_int(c_int, char*?[*]?)?;
+using SDL_main_func = extern c_int(c_int, char*?[*]?)?;
 /// A callback used to implement SDL_malloc().
-using SDL_malloc_func = void*?(c_size_t)?;
+using SDL_malloc_func = extern void*?(c_size_t)?;
 /// A callback used to implement SDL_realloc().
-using SDL_realloc_func = void*?(void*?, c_size_t)?;
+using SDL_realloc_func = extern void*?(void*?, c_size_t)?;
 /// Alias for _XEvent.
 using XEvent = _XEvent;
 

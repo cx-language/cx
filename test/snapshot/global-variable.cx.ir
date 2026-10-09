@@ -4,9 +4,10 @@ global _CX1G4main3barE = int32 42
 
 int32 main() {
     int32* d = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 43 to _CX1G4main3fooE
     int32 _CX1G4main3barE.load = load _CX1G4main3barE
     store _CX1G4main3barE.load to d
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

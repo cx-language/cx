@@ -6,9 +6,9 @@ void main() {
     callee();
 }
 
-// CHECK: define void @_CX1N4main6calleeE4void0_() #{{[0-9]+}} !dbg !{{[0-9]+}} {
+// CHECK: define void @_CX1N4main6calleeE4void0_(ptr %__context) #{{[0-9]+}} !dbg !{{[0-9]+}} {
 // CHECK: define i32 @main() #{{[0-9]+}} !dbg !{{[0-9]+}} {
-// CHECK: call void @_CX1N4main6calleeE4void0_(), !dbg !{{[0-9]+}}
+// CHECK: call void @_CX1N4main6calleeE4void0_(ptr %{{[0-9]+}}), !dbg !{{[0-9]+}}
 // CHECK: attributes #{{[0-9]+}} = { "frame-pointer"="all" }
 // CHECK: !llvm.module.flags = !{!{{[0-9]+}}, !{{[0-9]+}}}
 // CHECK: !llvm.dbg.cu = !{!{{[0-9]+}}}

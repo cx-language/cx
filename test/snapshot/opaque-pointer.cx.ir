@@ -1,7 +1,8 @@
 
 int32 main() {
     S* s = alloca S
-    void _0 = call _CX1N19opaque_2Dpointer__hM19opaque_2Dpointer__h1S4initE4void1_OPM19opaque_2Dpointer__h6Opaque(S* s, Opaque* null)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N19opaque_2Dpointer__hM19opaque_2Dpointer__h1S4initE4void1_OPM19opaque_2Dpointer__h6Opaque(Context* _0, S* s, Opaque* null)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

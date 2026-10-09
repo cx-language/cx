@@ -5,25 +5,26 @@ int32 main() {
     E* enum_0 = alloca E
     E* enum_1 = alloca E
     E* enum_2 = alloca E
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     int32* tag = getelementptr enum, 0
     store int32 0 to tag
     E enum.load = load enum
     store enum.load to e
     int32* tag_0 = getelementptr enum_0, 0
     store int32 1 to tag_0
-    struct { bool, int32 } _0 = insertvalue struct { bool, int32 } undefined, 0, bool false
-    struct { bool, int32 } _1 = insertvalue _0, 1, int32 42
+    struct { bool, int32 } _1 = insertvalue struct { bool, int32 } undefined, 0, bool false
+    struct { bool, int32 } _2 = insertvalue _1, 1, int32 42
     union { struct { bool, int32 }, struct { int32 } }* associatedValue = getelementptr enum_0, 1
-    struct { bool, int32 }* _2 = cast associatedValue to struct { bool, int32 }*
-    store _1 to _2
+    struct { bool, int32 }* _3 = cast associatedValue to struct { bool, int32 }*
+    store _2 to _3
     E enum.load_0 = load enum_0
     store enum.load_0 to e
     int32* tag_1 = getelementptr enum_1, 0
     store int32 2 to tag_1
-    struct { int32 } _3 = insertvalue struct { int32 } undefined, 0, int32 43
+    struct { int32 } _4 = insertvalue struct { int32 } undefined, 0, int32 43
     union { struct { bool, int32 }, struct { int32 } }* associatedValue_0 = getelementptr enum_1, 1
-    struct { int32 }* _4 = cast associatedValue_0 to struct { int32 }*
-    store _3 to _4
+    struct { int32 }* _5 = cast associatedValue_0 to struct { int32 }*
+    store _4 to _5
     E enum.load_1 = load enum_1
     store enum.load_1 to e
     int32* e.tag = getelementptr e, 0
@@ -38,42 +39,42 @@ switch.case.0:
     br switch.end
 
 switch.case.1:
-    union { struct { bool, int32 }, struct { int32 } }* _5 = getelementptr e, 1
-    struct { bool, int32 }* eb = cast _5 to struct { bool, int32 }*
+    union { struct { bool, int32 }, struct { int32 } }* _6 = getelementptr e, 1
+    struct { bool, int32 }* eb = cast _6 to struct { bool, int32 }*
     int32* tag_2 = getelementptr enum_2, 0
     store int32 2 to tag_2
     int32* i = getelementptr eb, 1
     int32 i.load = load i
-    struct { int32 } _6 = insertvalue struct { int32 } undefined, 0, i.load
+    struct { int32 } _7 = insertvalue struct { int32 } undefined, 0, i.load
     union { struct { bool, int32 }, struct { int32 } }* associatedValue_1 = getelementptr enum_2, 1
-    struct { int32 }* _7 = cast associatedValue_1 to struct { int32 }*
-    store _6 to _7
+    struct { int32 }* _8 = cast associatedValue_1 to struct { int32 }*
+    store _7 to _8
     E enum.load_2 = load enum_2
     store enum.load_2 to e
     int32* i_0 = getelementptr eb, 1
     int32 i.load_0 = load i_0
-    void _8 = call _CX1N3std10checkLeaksE4void0_()
+    void _9 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return i.load_0
 
 switch.case.2:
-    union { struct { bool, int32 }, struct { int32 } }* _9 = getelementptr e, 1
-    int32* eb_0 = cast _9 to int32*
+    union { struct { bool, int32 }, struct { int32 } }* _10 = getelementptr e, 1
+    int32* eb_0 = cast _10 to int32*
     int32 eb.load = load eb_0
-    void _10 = call _CX1N3std10checkLeaksE4void0_()
+    void _11 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return eb.load
 
 switch.default:
-    never _11 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "invalid value in switch over enum 'E' at enum-associated-values.cx:14:13
+    never _12 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "invalid value in switch over enum 'E' at enum-associated-values.cx:14:13
 ")
     unreachable
 
 switch.end:
     int32* e.tag_0 = getelementptr e, 0
     int32 e.tag.load_0 = load e.tag_0
-    bool _12 = e.tag.load_0 == int32 0
+    bool _13 = e.tag.load_0 == int32 0
     int32* e.tag_1 = getelementptr e, 0
     int32 e.tag.load_1 = load e.tag_1
-    bool _13 = e.tag.load_1 == int32 1
-    void _14 = call _CX1N3std10checkLeaksE4void0_()
+    bool _14 = e.tag.load_1 == int32 1
+    void _15 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

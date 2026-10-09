@@ -2,40 +2,41 @@
 int32 main() {
     int32* sum = alloca int32
     int32* i = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 0 to sum
     store int32 3 to i
     br loop.condition
 
 loop.condition:
     int32 i.load = load i
-    bool _0 = i.load < int32 9
-    br _0, loop.body, loop.end
+    bool _1 = i.load < int32 9
+    br _1, loop.body, loop.end
 
 loop.body:
     int32 sum.load = load sum
     int32 i.load_0 = load i
-    int32 _1 = checkedarith + sum.load, i.load_0
-    bool _2 = overflow _1
-    bool _3 = !_2
-    bool overflow.condition = _3 == bool false
+    int32 _2 = checkedarith + sum.load, i.load_0
+    bool _3 = overflow _2
+    bool _4 = !_3
+    bool overflow.condition = _4 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 loop.increment:
     int32 i.load_1 = load i
-    int32 _4 = i.load_1 + int32 1
-    store _4 to i
+    int32 _5 = i.load_1 + int32 1
+    store _5 to i
     br loop.condition
 
 loop.end:
-    void _5 = call _CX1N3std10checkLeaksE4void0_()
+    void _6 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 
 overflow.fail:
-    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at for-loop-c-style.cx:6:13
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "integer overflow at for-loop-c-style.cx:6:13
 ")
     unreachable
 
 overflow.success:
-    store _1 to sum
+    store _2 to sum
     br loop.increment
 }

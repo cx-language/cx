@@ -1,0 +1,4 @@
+// RUN: %not %cx -parse --error-limit=0 %S/inputs/extern-non-function-type/param.cx %S/inputs/extern-non-function-type/alias.cx 2>&1 | %FileCheck %s
+
+// CHECK: param.cx:1:19: error: 'extern' in type position only applies to function types
+// CHECK: alias.cx:1:27: error: 'extern' in type position only applies to function types

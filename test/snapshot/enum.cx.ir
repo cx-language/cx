@@ -2,10 +2,11 @@ global _CX1G4main1xE = int32 0
 
 int32 main() {
     int32* foo = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 2 to foo
     int32 foo.load = load foo
-    bool _0 = foo.load == int32 1
-    br _0, if.then, if.else
+    bool _1 = foo.load == int32 1
+    br _1, if.then, if.else
 
 if.then:
     br if.end
@@ -15,8 +16,8 @@ if.else:
 
 if.end:
     int32 foo.load_0 = load foo
-    bool _1 = foo.load_0 != int32 0
-    br _1, if.then, if.else
+    bool _2 = foo.load_0 != int32 0
+    br _2, if.then, if.else
 
 if.then_0:
     br if.end_0
@@ -33,23 +34,23 @@ if.end_0:
     }
 
 switch.case.0:
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 
 switch.case.1:
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    void _4 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 
 switch.case.2:
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    void _5 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 
 switch.default:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "invalid value in switch over enum 'A' at enum.cx:11:13
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "invalid value in switch over enum 'A' at enum.cx:11:13
 ")
     unreachable
 
 switch.end:
-    void _6 = call _CX1N3std10checkLeaksE4void0_()
+    void _7 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

@@ -116,7 +116,7 @@ private:
     void reparseGenericReturnType(Type& type, Location& location, llvm::StringRef& name, size_t returnTypeIndex, TypeDecl* receiver);
     Type parseSimpleType();
     Type parseAnonymousStructType();
-    Type parseFunctionType(Type returnType);
+    Type parseFunctionType(Type returnType, bool isExtern = false);
     // `const` is rejected in types; declarators consume a leading `const` themselves.
     Type parseType();
     SizeofExpr* parseSizeofExpr();

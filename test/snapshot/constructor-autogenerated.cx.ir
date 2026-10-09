@@ -6,19 +6,20 @@ int32 main() {
     Empty* e = alloca Empty
     Generic<float32>* g = alloca Generic<float32>
     Generic<Empty>* h = alloca Generic<Empty>
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 2 to b
-    void _0 = call _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(X* x, int32 4, int32* b)
-    void _1 = call _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(X* y, int32 4, int32* b)
-    void _2 = call _CX1N4mainM4main5Empty4initE4void0_(Empty* e)
-    void _3 = call _CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(Generic<float32>* g, float32 4.5)
+    void _1 = call _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(Context* _0, X* x, int32 4, int32* b)
+    void _2 = call _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(Context* _0, X* y, int32 4, int32* b)
+    void _3 = call _CX1N4mainM4main5Empty4initE4void0_(Context* _0, Empty* e)
+    void _4 = call _CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(Context* _0, Generic<float32>* g, float32 4.5)
     Empty e.load = load e
-    void _4 = call _CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(Generic<Empty>* h, Empty e.load)
-    void _5 = call _CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(Generic<Empty>* h)
-    void _6 = call _CX1N3std10checkLeaksE4void0_()
+    void _5 = call _CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(Context* _0, Generic<Empty>* h, Empty e.load)
+    void _6 = call _CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(Context* _0, Generic<Empty>* h)
+    void _7 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(X* this, int32 a, int32* b) {
+void _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(Context* __context, X* this, int32 a, int32* b) {
     X** this_0 = alloca X*
     int32* a_0 = alloca int32
     int32** b_0 = alloca int32*
@@ -36,19 +37,19 @@ void _CX1N4mainM4main1X4initE4void2_M3std5int32PM3std5int32(X* this, int32 a, in
     return void
 }
 
-void _CX1N4mainM4main5Empty6deinitE4void0_(Empty* this) {
+void _CX1N4mainM4main5Empty6deinitE4void0_(Context* __context, Empty* this) {
     Empty** this_0 = alloca Empty*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main5Empty4initE4void0_(Empty* this) {
+void _CX1N4mainM4main5Empty4initE4void0_(Context* __context, Empty* this) {
     Empty** this_0 = alloca Empty*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(Generic<float32>* this, float32 i) {
+void _CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(Context* __context, Generic<float32>* this, float32 i) {
     Generic<float32>** this_0 = alloca Generic<float32>*
     float32* i_0 = alloca float32
     store this to this_0
@@ -60,15 +61,15 @@ void _CX1N4mainM4main7GenericIM3std7float32E4initE4void1_M3std7float32(Generic<f
     return void
 }
 
-void _CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(Generic<Empty>* this) {
+void _CX1N4mainM4main7GenericIM4main5EmptyE6deinitE4void0_(Context* __context, Generic<Empty>* this) {
     Generic<Empty>** this_0 = alloca Generic<Empty>*
     store this to this_0
     Empty* i = getelementptr this, 0
-    void _0 = call _CX1N4mainM4main5Empty6deinitE4void0_(Empty* i)
+    void _0 = call _CX1N4mainM4main5Empty6deinitE4void0_(Context* __context, Empty* i)
     return void
 }
 
-void _CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(Generic<Empty>* this, Empty i) {
+void _CX1N4mainM4main7GenericIM4main5EmptyE4initE4void1_M4main5Empty(Context* __context, Generic<Empty>* this, Empty i) {
     Generic<Empty>** this_0 = alloca Generic<Empty>*
     Empty* i_0 = alloca Empty
     store this to this_0

@@ -2,6 +2,7 @@
 int32 main() {
     A<int32>* a = alloca A<int32>
     A<A<A<bool>>>* aaa = alloca A<A<A<bool>>>
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

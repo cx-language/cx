@@ -133,6 +133,18 @@ struct IRGenerator {
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     Value* emitConstStructCall(const CallExpr& expr, const ConstructorDecl& constructor);
     Value* emitClosureCallExpr(const CallExpr& expr);
+    // withAllocator(allocator, body) pushes a context overriding the
+    // allocator and calls body with it; this lowers that directly.
+    Value* emitWithAllocatorCall(const CallExpr& expr);
+    // Calls ambientRoot for the default context at context roots (the entry
+    // point, exported extern functions, C-callback wrappers).
+    Value* emitRootContextCall(const Expr* expr);
+    // Cross-ABI trampoline, one per target declaration: a C-ABI wrapper
+    // roots the context for a cx function used as a C callback (needsRoot),
+    // or a cx-ABI thunk drops it for a foreign function in a cx slot such
+    // as the entry point as a value (in which case returnType is the
+    // caller's expected return, differing from the target's only for main).
+    Function* getTrampoline(const FunctionDecl& target, bool needsRoot, IRType* returnType, const Expr& expr);
     Value* emitBuiltinCast(const CallExpr& expr);
     Value* emitSizeofExpr(const SizeofExpr& expr);
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
@@ -177,6 +189,9 @@ struct IRGenerator {
     Value* createLoad(Value* value, const Expr* expr = nullptr);
     void createStore(Value* value, Value* pointer);
     Value* createCall(Value* function, llvm::ArrayRef<Value*> args, const Expr* expr);
+    // Direct call passing the current context when the callee takes one, for
+    // compiler-generated calls that don't go through emitCallExpr.
+    Value* createContextCall(Function* callee, llvm::ArrayRef<Value*> args, const Expr* expr);
     void createBr(BasicBlock* destination, Value* argument = nullptr) {
         insertBlock->add(new BranchInst{ValueKind::BranchInst, destination, argument});
         destination->predecessors.push_back(insertBlock);
@@ -353,6 +368,10 @@ struct IRGenerator {
     llvm::SmallVector<size_t, 4> continueTempScopeDepths;
     BasicBlock* insertBlock;
     Function* currentFunction = nullptr;
+    // The hidden context parameter of the function being emitted (or the
+    // default context at context roots). Passed to every cx callee and
+    // returned by the context() intrinsic. Null outside function bodies.
+    Value* currentContext = nullptr;
     // True while emitting a global variable initializer, which must be a pure constant: string
     // literals and optional values take constant construction paths instead of emitting calls.
     bool emittingGlobalInitializer = false;
@@ -363,6 +382,15 @@ struct IRGenerator {
     static const int optionalPayloadFieldIndex = 1;
     static int64_t getOptionalSomeTag();
     static int64_t getOptionalNoneTag();
+
+    // Null without a standard library (bare-env builds).
+    const FunctionDecl* findStdlibFunction(const char* name);
+    const FieldDecl* findContextAllocatorField();
+    struct Trampoline {
+        const FunctionDecl* target;
+        Function* function;
+    };
+    std::vector<Trampoline> trampolines;
 };
 
 } // namespace cx

@@ -3,9 +3,10 @@ int32 main() {
     int32* i = alloca int32
     int32* j = alloca int32
     int32* k = alloca int32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store int32 42 to i
     store int32 1 to j
     store int32 105 to k
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

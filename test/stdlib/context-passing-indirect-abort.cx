@@ -1,0 +1,15 @@
+// RUN: %not %cx run %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --release %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --backend=c %s 2>&1 | %FileCheck %s
+// RUN: %not %cx run --release --backend=c %s 2>&1 | %FileCheck %s
+
+
+void body() {
+}
+
+void main() {
+    var w = withAllocator;
+    w(defaultAllocator(), body);
+}
+
+// CHECK: withAllocator() must be called directly

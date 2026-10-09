@@ -2,13 +2,14 @@
 int32 main() {
     A* a = alloca A
     B* b = alloca B
-    void _0 = call _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(A* a, bool false, int32 0)
-    void _1 = call _CX1N4mainM4main1B4initE4void1_M3std5int32(B* b, int32 4)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(Context* _0, A* a, bool false, int32 0)
+    void _2 = call _CX1N4mainM4main1B4initE4void1_M3std5int32(Context* _0, B* b, int32 4)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(A* this, bool b, int32 p) {
+void _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(Context* __context, A* this, bool b, int32 p) {
     A** this_0 = alloca A*
     bool* b_0 = alloca bool
     int32* p_0 = alloca int32
@@ -18,7 +19,7 @@ void _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(A* this, bool b, int32
     A* this.load = load this_0
     O* _0 = cast this.load to O*
     int32 p.load = load p_0
-    void _1 = call _CX1N4mainM4main1O4initE4void1_M3std5int32(O* _0, int32 p.load)
+    void _1 = call _CX1N4mainM4main1O4initE4void1_M3std5int32(Context* __context, O* _0, int32 p.load)
     A* this.load_0 = load this_0
     bool* b_1 = getelementptr this.load_0, 0
     bool b.load = load b_0
@@ -30,39 +31,39 @@ void _CX1N4mainM4main1A4initE4void2_M3std4boolM3std5int32(A* this, bool b, int32
     return void
 }
 
-void _CX1N4mainM4main1B4initE4void1_M3std5int32(B* this, int32 p) {
+void _CX1N4mainM4main1B4initE4void1_M3std5int32(Context* __context, B* this, int32 p) {
     B** this_0 = alloca B*
     int32* p_0 = alloca int32
     store this to this_0
     store p to p_0
-    void _0 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* p_0)
+    void _0 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(Context* __context, int32* p_0)
     return void
 }
 
-void _CX1N4mainM4main1O4initE4void1_M3std5int32(O* this, int32 p) {
+void _CX1N4mainM4main1O4initE4void1_M3std5int32(Context* __context, O* this, int32 p) {
     O** this_0 = alloca O*
     int32* p_0 = alloca int32
     store this to this_0
     store p to p_0
-    void _0 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* p_0)
+    void _0 = call _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(Context* __context, int32* p_0)
     return void
 }
 
-void _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(int32* value) {
+void _CX1N3std7printlnIM3std5int32EE4void1_RM3std5int32(Context* __context, int32* value) {
     int32** value_0 = alloca int32*
     store value to value_0
     int32* value.load = load value_0
-    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value.load)
-    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(char 10)
+    void _0 = call _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(Context* __context, int32* value.load)
+    void _1 = call _CX1N3std5printIM3std4charEE4void1_M3std4char(Context* __context, char 10)
     return void
 }
 
-void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(int32* value) {
+void _CX1N3std5printIM3std5int32EE4void1_RM3std5int32(Context* __context, int32* value) {
     int32** value_0 = alloca int32*
     OutputStream* stream = alloca OutputStream
     store value to value_0
-    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(OutputStream* stream)
+    void _0 = call _CX1N3stdM3std12OutputStream4initE4void0_(Context* __context, OutputStream* stream)
     int32* value.load = load value_0
-    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(int32* value.load, OutputStream* stream)
+    void _1 = call _CX1N3stdM3std5int325printE4void1_RM3std12OutputStream(Context* __context, int32* value.load, OutputStream* stream)
     return void
 }

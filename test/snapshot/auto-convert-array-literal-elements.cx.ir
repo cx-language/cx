@@ -2,11 +2,12 @@
 int32 main() {
     float32[1]* foo = alloca float32[1]
     uint16[2]* bar = alloca uint16[2]
-    float32[1] _0 = insertvalue float32[1] undefined, 0, float32 1
-    store _0 to foo
-    uint16[2] _1 = insertvalue uint16[2] undefined, 0, uint16 50
-    uint16[2] _2 = insertvalue _1, 1, uint16 100
-    store _2 to bar
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    float32[1] _1 = insertvalue float32[1] undefined, 0, float32 1
+    store _1 to foo
+    uint16[2] _2 = insertvalue uint16[2] undefined, 0, uint16 50
+    uint16[2] _3 = insertvalue _2, 1, uint16 100
+    store _3 to bar
+    void _4 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

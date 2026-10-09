@@ -177,6 +177,14 @@ static void deleteIRType(IRType* type) {
     }
 }
 
+Type cx::getContextStructType() {
+    auto* stdlib = Module::getStdlibModule();
+    if (!stdlib) return Type();
+    auto* decl = llvm::dyn_cast_or_null<TypeDecl>(stdlib->symbolTable.findOne("Context"));
+    if (!decl) return Type();
+    return decl->getType();
+}
+
 IRType* cx::getIRType(Type astType) {
     // Spelling twins are distinct bases sharing one identity; normalize so the
     // type cache below yields a single IR type per structure.
@@ -274,11 +282,18 @@ IRType* cx::getIRType(Type astType) {
     case TypeKind::FunctionType: {
         auto returnType = getIRType(astType.getReturnType());
         auto paramTypes = map(astType.getParamTypes(), [](Type t) { return getIRType(t); });
+        // cx functions take the ambient context as a hidden first parameter;
+        // extern ones use the plain C ABI. No stdlib (bare-env builds) means
+        // no Context type, so functions stay contextless there.
+        bool hasContextParam = false;
+        if (!llvm::cast<FunctionType>(astType.typeBase)->isExtern) {
+            if (Type contextType = getContextStructType()) {
+                paramTypes.insert(paramTypes.begin(), getIRType(contextType)->getPointerTo());
+                hasContextParam = true;
+            }
+        }
         auto functionType = new IRFunctionType{
-            IRTypeKind::IRFunctionType,
-            returnType,
-            std::move(paramTypes),
-            llvm::cast<FunctionType>(astType.typeBase)->isVariadic,
+            IRTypeKind::IRFunctionType, returnType, std::move(paramTypes), llvm::cast<FunctionType>(astType.typeBase)->isVariadic, hasContextParam,
         };
         irType = new IRPointerType{IRTypeKind::IRPointerType, functionType};
         break;
@@ -411,6 +426,7 @@ IRType* Value::getType() const {
                     function->returnType,
                     std::move(paramTypes),
                     function->isVariadic,
+                    function->hasContextParam,
                 })
             ->getPointerTo();
     }

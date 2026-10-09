@@ -2,49 +2,50 @@
 int32 main() {
     S<int32>* _0 = alloca S<int32>
     S<float32>* _1 = alloca S<float32>
-    void _2 = call _CX1N4mainM4main1SIM3std5int32E4initE4void0_(S<int32>* _0)
-    void _3 = call _CX1N4mainM4main1SIM3std5int32E1fE4void0_(S<int32>* _0)
-    void _4 = call _CX1N4mainM4main1SIM3std7float32E4initE4void0_(S<float32>* _1)
-    void _5 = call _CX1N4mainM4main1SIM3std7float32E1fE4void0_(S<float32>* _1)
-    void _6 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _3 = call _CX1N4mainM4main1SIM3std5int32E4initE4void0_(Context* _2, S<int32>* _0)
+    void _4 = call _CX1N4mainM4main1SIM3std5int32E1fE4void0_(Context* _2, S<int32>* _0)
+    void _5 = call _CX1N4mainM4main1SIM3std7float32E4initE4void0_(Context* _2, S<float32>* _1)
+    void _6 = call _CX1N4mainM4main1SIM3std7float32E1fE4void0_(Context* _2, S<float32>* _1)
+    void _7 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
     return int32 0
 }
 
-void _CX1N4mainM4main1SIM3std5int32E1fE4void0_(S<int32>* this) {
+void _CX1N4mainM4main1SIM3std5int32E1fE4void0_(Context* __context, S<int32>* this) {
     S<int32>** this_0 = alloca S<int32>*
     store this to this_0
     S<int32>* this.load = load this_0
-    void _0 = call _CX1N4mainM4main1SIM3std5int32E1gE4void0_(S<int32>* this.load)
+    void _0 = call _CX1N4mainM4main1SIM3std5int32E1gE4void0_(Context* __context, S<int32>* this.load)
     return void
 }
 
-void _CX1N4mainM4main1SIM3std5int32E4initE4void0_(S<int32>* this) {
+void _CX1N4mainM4main1SIM3std5int32E4initE4void0_(Context* __context, S<int32>* this) {
     S<int32>** this_0 = alloca S<int32>*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1SIM3std7float32E1fE4void0_(S<float32>* this) {
+void _CX1N4mainM4main1SIM3std7float32E1fE4void0_(Context* __context, S<float32>* this) {
     S<float32>** this_0 = alloca S<float32>*
     store this to this_0
     S<float32>* this.load = load this_0
-    void _0 = call _CX1N4mainM4main1SIM3std7float32E1gE4void0_(S<float32>* this.load)
+    void _0 = call _CX1N4mainM4main1SIM3std7float32E1gE4void0_(Context* __context, S<float32>* this.load)
     return void
 }
 
-void _CX1N4mainM4main1SIM3std7float32E4initE4void0_(S<float32>* this) {
+void _CX1N4mainM4main1SIM3std7float32E4initE4void0_(Context* __context, S<float32>* this) {
     S<float32>** this_0 = alloca S<float32>*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1SIM3std5int32E1gE4void0_(S<int32>* this) {
+void _CX1N4mainM4main1SIM3std5int32E1gE4void0_(Context* __context, S<int32>* this) {
     S<int32>** this_0 = alloca S<int32>*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1SIM3std7float32E1gE4void0_(S<float32>* this) {
+void _CX1N4mainM4main1SIM3std7float32E1gE4void0_(Context* __context, S<float32>* this) {
     S<float32>** this_0 = alloca S<float32>*
     store this to this_0
     return void

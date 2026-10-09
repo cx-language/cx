@@ -4,25 +4,26 @@ extern char** b()
 int32 main() {
     char*** s = alloca char**
     int32* i = alloca int32
-    char** _0 = call b()
-    store _0 to s
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    char** _1 = call b()
+    store _1 to s
     store int32 0 to i
     char** s.load = load s
     bool assert.condition = s.load == char** null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _1 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Unwrap failed at pointer-to-array-of-pointers.cx:8:21
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "Unwrap failed at pointer-to-array-of-pointers.cx:8:21
 ")
     unreachable
 
 assert.success:
     char** s.load_0 = load s
     int32 i.load = load i
-    char** _2 = getelementptr s.load_0, i.load
-    char* .load = load _2
-    c_int _3 = call printf(char* "%s
+    char** _3 = getelementptr s.load_0, i.load
+    char* .load = load _3
+    c_int _4 = call printf(char* "%s
 ", char* .load)
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    void _5 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

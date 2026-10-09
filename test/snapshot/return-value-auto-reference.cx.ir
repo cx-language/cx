@@ -1,22 +1,22 @@
 global _CX1G4main1iE = int32 42
 
-int32* _CX1N4main3fooEPM3std5int320_() {
+int32* _CX1N4main3fooEPM3std5int320_(Context* __context) {
     bool** a = alloca bool*
     A* _0 = alloca A
     char** b = alloca char*
     B* _1 = alloca B
     bool[2] _2 = insertvalue bool[2] undefined, 0, bool false
     bool[2] _3 = insertvalue _2, 1, bool true
-    void _4 = call _CX1N4mainM4main1A4initE4void1_5ArrayIM3std4boolN2_E(A* _0, bool[2] _3)
-    bool* _5 = call _CX1N4mainM4main1A2ffEPM3std4bool0_(A* _0)
+    void _4 = call _CX1N4mainM4main1A4initE4void1_5ArrayIM3std4boolN2_E(Context* __context, A* _0, bool[2] _3)
+    bool* _5 = call _CX1N4mainM4main1A2ffEPM3std4bool0_(Context* __context, A* _0)
     store _5 to a
-    void _6 = call _CX1N4mainM4main1B4initE4void1_M3std4char(B* _1, char 97)
-    char* _7 = call _CX1N4mainM4main1B2ggEPM3std4char0_(B* _1)
+    void _6 = call _CX1N4mainM4main1B4initE4void1_M3std4char(Context* __context, B* _1, char 97)
+    char* _7 = call _CX1N4mainM4main1B2ggEPM3std4char0_(Context* __context, B* _1)
     store _7 to b
     return _CX1G4main1iE
 }
 
-bool* _CX1N4mainM4main1A2ffEPM3std4bool0_(A* this) {
+bool* _CX1N4mainM4main1A2ffEPM3std4bool0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     A* this.load = load this_0
@@ -27,7 +27,7 @@ bool* _CX1N4mainM4main1A2ffEPM3std4bool0_(A* this) {
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at return-value-auto-reference.cx:15:19
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "index out of bounds at return-value-auto-reference.cx:15:19
 ")
     unreachable
 
@@ -36,7 +36,7 @@ bounds.success:
     return _3
 }
 
-void _CX1N4mainM4main1A4initE4void1_5ArrayIM3std4boolN2_E(A* this, bool[2] b) {
+void _CX1N4mainM4main1A4initE4void1_5ArrayIM3std4boolN2_E(Context* __context, A* this, bool[2] b) {
     A** this_0 = alloca A*
     bool[2]* b_0 = alloca bool[2]
     store this to this_0
@@ -48,7 +48,7 @@ void _CX1N4mainM4main1A4initE4void1_5ArrayIM3std4boolN2_E(A* this, bool[2] b) {
     return void
 }
 
-char* _CX1N4mainM4main1B2ggEPM3std4char0_(B* this) {
+char* _CX1N4mainM4main1B2ggEPM3std4char0_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     B* this.load = load this_0
@@ -56,7 +56,7 @@ char* _CX1N4mainM4main1B2ggEPM3std4char0_(B* this) {
     return a
 }
 
-void _CX1N4mainM4main1B4initE4void1_M3std4char(B* this, char a) {
+void _CX1N4mainM4main1B4initE4void1_M3std4char(Context* __context, B* this, char a) {
     B** this_0 = alloca B*
     char* a_0 = alloca char
     store this to this_0

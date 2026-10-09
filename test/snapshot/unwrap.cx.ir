@@ -4,45 +4,46 @@ extern void* f()
 int32 main() {
     uint8** byte = alloca uint8*
     uint8[1]** ptr = alloca uint8[1]*
-    void* _0 = call f()
-    uint8* _1 = cast _0 to uint8*
-    bool assert.condition = _1 == uint8* null
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void* _1 = call f()
+    uint8* _2 = cast _1 to uint8*
+    bool assert.condition = _2 == uint8* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Unwrap failed at unwrap.cx:6:37
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "Unwrap failed at unwrap.cx:6:37
 ")
     unreachable
 
 assert.success:
-    store _1 to byte
-    void* _3 = call f()
-    uint8[1]* _4 = cast _3 to uint8[1]*
-    store _4 to ptr
+    store _2 to byte
+    void* _4 = call f()
+    uint8[1]* _5 = cast _4 to uint8[1]*
+    store _5 to ptr
     uint8[1]* ptr.load = load ptr
     bool assert.condition_0 = ptr.load == uint8[1]* null
     br assert.condition_0, assert.fail, assert.success
 
 assert.fail_0:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Unwrap failed at unwrap.cx:8:8
+    never _6 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "Unwrap failed at unwrap.cx:8:8
 ")
     unreachable
 
 assert.success_0:
     uint8[1]* ptr.load_0 = load ptr
-    uint64 _6 = cast int32 0 to uint64
-    bool _7 = _6 < uint64 1
-    bool bounds.condition = _7 == bool false
+    uint64 _7 = cast int32 0 to uint64
+    bool _8 = _7 < uint64 1
+    bool bounds.condition = _8 == bool false
     br bounds.condition, bounds.fail, bounds.success
 
 bounds.fail:
-    never _8 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "index out of bounds at unwrap.cx:8:10
+    never _9 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "index out of bounds at unwrap.cx:8:10
 ")
     unreachable
 
 bounds.success:
-    uint8* _9 = getelementptr ptr.load_0, int32 0, int32 0
-    store uint8 1 to _9
-    void _10 = call _CX1N3std10checkLeaksE4void0_()
+    uint8* _10 = getelementptr ptr.load_0, int32 0, int32 0
+    store uint8 1 to _10
+    void _11 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

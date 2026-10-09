@@ -10,56 +10,57 @@ int32 main() {
     bool* and2 = alloca bool
     bool* or = alloca bool
     bool* or2 = alloca bool
-    bool _0 = call a()
-    br _0, and.rhs(_0), and.end(_0)
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    bool _1 = call a()
+    br _1, and.rhs(_1), and.end(_1)
 
 and.rhs:
-    bool _1 = call b()
-    br and.end(_1)
+    bool _2 = call b()
+    br and.end(_2)
 
 and.end(bool and_0):
     store and_0 to and
-    bool _2 = call a()
-    br _2, and.rhs(_2), and.end(_2)
+    bool _3 = call a()
+    br _3, and.rhs(_3), and.end(_3)
 
 and.rhs_0:
-    bool _3 = call c()
-    br and.end_0(_3)
+    bool _4 = call c()
+    br and.end_0(_4)
 
 and.rhs_1:
-    bool _4 = call b()
-    br and.end_1(_4)
+    bool _5 = call b()
+    br and.end_1(_5)
 
 and.end_1(bool and_1):
     br and_1, and.rhs(and_1), and.end(and_1)
 
 and.end_0(bool and_2):
     store and_2 to and2
-    bool _5 = call a()
-    br _5, or.end(_5), or.rhs(_5)
+    bool _6 = call a()
+    br _6, or.end(_6), or.rhs(_6)
 
 or.rhs:
-    bool _6 = call b()
-    br or.end(_6)
+    bool _7 = call b()
+    br or.end(_7)
 
 or.end(bool or_0):
     store or_0 to or
-    bool _7 = call a()
-    br _7, or.end(_7), or.rhs(_7)
+    bool _8 = call a()
+    br _8, or.end(_8), or.rhs(_8)
 
 or.rhs_0:
-    bool _8 = call c()
-    br or.end_0(_8)
+    bool _9 = call c()
+    br or.end_0(_9)
 
 or.rhs_1:
-    bool _9 = call b()
-    br or.end_1(_9)
+    bool _10 = call b()
+    br or.end_1(_10)
 
 or.end_1(bool or_1):
     br or_1, or.end(or_1), or.rhs(or_1)
 
 or.end_0(bool or_2):
     store or_2 to or2
-    void _10 = call _CX1N3std10checkLeaksE4void0_()
+    void _11 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

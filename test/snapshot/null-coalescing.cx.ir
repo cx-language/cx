@@ -22,17 +22,18 @@ int32 main() {
     Optional<int32>* _6 = alloca Optional<int32>
     int32** w = alloca int32*
     bool* _7 = alloca bool
-    Optional<int32> _8 = call a()
-    int32 _9 = extractvalue _8, 0
-    bool _10 = _9 == int32 1
+    Context* _8 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    Optional<int32> _9 = call a()
+    int32 _10 = extractvalue _9, 0
+    bool _11 = _10 == int32 1
     store bool false to _0
-    br _10, coalesce.value, coalesce.default
+    br _11, coalesce.value, coalesce.default
 
 coalesce.value:
-    store _8 to _1
-    union { struct { int32 } }* _11 = getelementptr _1, 1
-    int32* _12 = cast _11 to int32*
-    int32 .load = load _12
+    store _9 to _1
+    union { struct { int32 } }* _12 = getelementptr _1, 1
+    int32* _13 = cast _12 to int32*
+    int32 .load = load _13
     br coalesce.end(.load)
 
 coalesce.default:
@@ -41,75 +42,75 @@ coalesce.default:
 
 coalesce.end(int32 coalesce):
     store coalesce to x
-    Optional<int32> _13 = call a()
-    int32 _14 = extractvalue _13, 0
-    bool _15 = _14 == int32 1
+    Optional<int32> _14 = call a()
+    int32 _15 = extractvalue _14, 0
+    bool _16 = _15 == int32 1
     store bool false to _2
-    br _15, coalesce.value, coalesce.default
+    br _16, coalesce.value, coalesce.default
 
 coalesce.value_0:
-    br coalesce.end_0(_13)
+    br coalesce.end_0(_14)
 
 coalesce.default_0:
     store bool true to _2
-    Optional<int32> _16 = call b()
-    br coalesce.end_0(_16)
+    Optional<int32> _17 = call b()
+    br coalesce.end_0(_17)
 
 coalesce.end_0(Optional<int32> coalesce_0):
     store coalesce_0 to y
-    Optional<int32> _17 = call a()
-    int32 _18 = extractvalue _17, 0
-    bool _19 = _18 == int32 1
+    Optional<int32> _18 = call a()
+    int32 _19 = extractvalue _18, 0
+    bool _20 = _19 == int32 1
     store bool false to _3
-    br _19, coalesce.value, coalesce.default
+    br _20, coalesce.value, coalesce.default
 
 coalesce.value_1:
-    store _17 to _4
-    union { struct { int32 } }* _20 = getelementptr _4, 1
-    int32* _21 = cast _20 to int32*
-    int32 .load_0 = load _21
+    store _18 to _4
+    union { struct { int32 } }* _21 = getelementptr _4, 1
+    int32* _22 = cast _21 to int32*
+    int32 .load_0 = load _22
     br coalesce.end_1(.load_0)
 
 coalesce.default_1:
     store bool true to _3
-    Optional<int32> _22 = call b()
-    int32 _23 = extractvalue _22, 0
-    bool _24 = _23 == int32 1
+    Optional<int32> _23 = call b()
+    int32 _24 = extractvalue _23, 0
+    bool _25 = _24 == int32 1
     store bool false to _5
-    br _24, coalesce.value, coalesce.default
+    br _25, coalesce.value, coalesce.default
 
 coalesce.value_2:
-    store _22 to _6
-    union { struct { int32 } }* _25 = getelementptr _6, 1
-    int32* _26 = cast _25 to int32*
-    int32 .load_1 = load _26
+    store _23 to _6
+    union { struct { int32 } }* _26 = getelementptr _6, 1
+    int32* _27 = cast _26 to int32*
+    int32 .load_1 = load _27
     br coalesce.end_2(.load_1)
 
 coalesce.default_2:
     store bool true to _5
-    int32 _27 = call c()
-    br coalesce.end_2(_27)
+    int32 _28 = call c()
+    br coalesce.end_2(_28)
 
 coalesce.end_2(int32 coalesce_1):
     br coalesce.end_1(coalesce_1)
 
 coalesce.end_1(int32 coalesce_2):
     store coalesce_2 to z
-    int32* _28 = call p()
-    bool _29 = _28 != int32* null
+    int32* _29 = call p()
+    bool _30 = _29 != int32* null
     store bool false to _7
-    br _29, coalesce.value, coalesce.default
+    br _30, coalesce.value, coalesce.default
 
 coalesce.value_3:
-    br coalesce.end_3(_28)
+    br coalesce.end_3(_29)
 
 coalesce.default_3:
     store bool true to _7
-    int32* _30 = call q()
-    br coalesce.end_3(_30)
+    int32* _31 = call q()
+    br coalesce.end_3(_31)
 
 coalesce.end_3(int32* coalesce_3):
     store coalesce_3 to w
-    void _31 = call _CX1N3std10checkLeaksE4void0_()
+    void _32 = call _CX1N3std10checkLeaksE4void0_(Context* _8)
     return int32 0
 }

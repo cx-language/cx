@@ -1,23 +1,23 @@
 
-void _CX1N4main3quxE4void2_PM4main3FooPM4main3Bar(Foo* f, Bar* b) {
+void _CX1N4main3quxE4void2_PM4main3FooPM4main3Bar(Context* __context, Foo* f, Bar* b) {
     Foo** f_0 = alloca Foo*
     Bar** b_0 = alloca Bar*
     store f to f_0
     store b to b_0
     Foo* f.load = load f_0
-    void _0 = call _CX1N4mainM4main3Foo3fooE4void0_(Foo* f.load)
+    void _0 = call _CX1N4mainM4main3Foo3fooE4void0_(Context* __context, Foo* f.load)
     Bar* b.load = load b_0
-    void _1 = call _CX1N4mainM4main3Bar3barE4void0_(Bar* b.load)
+    void _1 = call _CX1N4mainM4main3Bar3barE4void0_(Context* __context, Bar* b.load)
     return void
 }
 
-void _CX1N4mainM4main3Foo3fooE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo3fooE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main3Bar3barE4void0_(Bar* this) {
+void _CX1N4mainM4main3Bar3barE4void0_(Context* __context, Bar* this) {
     Bar** this_0 = alloca Bar*
     store this to this_0
     return void
@@ -26,14 +26,15 @@ void _CX1N4mainM4main3Bar3barE4void0_(Bar* this) {
 int32 main() {
     Foo* f = alloca Foo
     Bar* b = alloca Bar
-    void _0 = call _CX1N4mainM4main3Foo4initE4void0_(Foo* f)
-    void _1 = call _CX1N4mainM4main3Bar4initE4void0_(Bar* b)
-    void _2 = call _CX1N4main3quxE4void2_PM4main3FooPM4main3Bar(Foo* f, Bar* b)
-    void _3 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main3Foo4initE4void0_(Context* _0, Foo* f)
+    void _2 = call _CX1N4mainM4main3Bar4initE4void0_(Context* _0, Bar* b)
+    void _3 = call _CX1N4main3quxE4void2_PM4main3FooPM4main3Bar(Context* _0, Foo* f, Bar* b)
+    void _4 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main3Foo4initE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo4initE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     Foo* this.load = load this_0
@@ -42,7 +43,7 @@ void _CX1N4mainM4main3Foo4initE4void0_(Foo* this) {
     return void
 }
 
-void _CX1N4mainM4main3Bar4initE4void0_(Bar* this) {
+void _CX1N4mainM4main3Bar4initE4void0_(Context* __context, Bar* this) {
     Bar** this_0 = alloca Bar*
     store this to this_0
     Bar* this.load = load this_0

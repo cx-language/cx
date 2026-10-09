@@ -2,16 +2,17 @@
 extern bool b()
 
 int32 main() {
-    bool _0 = call b()
-    bool assert.condition = _0 == bool false
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    bool _1 = call b()
+    bool assert.condition = _1 == bool false
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    never _1 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "Assertion failed at assert.cx:6:5
+    never _2 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _0, char* "Assertion failed at assert.cx:6:5
 ")
     unreachable
 
 assert.success:
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

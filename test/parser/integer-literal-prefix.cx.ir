@@ -1,4 +1,4 @@
 
-int32 _CX1N4main3fooEM3std5int320_() {
+int32 _CX1N4main3fooEM3std5int320_(Context* __context) {
     return int32 120
 }

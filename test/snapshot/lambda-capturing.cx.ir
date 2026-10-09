@@ -1,5 +1,5 @@
 
-void _CX1N4main13capturesParamE4void1_M3std5int32(int32 p) {
+void _CX1N4main13capturesParamE4void1_M3std5int32(Context* __context, int32 p) {
     int32* p_0 = alloca int32
     int32* d = alloca int32
     __closure0* b = alloca __closure0
@@ -12,14 +12,14 @@ void _CX1N4main13capturesParamE4void1_M3std5int32(int32 p) {
     __closure0 _2 = insertvalue _1, 2, d.load
     store _2 to b
     __closure0 b.load = load b
-    int32(int32, int32, int32)* _3 = extractvalue b.load, 0
+    int32(Context*, int32, int32, int32)* _3 = extractvalue b.load, 0
     int32 _4 = extractvalue b.load, 1
     int32 _5 = extractvalue b.load, 2
-    int32 _6 = call _3(int32 _4, int32 _5, int32 1)
+    int32 _6 = call _3(Context* __context, int32 _4, int32 _5, int32 1)
     return void
 }
 
-int32 _CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32(int32 __capture_p, int32 __capture_d, int32 c) {
+int32 _CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32(Context* __context, int32 __capture_p, int32 __capture_d, int32 c) {
     int32* __capture_p_0 = alloca int32
     int32* __capture_d_0 = alloca int32
     int32* c_0 = alloca int32
@@ -35,7 +35,7 @@ int32 _CX1N4main11____lambda0EM3std5int321_M3std5int32C2_M3std5int32M3std5int32(
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-capturing.cx:5:26
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-capturing.cx:5:26
 ")
     unreachable
 
@@ -48,7 +48,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-capturing.cx:5:30
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-capturing.cx:5:30
 ")
     unreachable
 
@@ -60,23 +60,24 @@ int32 main() {
     S* s = alloca S
     int32* a = alloca int32
     __closure2* b = alloca __closure2
-    void _0 = call _CX1N4main13capturesParamE4void1_M3std5int32(int32 100)
-    void _1 = call _CX1N4mainM4main1S4initE4void1_M3std5int32(S* s, int32 5)
-    int32 _2 = call _CX1N4mainM4main1S3getEM3std5int321_M3std5int32(S* s, int32 1)
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4main13capturesParamE4void1_M3std5int32(Context* _0, int32 100)
+    void _2 = call _CX1N4mainM4main1S4initE4void1_M3std5int32(Context* _0, S* s, int32 5)
+    int32 _3 = call _CX1N4mainM4main1S3getEM3std5int321_M3std5int32(Context* _0, S* s, int32 1)
     store int32 1 to a
-    __closure2 _3 = insertvalue __closure2 undefined, 0, _CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32
+    __closure2 _4 = insertvalue __closure2 undefined, 0, _CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32
     int32 a.load = load a
-    __closure2 _4 = insertvalue _3, 1, a.load
-    store _4 to b
+    __closure2 _5 = insertvalue _4, 1, a.load
+    store _5 to b
     __closure2 b.load = load b
-    int32(int32, int32)* _5 = extractvalue b.load, 0
-    int32 _6 = extractvalue b.load, 1
-    int32 _7 = call _5(int32 _6, int32 2)
-    void _8 = call _CX1N3std10checkLeaksE4void0_()
+    int32(Context*, int32, int32)* _6 = extractvalue b.load, 0
+    int32 _7 = extractvalue b.load, 1
+    int32 _8 = call _6(Context* _0, int32 _7, int32 2)
+    void _9 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1S4initE4void1_M3std5int32(S* this, int32 d) {
+void _CX1N4mainM4main1S4initE4void1_M3std5int32(Context* __context, S* this, int32 d) {
     S** this_0 = alloca S*
     int32* d_0 = alloca int32
     store this to this_0
@@ -88,7 +89,7 @@ void _CX1N4mainM4main1S4initE4void1_M3std5int32(S* this, int32 d) {
     return void
 }
 
-int32 _CX1N4mainM4main1S3getEM3std5int321_M3std5int32(S* this, int32 c) {
+int32 _CX1N4mainM4main1S3getEM3std5int321_M3std5int32(Context* __context, S* this, int32 c) {
     S** this_0 = alloca S*
     int32* c_0 = alloca int32
     __closure1* b = alloca __closure1
@@ -101,14 +102,14 @@ int32 _CX1N4mainM4main1S3getEM3std5int321_M3std5int32(S* this, int32 c) {
     __closure1 _2 = insertvalue _1, 2, this.load
     store _2 to b
     __closure1 b.load = load b
-    int32(int32, S*, int32)* _3 = extractvalue b.load, 0
+    int32(Context*, int32, S*, int32)* _3 = extractvalue b.load, 0
     int32 _4 = extractvalue b.load, 1
     S* _5 = extractvalue b.load, 2
-    int32 _6 = call _3(int32 _4, S* _5, int32 1)
+    int32 _6 = call _3(Context* __context, int32 _4, S* _5, int32 1)
     return _6
 }
 
-int32 _CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(int32 __capture_a, int32 c) {
+int32 _CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(Context* __context, int32 __capture_a, int32 c) {
     int32* __capture_a_0 = alloca int32
     int32* c_0 = alloca int32
     store __capture_a to __capture_a_0
@@ -122,7 +123,7 @@ int32 _CX1N4main11____lambda2EM3std5int321_M3std5int32C1_M3std5int32(int32 __cap
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-capturing.cx:23:26
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-capturing.cx:23:26
 ")
     unreachable
 
@@ -130,7 +131,7 @@ overflow.success:
     return _0
 }
 
-int32 _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(int32 __capture_c, S* __capture_this, int32 x) {
+int32 _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(Context* __context, int32 __capture_c, S* __capture_this, int32 x) {
     int32* __capture_c_0 = alloca int32
     S** __capture_this_0 = alloca S*
     int32* x_0 = alloca int32
@@ -146,7 +147,7 @@ int32 _CX1N4main11____lambda1EM3std5int321_M3std5int32C2_M3std5int32PM4main1S(in
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-capturing.cx:13:30
+    never _3 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-capturing.cx:13:30
 ")
     unreachable
 
@@ -161,7 +162,7 @@ overflow.success:
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at lambda-capturing.cx:13:34
+    never _7 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at lambda-capturing.cx:13:34
 ")
     unreachable
 

@@ -2,24 +2,25 @@
 int32 main() {
     B* b = alloca B
     int32* x = alloca int32
-    void _0 = call _CX1N4mainM4main1B4initE4void0_(B* b)
-    int32 _1 = call _CX1N4mainM4main1B1gEM3std5int320_(B* b)
-    store _1 to x
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1B4initE4void0_(Context* _0, B* b)
+    int32 _2 = call _CX1N4mainM4main1B1gEM3std5int320_(Context* _0, B* b)
+    store _2 to x
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1B4initE4void0_(B* this) {
+void _CX1N4mainM4main1B4initE4void0_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     return void
 }
 
-int32 _CX1N4mainM4main1B1gEM3std5int320_(B* this) {
+int32 _CX1N4mainM4main1B1gEM3std5int320_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     B* this.load = load this_0
-    int32 _0 = call _CX1N4mainM4main1B1fEM3std5int320_(B* this.load)
+    int32 _0 = call _CX1N4mainM4main1B1fEM3std5int320_(Context* __context, B* this.load)
     int32 _1 = checkedarith * _0, int32 2
     bool _2 = overflow _1
     bool _3 = !_2
@@ -27,7 +28,7 @@ int32 _CX1N4mainM4main1B1gEM3std5int320_(B* this) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at interface-method-definition.cx:5:26
+    never _4 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at interface-method-definition.cx:5:26
 ")
     unreachable
 
@@ -35,7 +36,7 @@ overflow.success:
     return _1
 }
 
-int32 _CX1N4mainM4main1B1fEM3std5int320_(B* this) {
+int32 _CX1N4mainM4main1B1fEM3std5int320_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     return int32 21

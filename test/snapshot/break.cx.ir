@@ -1,5 +1,6 @@
 
 int32 main() {
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     br loop.condition
 
 loop.condition:
@@ -25,6 +26,6 @@ switch.default:
     br switch.end
 
 switch.end:
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

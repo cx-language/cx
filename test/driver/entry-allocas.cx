@@ -25,5 +25,5 @@ void main() {
 // CHECK-NOT: alloca
 // The call still coerces the struct to an integer chunk (if it stopped, the
 // CHECK-NOT above would pass vacuously).
-// CHECK: call void @{{.*}}sink{{.*}}(i64 {{.*}})
+// CHECK: call void @{{.*}}sink{{.*}}(ptr {{.*}}, i64 {{.*}})
 // CHECK: br label %loop.increment

@@ -1,11 +1,12 @@
 
 int32 main() {
-    void _0 = call _CX1N4main1fIM3std5int32EE4void0_()
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4main1fIM3std5int32EE4void0_(Context* _0)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4main1fIM3std5int32EE4void0_() {
+void _CX1N4main1fIM3std5int32EE4void0_(Context* __context) {
     int32* i = alloca int32
     store int32 0 to i
     int32 i.load = load i

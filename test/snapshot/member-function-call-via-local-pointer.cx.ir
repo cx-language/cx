@@ -2,14 +2,15 @@
 int32 main() {
     Foo* f = alloca Foo
     Foo** rf = alloca Foo*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store f to rf
     Foo* rf.load = load rf
-    void _0 = call _CX1N4mainM4main3Foo3barE4void0_(Foo* rf.load)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N4mainM4main3Foo3barE4void0_(Context* _0, Foo* rf.load)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main3Foo3barE4void0_(Foo* this) {
+void _CX1N4mainM4main3Foo3barE4void0_(Context* __context, Foo* this) {
     Foo** this_0 = alloca Foo*
     store this to this_0
     return void

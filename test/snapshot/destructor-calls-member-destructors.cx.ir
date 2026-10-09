@@ -4,15 +4,16 @@ extern bool f()
 int32 main() {
     A* a = alloca A
     C* c = alloca C
-    void _0 = call _CX1N4mainM4main1A4initE4void0_(A* a)
-    void _1 = call _CX1N4mainM4main1C4initE4void0_(C* c)
-    void _2 = call _CX1N4mainM4main1C6deinitE4void0_(C* c)
-    void _3 = call _CX1N4mainM4main1A6deinitE4void0_(A* a)
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1A4initE4void0_(Context* _0, A* a)
+    void _2 = call _CX1N4mainM4main1C4initE4void0_(Context* _0, C* c)
+    void _3 = call _CX1N4mainM4main1C6deinitE4void0_(Context* _0, C* c)
+    void _4 = call _CX1N4mainM4main1A6deinitE4void0_(Context* _0, A* a)
+    void _5 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1A6deinitE4void0_(A* this) {
+void _CX1N4mainM4main1A6deinitE4void0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     B* b = getelementptr this, 0
@@ -21,42 +22,42 @@ void _CX1N4mainM4main1A6deinitE4void0_(A* this) {
     br _0, if.then, if.else
 
 if.then:
-    void _1 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
-    void _2 = call _CX1N4mainM4main1B6deinitE4void0_(B* b)
+    void _1 = call _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* bb)
+    void _2 = call _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* b)
     return void
 
 if.else:
     br if.end
 
 if.end:
-    void _3 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
-    void _4 = call _CX1N4mainM4main1B6deinitE4void0_(B* b)
+    void _3 = call _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* bb)
+    void _4 = call _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* b)
     return void
 }
 
-void _CX1N4mainM4main1A4initE4void0_(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1C6deinitE4void0_(C* this) {
+void _CX1N4mainM4main1C6deinitE4void0_(Context* __context, C* this) {
     C** this_0 = alloca C*
     store this to this_0
     B* b = getelementptr this, 0
     B* bb = getelementptr this, 1
-    void _0 = call _CX1N4mainM4main1B6deinitE4void0_(B* bb)
-    void _1 = call _CX1N4mainM4main1B6deinitE4void0_(B* b)
+    void _0 = call _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* bb)
+    void _1 = call _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* b)
     return void
 }
 
-void _CX1N4mainM4main1C4initE4void0_(C* this) {
+void _CX1N4mainM4main1C4initE4void0_(Context* __context, C* this) {
     C** this_0 = alloca C*
     store this to this_0
     return void
 }
 
-void _CX1N4mainM4main1B6deinitE4void0_(B* this) {
+void _CX1N4mainM4main1B6deinitE4void0_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     return void

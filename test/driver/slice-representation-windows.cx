@@ -14,7 +14,7 @@ void main() {
 // than 8 bytes indirectly, so slices cross as byval pointers there (SysV
 // coerces them to integer chunks; see slice-representation.cx).
 // CHECK: %"Slice<int32>" = type { ptr, i32 }
-// CHECK-LABEL: define void @{{.*}}take{{.*}}(ptr byval(%"Slice<int32>") align 8 {{.*}})
+// CHECK-LABEL: define void @{{.*}}take{{.*}}(ptr {{.*}}, ptr byval(%"Slice<int32>") align 8 {{.*}})
 // CHECK-LABEL: define i32 @main()
 // CHECK: alloca %"Slice<int32>", align 8
-// CHECK: call void @{{.*}}take{{.*}}(ptr byval(%"Slice<int32>") align 8 {{.*}})
+// CHECK: call void @{{.*}}take{{.*}}(ptr {{.*}}, ptr byval(%"Slice<int32>") align 8 {{.*}})

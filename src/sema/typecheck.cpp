@@ -500,6 +500,10 @@ void Typechecker::ensureImplicitRuntimeUses(const Module& mainModule) {
     if (usesArgv) {
         if (Decl* mallocDecl = stdModule->symbolTable.findOne("malloc")) markReferenced(mallocDecl);
     }
+    // Context roots (the entry point, exported extern functions, C-callback
+    // wrappers) call ambientRoot for the default context. Unconditional:
+    // libraries without a main still root exported functions this way.
+    if (Decl* rootDecl = stdModule->symbolTable.findOne("ambientRoot")) markReferenced(rootDecl);
     // Payloadless construction of a case with associated values (e.g. `Ok` in `r == Ok`)
     // emits a memset of the payload in irgen-expr.cpp (zeroEnumPayload).
     if (implicitUses.payloadlessEnumCase) {

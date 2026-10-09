@@ -2,17 +2,18 @@
 int32 main() {
     A* a = alloca A
     B* b = alloca B
-    void _0 = call _CX1N4mainM4main1A4initE4void0_(A* a)
-    int32 _1 = call _CX1N4mainM4main1A3fooEM3std5int320_(A* a)
-    void _2 = call _CX1N4mainM4main1A3barE4void0_(A* a)
-    void _3 = call _CX1N4mainM4main1B4initE4void0_(B* b)
-    int32 _4 = call _CX1N4mainM4main1B3fooEM3std5int320_(B* b)
-    void _5 = call _CX1N4mainM4main1B3barE4void0_(B* b)
-    void _6 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1A4initE4void0_(Context* _0, A* a)
+    int32 _2 = call _CX1N4mainM4main1A3fooEM3std5int320_(Context* _0, A* a)
+    void _3 = call _CX1N4mainM4main1A3barE4void0_(Context* _0, A* a)
+    void _4 = call _CX1N4mainM4main1B4initE4void0_(Context* _0, B* b)
+    int32 _5 = call _CX1N4mainM4main1B3fooEM3std5int320_(Context* _0, B* b)
+    void _6 = call _CX1N4mainM4main1B3barE4void0_(Context* _0, B* b)
+    void _7 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1A4initE4void0_(A* this) {
+void _CX1N4mainM4main1A4initE4void0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     A* this.load = load this_0
@@ -21,7 +22,7 @@ void _CX1N4mainM4main1A4initE4void0_(A* this) {
     return void
 }
 
-int32 _CX1N4mainM4main1A3fooEM3std5int320_(A* this) {
+int32 _CX1N4mainM4main1A3fooEM3std5int320_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     A* this.load = load this_0
@@ -30,7 +31,7 @@ int32 _CX1N4mainM4main1A3fooEM3std5int320_(A* this) {
     return j.load
 }
 
-void _CX1N4mainM4main1A3barE4void0_(A* this) {
+void _CX1N4mainM4main1A3barE4void0_(Context* __context, A* this) {
     A** this_0 = alloca A*
     store this to this_0
     A* this.load = load this_0
@@ -39,7 +40,7 @@ void _CX1N4mainM4main1A3barE4void0_(A* this) {
     return void
 }
 
-void _CX1N4mainM4main1B4initE4void0_(B* this) {
+void _CX1N4mainM4main1B4initE4void0_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     B* this.load = load this_0
@@ -48,7 +49,7 @@ void _CX1N4mainM4main1B4initE4void0_(B* this) {
     return void
 }
 
-int32 _CX1N4mainM4main1B3fooEM3std5int320_(B* this) {
+int32 _CX1N4mainM4main1B3fooEM3std5int320_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     B* this.load = load this_0
@@ -57,7 +58,7 @@ int32 _CX1N4mainM4main1B3fooEM3std5int320_(B* this) {
     return j.load
 }
 
-void _CX1N4mainM4main1B3barE4void0_(B* this) {
+void _CX1N4mainM4main1B3barE4void0_(Context* __context, B* this) {
     B** this_0 = alloca B*
     store this to this_0
     B* this.load = load this_0

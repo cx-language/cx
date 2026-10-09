@@ -1,22 +1,22 @@
 
-Big _CX1N4main5identEM4main3Big1_M4main3Big(Big x) {
+Big _CX1N4main5identEM4main3Big1_M4main3Big(Context* __context, Big x) {
     Big* x_0 = alloca Big
     store x to x_0
     Big x.load = load x_0
     return x.load
 }
 
-Outer _CX1N4main9makeOuterEM4main5Outer0_() {
+Outer _CX1N4main9makeOuterEM4main5Outer0_(Context* __context) {
     Outer* _0 = alloca Outer
     Big* _1 = alloca Big
-    void _2 = call _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* _1, int32 1, int32 2, int32 3, int32 4, int32 5)
+    void _2 = call _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Context* __context, Big* _1, int32 1, int32 2, int32 3, int32 4, int32 5)
     Big .load = load _1
-    void _3 = call _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Outer* _0, Big .load, int32 7)
+    void _3 = call _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Context* __context, Outer* _0, Big .load, int32 7)
     Outer .load_0 = load _0
     return .load_0
 }
 
-void _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Outer* this, Big item, int32 tag) {
+void _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Context* __context, Outer* this, Big item, int32 tag) {
     Outer** this_0 = alloca Outer*
     Big* item_0 = alloca Big
     int32* tag_0 = alloca int32
@@ -34,7 +34,7 @@ void _CX1N4mainM4main5Outer4initE4void2_M4main3BigM3std5int32(Outer* this, Big i
     return void
 }
 
-void _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* this, int32 a, int32 b, int32 c, int32 d, int32 e) {
+void _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Context* __context, Big* this, int32 a, int32 b, int32 c, int32 d, int32 e) {
     Big** this_0 = alloca Big*
     int32* a_0 = alloca int32
     int32* b_0 = alloca int32
@@ -70,7 +70,7 @@ void _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int
     return void
 }
 
-Wide _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Wide x) {
+Wide _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Context* __context, Wide x) {
     Wide* x_0 = alloca Wide
     store x to x_0
     Wide x.load = load x_0
@@ -86,10 +86,11 @@ int32 main() {
     bool* _1 = alloca bool
     Wide* w = alloca Wide
     Wide* v = alloca Wide
-    void _2 = call _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Big* b, int32 1, int32 2, int32 3, int32 4, int32 5)
+    Context* _2 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _3 = call _CX1N4mainM4main3Big4initE4void5_M3std5int32M3std5int32M3std5int32M3std5int32M3std5int32(Context* _2, Big* b, int32 1, int32 2, int32 3, int32 4, int32 5)
     Big b.load = load b
-    Big _3 = call _CX1N4main5identEM4main3Big1_M4main3Big(Big b.load)
-    store _3 to c
+    Big _4 = call _CX1N4main5identEM4main3Big1_M4main3Big(Context* _2, Big b.load)
+    store _4 to c
     store bool true to flag
     bool flag.load = load flag
     store bool false to _0
@@ -108,65 +109,65 @@ if.else:
 
 if.end(Big if.result):
     store if.result to d
-    int64 _4 = cast int32 1 to int64
-    int64 _5 = cast int32 2 to int64
-    int64 _6 = cast int32 3 to int64
-    int64 _7 = cast int32 4 to int64
-    void _8 = call _CX1N4mainM4main4Wide4initE4void4_M3std5int64M3std5int64M3std5int64M3std5int64(Wide* w, int64 _4, int64 _5, int64 _6, int64 _7)
+    int64 _5 = cast int32 1 to int64
+    int64 _6 = cast int32 2 to int64
+    int64 _7 = cast int32 3 to int64
+    int64 _8 = cast int32 4 to int64
+    void _9 = call _CX1N4mainM4main4Wide4initE4void4_M3std5int64M3std5int64M3std5int64M3std5int64(Context* _2, Wide* w, int64 _5, int64 _6, int64 _7, int64 _8)
     Wide w.load = load w
-    Wide _9 = call _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Wide w.load)
-    store _9 to v
+    Wide _10 = call _CX1N4main9identWideEM4main4Wide1_M4main4Wide(Context* _2, Wide w.load)
+    store _10 to v
     int32* a = getelementptr d, 0
     int32 a.load = load a
-    Outer _10 = call _CX1N4main9makeOuterEM4main5Outer0_()
-    Big item = extractvalue _10, 0
+    Outer _11 = call _CX1N4main9makeOuterEM4main5Outer0_(Context* _2)
+    Big item = extractvalue _11, 0
     int32 a_0 = extractvalue item, 0
-    int32 _11 = checkedarith + a.load, a_0
-    bool _12 = overflow _11
-    bool _13 = !_12
-    bool overflow.condition = _13 == bool false
+    int32 _12 = checkedarith + a.load, a_0
+    bool _13 = overflow _12
+    bool _14 = !_13
+    bool overflow.condition = _14 == bool false
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _14 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at large-struct-passing.cx:42:16
+    never _15 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _2, char* "integer overflow at large-struct-passing.cx:42:16
 ")
     unreachable
 
 overflow.success:
-    Outer _15 = call _CX1N4main9makeOuterEM4main5Outer0_()
-    int32 tag = extractvalue _15, 1
-    int32 _16 = checkedarith + _11, tag
-    bool _17 = overflow _16
-    bool _18 = !_17
-    bool overflow.condition_0 = _18 == bool false
+    Outer _16 = call _CX1N4main9makeOuterEM4main5Outer0_(Context* _2)
+    int32 tag = extractvalue _16, 1
+    int32 _17 = checkedarith + _12, tag
+    bool _18 = overflow _17
+    bool _19 = !_18
+    bool overflow.condition_0 = _19 == bool false
     br overflow.condition_0, overflow.fail, overflow.success
 
 overflow.fail_0:
-    never _19 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at large-struct-passing.cx:42:37
+    never _20 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _2, char* "integer overflow at large-struct-passing.cx:42:37
 ")
     unreachable
 
 overflow.success_0:
     int64* a_1 = getelementptr v, 0
     int64 a.load_0 = load a_1
-    int32 _20 = cast a.load_0 to int32
-    int32 _21 = checkedarith + _16, _20
-    bool _22 = overflow _21
-    bool _23 = !_22
-    bool overflow.condition_1 = _23 == bool false
+    int32 _21 = cast a.load_0 to int32
+    int32 _22 = checkedarith + _17, _21
+    bool _23 = overflow _22
+    bool _24 = !_23
+    bool overflow.condition_1 = _24 == bool false
     br overflow.condition_1, overflow.fail, overflow.success
 
 overflow.fail_1:
-    never _24 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at large-struct-passing.cx:42:55
+    never _25 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* _2, char* "integer overflow at large-struct-passing.cx:42:55
 ")
     unreachable
 
 overflow.success_1:
-    void _25 = call _CX1N3std10checkLeaksE4void0_()
-    return _21
+    void _26 = call _CX1N3std10checkLeaksE4void0_(Context* _2)
+    return _22
 }
 
-void _CX1N4mainM4main4Wide4initE4void4_M3std5int64M3std5int64M3std5int64M3std5int64(Wide* this, int64 a, int64 b, int64 c, int64 d) {
+void _CX1N4mainM4main4Wide4initE4void4_M3std5int64M3std5int64M3std5int64M3std5int64(Context* __context, Wide* this, int64 a, int64 b, int64 c, int64 d) {
     Wide** this_0 = alloca Wide*
     int64* a_0 = alloca int64
     int64* b_0 = alloca int64

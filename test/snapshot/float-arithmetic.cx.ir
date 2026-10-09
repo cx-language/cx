@@ -2,17 +2,18 @@
 int32 main() {
     float32* a = alloca float32
     float32* b = alloca float32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store float32 1 to a
     float32 a.load = load a
-    float32 _0 = -a.load
-    float32 _1 = float32 2 * _0
-    store _1 to b
-    float32 b.load = load b
-    float32 _2 = b.load + float32 1
+    float32 _1 = -a.load
+    float32 _2 = float32 2 * _1
     store _2 to b
-    float32 b.load_0 = load b
-    float32 _3 = b.load_0 + float32 -1
+    float32 b.load = load b
+    float32 _3 = b.load + float32 1
     store _3 to b
-    void _4 = call _CX1N3std10checkLeaksE4void0_()
+    float32 b.load_0 = load b
+    float32 _4 = b.load_0 + float32 -1
+    store _4 to b
+    void _5 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

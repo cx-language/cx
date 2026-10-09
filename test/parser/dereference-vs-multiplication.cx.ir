@@ -1,21 +1,21 @@
 
-int32 _CX1N4main1gEM3std5int320_() {
+int32 _CX1N4main1gEM3std5int320_(Context* __context) {
     return int32 1
 }
 
-void _CX1N4main1fE4void2_PM3std5int32M3std5int32(int32* a, int32 b) {
+void _CX1N4main1fE4void2_PM3std5int32M3std5int32(Context* __context, int32* a, int32 b) {
     int32** a_0 = alloca int32*
     int32* b_0 = alloca int32
     int32* m = alloca int32
     int32* n = alloca int32
     store a to a_0
     store b to b_0
-    int32 _0 = call _CX1N4main1gEM3std5int320_()
+    int32 _0 = call _CX1N4main1gEM3std5int320_(Context* __context)
     store _0 to m
     int32* a.load = load a_0
     int32 b.load = load b_0
     store b.load to a.load
-    int32 _1 = call _CX1N4main1gEM3std5int320_()
+    int32 _1 = call _CX1N4main1gEM3std5int320_(Context* __context)
     int32 b.load_0 = load b_0
     int32 _2 = checkedarith * _1, b.load_0
     bool _3 = overflow _2
@@ -24,7 +24,7 @@ void _CX1N4main1fE4void2_PM3std5int32M3std5int32(int32* a, int32 b) {
     br overflow.condition, overflow.fail, overflow.success
 
 overflow.fail:
-    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(char* "integer overflow at dereference-vs-multiplication.cx:11:5
+    never _5 = call _CX1N3std10assertFailEM3std5never1_PM3std4char(Context* __context, char* "integer overflow at dereference-vs-multiplication.cx:11:5
 ")
     unreachable
 

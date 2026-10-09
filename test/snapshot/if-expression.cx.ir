@@ -15,38 +15,39 @@ int32 main() {
     bool* _1 = alloca bool
     bool* _2 = alloca bool
     bool* _3 = alloca bool
-    bool _4 = call a()
+    Context* _4 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    bool _5 = call a()
     store bool false to _0
     store bool false to _1
-    br _4, if.then, if.else
+    br _5, if.then, if.else
 
 if.then:
     store bool true to _0
-    bool _5 = call b()
-    br if.end(_5)
+    bool _6 = call b()
+    br if.end(_6)
 
 if.else:
     store bool true to _1
-    bool _6 = call c()
+    bool _7 = call c()
     store bool false to _2
     store bool false to _3
-    br _6, if.then, if.else
+    br _7, if.then, if.else
 
 if.then_0:
     store bool true to _2
-    bool _7 = call d()
-    br if.end_0(_7)
+    bool _8 = call d()
+    br if.end_0(_8)
 
 if.else_0:
     store bool true to _3
-    bool _8 = call e()
-    br if.end_0(_8)
+    bool _9 = call e()
+    br if.end_0(_9)
 
 if.end_0(bool if.result):
     br if.end(if.result)
 
 if.end(bool if.result_0):
     store if.result_0 to x
-    void _9 = call _CX1N3std10checkLeaksE4void0_()
+    void _10 = call _CX1N3std10checkLeaksE4void0_(Context* _4)
     return int32 0
 }

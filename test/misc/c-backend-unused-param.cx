@@ -3,6 +3,7 @@
 // Unreferenced parameters (including `this`) spill like any other parameter.
 
 // CHECK-LABEL: 1C1fE{{.*}} this) {
+// CHECK-NEXT: (void)__context;
 // CHECK-NEXT: struct {{.*}}* this0;
 // CHECK-NEXT: *(&this0) = this;
 

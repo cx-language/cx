@@ -1,20 +1,21 @@
 
 int32 main() {
     A<C>* a = alloca A<C>
-    void _0 = call _CX1N4mainM4main1AIM4main1CE4initE4void0_(A<C>* a)
-    void _1 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call _CX1N4mainM4main1AIM4main1CE4initE4void0_(Context* _0, A<C>* a)
+    void _2 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-void _CX1N4mainM4main1AIM4main1CE4initE4void0_(A<C>* this) {
+void _CX1N4mainM4main1AIM4main1CE4initE4void0_(Context* __context, A<C>* this) {
     A<C>** this_0 = alloca A<C>*
     C* t = alloca C
     store this to this_0
-    void _0 = call _CX1N4mainM4main1C4initE4void0_(C* t)
+    void _0 = call _CX1N4mainM4main1C4initE4void0_(Context* __context, C* t)
     return void
 }
 
-void _CX1N4mainM4main1C4initE4void0_(C* this) {
+void _CX1N4mainM4main1C4initE4void0_(Context* __context, C* this) {
     C** this_0 = alloca C*
     store this to this_0
     C* this.load = load this_0

@@ -1,10 +1,11 @@
 
 int32 main() {
     float32* f = alloca float32
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store float32 4.19999981 to f
     float32 f.load = load f
-    c_double _0 = cast f.load to c_double
-    c_int _1 = call printf(char* "%d %f", int32 -3, c_double _0)
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    c_double _1 = cast f.load to c_double
+    c_int _2 = call printf(char* "%d %f", int32 -3, c_double _1)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

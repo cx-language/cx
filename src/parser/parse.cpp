@@ -630,7 +630,7 @@ Type Parser::parseAnonymousStructType() {
 /// function-type ::= type '(' param-types ')'
 /// param-types ::= '' | non-empty-param-types
 /// non-empty-param-types ::= type | type ',' non-empty-param-types
-Type Parser::parseFunctionType(Type returnType) {
+Type Parser::parseFunctionType(Type returnType, bool isExtern) {
     parse(Token::LeftParen);
     AstVector<Type> paramTypes;
 
@@ -640,13 +640,22 @@ Type Parser::parseFunctionType(Type returnType) {
     }
 
     consumeToken();
-    return FunctionType::get(returnType, std::move(paramTypes), false, returnType.location);
+    return FunctionType::get(returnType, std::move(paramTypes), false, returnType.location, Location(), isExtern);
 }
 
 /// type ::= simple-type | type '*' | type '&' | type '?' | function-type | anonymous-struct-type
 Type Parser::parseType() {
     Type type;
     auto location = getCurrentLocation();
+
+    // 'extern' marks a C-ABI function type (no hidden context parameter), for
+    // naming C callback types in 'using' aliases. It must be followed by a
+    // function type; postfix operators apply outside it.
+    bool wantExtern = false;
+    if (currentToken() == Token::Extern) {
+        wantExtern = true;
+        consumeToken();
+    }
 
     switch (currentToken()) {
     case Token::Identifier:
@@ -680,7 +689,8 @@ Type Parser::parseType() {
             consumeToken();
             break;
         case Token::LeftParen:
-            type = parseFunctionType(type);
+            type = parseFunctionType(type, wantExtern);
+            wantExtern = false;
             break;
         case Token::LeftBracket:
             type = parseArrayType(type);
@@ -697,6 +707,9 @@ Type Parser::parseType() {
         case Token::AndAnd:
             ERROR_CURRENT_TOKEN("nested references ('T&&') are not supported; a borrow ('T&') already borrows the whole value");
         default:
+            if (wantExtern) {
+                ERROR_CURRENT_TOKEN("'extern' in type position only applies to function types");
+            }
             return type.withLocation(location, getLastTokenEndLocation());
         }
     }

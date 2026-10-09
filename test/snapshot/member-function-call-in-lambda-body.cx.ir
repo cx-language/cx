@@ -1,20 +1,21 @@
 
 int32 main() {
-    int32(X*)** lambda = alloca int32(X*)*
+    int32(Context*, X*)** lambda = alloca int32(Context*, X*)*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     store _CX1N4main11____lambda0EM3std5int321_PM4main1X to lambda
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
-int32 _CX1N4main11____lambda0EM3std5int321_PM4main1X(X* x) {
+int32 _CX1N4main11____lambda0EM3std5int321_PM4main1X(Context* __context, X* x) {
     X** x_0 = alloca X*
     store x to x_0
     X* x.load = load x_0
-    int32 _0 = call _CX1N4mainM4main1X3fooEM3std5int320_(X* x.load)
+    int32 _0 = call _CX1N4mainM4main1X3fooEM3std5int320_(Context* __context, X* x.load)
     return _0
 }
 
-int32 _CX1N4mainM4main1X3fooEM3std5int320_(X* this) {
+int32 _CX1N4mainM4main1X3fooEM3std5int320_(Context* __context, X* this) {
     X** this_0 = alloca X*
     store this to this_0
     return int32 42

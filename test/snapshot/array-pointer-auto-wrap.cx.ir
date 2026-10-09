@@ -2,8 +2,9 @@
 int32 main() {
     int32** p = alloca int32*
     int32** o = alloca int32*
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
     int32* p.load = load p
     store p.load to o
-    void _0 = call _CX1N3std10checkLeaksE4void0_()
+    void _1 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }

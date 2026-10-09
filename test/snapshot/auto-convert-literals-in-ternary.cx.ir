@@ -1,5 +1,5 @@
 
-uint8 _CX1N4main3fooEM3std5uint81_M3std4bool(bool b) {
+uint8 _CX1N4main3fooEM3std5uint81_M3std4bool(Context* __context, bool b) {
     bool* b_0 = alloca bool
     bool* _0 = alloca bool
     bool* _1 = alloca bool

@@ -1,13 +1,14 @@
 
 int32 main() {
-    void _0 = call bar()
-    void _1 = call _CX1N4main3fooE4void0_()
-    void _2 = call _CX1N3std10checkLeaksE4void0_()
+    Context* _0 = call _CX1N3std11ambientRootERM3std7Context0_(Context* null)
+    void _1 = call bar()
+    void _2 = call _CX1N4main3fooE4void0_(Context* _0)
+    void _3 = call _CX1N3std10checkLeaksE4void0_(Context* _0)
     return int32 0
 }
 
 extern void bar()
 
-void _CX1N4main3fooE4void0_() {
+void _CX1N4main3fooE4void0_(Context* __context) {
     return void
 }

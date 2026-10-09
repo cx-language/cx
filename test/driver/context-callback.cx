@@ -1,0 +1,44 @@
+// UNSUPPORTED: windows
+// RUN: %cc -c %S/inputs/context-callback.c -o %t-helper.o
+// RUN: %cx -c %s -o %t.o -Werror && %cc %t.o %t-helper.o -o %t.exe && %t.exe | %FileCheck %s
+// RUN: %cx --backend=c --print-c %s -Werror > %t-gen.c && %cc %t-gen.c %t-helper.o -o %t-c.exe && %t-c.exe | %FileCheck %s
+
+import "inputs/context-callback.h";
+
+int contextAllocs = 0;
+
+void*? countingAlloc(void*? state, c_size_t size) {
+    contextAllocs++;
+    var def = defaultAllocator();
+    return def.alloc(def.state, size);
+}
+
+void countingFree(void*? state, void* ptr) {
+    var def = defaultAllocator();
+    def.free(def.state, ptr);
+}
+
+Allocator countingAllocator() {
+    return Allocator(state = null, alloc = countingAlloc, free = countingFree);
+}
+
+void allocateOne() {
+    var p = allocate<int>(1);
+    deallocate(p);
+}
+
+// The callback runs through a C-ABI wrapper rooted at the default context,
+// so allocations inside it never observe the caller's override.
+void allocateAndReport() {
+    var before = contextAllocs;
+    allocateOne();
+    println(contextAllocs == before);
+}
+
+void main() {
+    run_callback(allocateAndReport);
+    withAllocator(countingAllocator(), () => { run_callback(allocateAndReport); });
+}
+
+// CHECK: true
+// CHECK: true
