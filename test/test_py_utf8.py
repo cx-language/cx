@@ -21,7 +21,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SKIP_DIRS = {"out", ".vs", "__pycache__", ".git"}
+# Build/output trees may contain third-party or generated code (e.g. an
+# in-source build/ holding build/_deps/zstd-src), so they are not linted.
+# Compared case-insensitively: "Build" is a common Windows spelling.
+SKIP_DIRS = {"out", "build", ".vs", "__pycache__", ".git"}
+SKIP_DIR_PREFIXES = ("cmake-build-", "build-")
 
 # F-string literal parts (PEP 701, Python 3.12+); absent on older versions.
 _FSTRING_TOKENS = {
@@ -49,13 +53,16 @@ def is_python_script(path):
     return first_line.startswith(b"#!") and b"python" in first_line
 
 
-def repo_python_files():
-    return sorted(
-        path
-        for path in ROOT.rglob("*")
-        if not any(part in SKIP_DIRS or part.startswith("cmake-build-") for part in path.relative_to(ROOT).parts)
-        and is_python_script(path)
+def is_skipped_path(path):
+    # Only directory parts count: a file named e.g. build-foo.py is linted.
+    return any(
+        part.lower() in SKIP_DIRS or part.lower().startswith(SKIP_DIR_PREFIXES)
+        for part in path.relative_to(ROOT).parent.parts
     )
+
+
+def repo_python_files():
+    return sorted(path for path in ROOT.rglob("*") if not is_skipped_path(path) and is_python_script(path))
 
 
 def blank_strings_and_comments(source):
@@ -179,6 +186,30 @@ class PyUtf8Test(unittest.TestCase):
         for path in repo_python_files():
             violations.extend(check_file(path))
         self.assertEqual(violations, [])
+
+    def test_build_trees_are_skipped(self):
+        skipped = [
+            "build/_deps/zstd-src/cmake/test.py",
+            "Build/x.py",
+            "build-debug/x.py",
+            "out/build/x64-Debug/x.py",
+            "cmake-build-debug/x.py",
+        ]
+        for relative in skipped:
+            with self.subTest(relative=relative):
+                self.assertTrue(is_skipped_path(ROOT / relative))
+        linted = [
+            "examples/build_examples.py",
+            "scripts/build-foo.py",
+            "test/test_py_utf8.py",
+            "website/build-website.py",
+            "website/serve.py",
+        ]
+        for relative in linted:
+            with self.subTest(relative=relative):
+                self.assertFalse(is_skipped_path(ROOT / relative))
+        # The helper above is the same filter repo_python_files() applies.
+        self.assertIn(ROOT / "examples/build_examples.py", repo_python_files())
 
     def test_checker_logic(self):
         # The checker flags locale-dependent calls and exempts the rest.
