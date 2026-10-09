@@ -3,6 +3,10 @@
 void sink<T>(T v) {
 }
 
+struct WipeBox {
+    int x;
+}
+
 void moveWhileBorrowed() {
     var list = List([1, 2, 3]);
     int& r = list[0];
@@ -120,6 +124,15 @@ void mutateAfterInnerScope(bool c) {
         println(r);
     }
     list.push(4);
+}
+
+void nestedCheckKeepsFreeze() {
+    var list = List([1, 2, 3]);
+    int& r = list[0];
+    println(WipeBox(1));
+    // CHECK: [[@LINE+1]]:5: error: cannot call 'push' on 'list' while view 'r' borrowed from it is still in use (it mutates the receiver)
+    list.push(4);
+    println(r);
 }
 
 void plainLoop() {

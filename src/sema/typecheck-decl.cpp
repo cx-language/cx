@@ -1610,11 +1610,16 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         llvm::SaveAndRestore saveAssignTarget(assignTarget, static_cast<Decl*>(nullptr));
         llvm::SaveAndRestore saveInReturnValue(inReturnValue, false);
         // View-freeze windows span lambdas (captured uses extend them), so
-        // lambdas share the enclosing state and only non-lambdas own it.
+        // lambdas share the enclosing state. Non-lambdas get fresh state that
+        // restores on exit: nested on-demand checks (e.g. instantiations) must
+        // not clobber the enclosing function's in-progress records.
+        std::optional<llvm::SaveAndRestore<std::vector<ViewFreezeRecord>>> saveViewFreezeRecords;
+        std::optional<llvm::SaveAndRestore<std::vector<RootMutation>>> saveViewRootMutations;
+        std::optional<llvm::SaveAndRestore<std::vector<ViewCallCandidate>>> saveViewCallCandidates;
         if (!decl.isLambda()) {
-            viewFreezeRecords.clear();
-            viewRootMutations.clear();
-            viewCallCandidates.clear();
+            saveViewFreezeRecords.emplace(viewFreezeRecords, std::vector<ViewFreezeRecord>());
+            saveViewRootMutations.emplace(viewRootMutations, std::vector<RootMutation>());
+            saveViewCallCandidates.emplace(viewCallCandidates, std::vector<ViewCallCandidate>());
         }
 
         TypeDecl* receiverTypeDecl = decl.getTypeDecl();
@@ -1693,9 +1698,6 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             condWarnedDecls.clear();
             if (!decl.isLambda()) {
                 checkViewFreezes();
-                viewFreezeRecords.clear();
-                viewRootMutations.clear();
-                viewCallCandidates.clear();
             }
         }
 
@@ -1822,11 +1824,6 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         }
     } catch (const CompileError&) {
         decl.checkState = Decl::CheckState::Checked;
-        if (!decl.isLambda()) {
-            viewFreezeRecords.clear();
-            viewRootMutations.clear();
-            viewCallCandidates.clear();
-        }
         throw;
     }
     decl.checkState = Decl::CheckState::Checked;
