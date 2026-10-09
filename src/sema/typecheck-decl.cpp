@@ -2404,6 +2404,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
                             "cannot bind '" << declaredType << "' to constant '" << borrowOfConstantSubject(initializerType, declaredType) << "'"
                                             << narrowingHint(initializerType, declaredType)
                                             << ambiguousConversionHint(decl.initializer, initializerType, declaredType));
+            } else if (isConstBlockedConversion(*decl.initializer, initializerType, declaredType)) {
+                // The conversion exists; only the initializer being a constant blocks it.
+                ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
+                            "cannot convert '" << initializerType << "' to '" << declaredType << "' over a constant (use 'var' instead of 'const')");
             } else {
                 ERROR_RANGE(getExprRangeStart(*decl.initializer), decl.initializer->endLocation,
                             "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint

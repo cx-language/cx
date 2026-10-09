@@ -54,7 +54,15 @@ void main() {
 
 void constArrayDoesNotConvertToSlice() {
     const a = [5, 4, 3, 2, 1];
-    // CHECK: [[@LINE+1]]:10: error: invalid argument #1 type 'int[5]' to 'sort', expected 'int[]'
+    // CHECK: [[@LINE+1]]:10: error: cannot convert 'int[5]' to 'int[]' over a constant in argument #1 to 'sort' (use 'var' instead of 'const')
     sort(a);
+    // CHECK: [[@LINE+1]]:15: error: cannot convert 'int[5]' to 'int[]' over a constant (use 'var' instead of 'const')
+    int[] s = a;
+}
+
+int[] constArrayReturn() {
+    const a = [5, 4, 3, 2, 1];
+    // CHECK: [[@LINE+1]]:12: error: cannot convert 'int[5]' to 'int[]' over a constant in return value (use 'var' instead of 'const')
+    return a;
 }
 

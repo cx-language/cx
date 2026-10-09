@@ -220,6 +220,8 @@ struct Typechecker {
     FunctionDecl* findUserConversion(const Expr* expr, Type source, Type target, int* viableCount = nullptr, bool diagnoseOutOfRange = false) const;
     /// Explains a failed conversion when several user-declared conversions apply, empty otherwise.
     std::string ambiguousConversionHint(const Expr* expr, Type source, Type target) const;
+    /// Whether the types alone would convert and only the source being a constant blocks it.
+    bool isConstBlockedConversion(const Expr& expr, Type source, Type target) const;
     /// Commits a user-declared conversion found by findUserConversion: checks and references the
     /// conversion function, converts the operand to its parameter (constructors), and wraps both in
     /// a UserConversion cast. Null when the operand no longer converts.

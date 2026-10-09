@@ -8,7 +8,7 @@ void main() {
 
 void optionalDecay() {
     const int[3]? o = [1, 2, 3];
-    // CHECK: [[@LINE+1]]:17: error: cannot assign 'int[3]?' to 'int[*]?'
+    // CHECK: [[@LINE+1]]:17: error: cannot convert 'int[3]?' to 'int[*]?' over a constant (use 'var' instead of 'const')
     int[*]? p = o;
 }
 

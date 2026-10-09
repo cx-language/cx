@@ -3022,6 +3022,13 @@ Type cx::borrowOfConstantSubject(Type source, Type target) {
     return source;
 }
 
+bool Typechecker::isConstBlockedConversion(const Expr& expr, Type source, Type target) const {
+    // A null probe imposes no constness constraint, so it answers the type-level question.
+    return exprIsConst(expr)
+        && isImplicitlyConvertible(nullptr, source, target, /*allowPointerToTemporary=*/false, nullptr,
+                                   /*diagnoseOutOfRange=*/false, /*allowOperatorBorrow=*/false, /*allowUserConversion=*/true);
+}
+
 static bool isTrackedConstArg(const Expr& arg, Type type) {
     // For-in lowering names its own bindings over a constant range; those
     // are governed by element constness instead.
@@ -4820,6 +4827,11 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
                                                    << "' in argument #" << (argIndex + 1) << " to '" << callee << "'"
                                                    << narrowingHint(arg.value->type, param.type)
                                                    << ambiguousConversionHint(arg.value, arg.value->type, param.type));
+        } else if (isConstBlockedConversion(*arg.value, arg.value->type, param.type)) {
+            // The conversion exists; only the argument being a constant blocks it.
+            ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
+                                   "cannot convert '" << arg.value->type << "' to '" << param.type << "' over a constant in argument #" << (argIndex + 1)
+                                                      << " to '" << callee << "' (use 'var' instead of 'const')");
         } else {
             ERROR_WITH_NOTES_RANGE(getExprRangeStart(*arg.value), arg.value->endLocation, std::move(declNote),
                                    "invalid argument #" << (argIndex + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param.type

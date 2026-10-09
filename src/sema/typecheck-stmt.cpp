@@ -395,6 +395,11 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
                         "cannot bind '" << displayReturn << "' to constant '" << borrowOfConstantSubject(returnValueType, currentFunction->getReturnType())
                                         << "' in return value" << narrowingHint(returnValueType, displayReturn)
                                         << ambiguousConversionHint(stmt.value, returnValueType, currentFunction->getReturnType()));
+        } else if (isConstBlockedConversion(*stmt.value, returnValueType, currentFunction->getReturnType())) {
+            // The conversion exists; only the returned value being a constant blocks it.
+            ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
+                        "cannot convert '" << returnValueType << "' to '" << displayReturn
+                                           << "' over a constant in return value (use 'var' instead of 'const')");
         } else {
             ERROR_RANGE(getExprRangeStart(*stmt.value), stmt.value->endLocation,
                         "mismatching return type '" << returnValueType << "', expected '" << displayReturn << "'"
