@@ -1,6 +1,8 @@
 #include "type.h"
 #include <sstream>
+#include <unordered_map>
 #pragma warning(push, 0)
+#include <llvm/ADT/Hashing.h>
 #include <llvm/ADT/ScopeExit.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSwitch.h>
@@ -15,8 +17,60 @@ using namespace cx;
 
 static std::vector<TypeBase*> typeBases;
 
+// Structural hash matching operator==: equal types hash equal. Locations,
+// spellings, and decl pointers are ignored, so spelling twins share one bucket.
+static llvm::hash_code hashTypeStructure(Type type) {
+    switch (type.getKind()) {
+    case TypeKind::BasicType: {
+        llvm::hash_code hash = llvm::hash_value(type.getName());
+        for (const GenericArg& arg : type.getGenericArgs()) {
+            hash = llvm::hash_combine(hash, static_cast<int>(arg.kind));
+            if (arg.isInt()) {
+                hash = llvm::hash_combine(hash, arg.getInt());
+            } else if (arg.isType()) {
+                hash = llvm::hash_combine(hash, hashTypeStructure(arg.getType()));
+            }
+        }
+        return llvm::hash_combine(type.getKind(), hash);
+    }
+    case TypeKind::ArrayPointerType:
+        return llvm::hash_combine(type.getKind(), hashTypeStructure(type.getElementType()));
+    case TypeKind::AnonymousStructType: {
+        llvm::hash_code hash = llvm::hash_value(type.getAnonymousStructElements().size());
+        for (const auto& element : type.getAnonymousStructElements()) {
+            hash = llvm::hash_combine(hash, llvm::hash_value(element.name), hashTypeStructure(element.type));
+        }
+        return llvm::hash_combine(type.getKind(), hash);
+    }
+    case TypeKind::FunctionType: {
+        llvm::hash_code hash = llvm::hash_combine(hashTypeStructure(type.getReturnType()), type.getParamTypes().size());
+        for (Type paramType : type.getParamTypes()) {
+            hash = llvm::hash_combine(hash, hashTypeStructure(paramType));
+        }
+        return llvm::hash_combine(type.getKind(), llvm::cast<FunctionType>(type.typeBase)->isVariadic, hash);
+    }
+    case TypeKind::PointerType:
+        return llvm::hash_combine(type.getKind(), static_cast<int>(type.getPointerKind()), hashTypeStructure(type.getPointee()));
+    case TypeKind::UnresolvedType:
+        return llvm::hash_combine(type.getKind());
+    }
+    llvm_unreachable("all cases handled");
+}
+
+struct StructuralTypeHash {
+    size_t operator()(TypeBase* base) const { return hashTypeStructure(Type(base, Location(), Location())); }
+};
+
+struct StructuralTypeEq {
+    bool operator()(TypeBase* a, TypeBase* b) const { return Type(a, Location(), Location()) == Type(b, Location(), Location()); }
+};
+
+// Creation-ordered structural twins per shape; the vector usually holds one base.
+static std::unordered_map<TypeBase*, std::vector<TypeBase*>, StructuralTypeHash, StructuralTypeEq> typeIndex;
+
 void cx::resetTypeInterning() {
     typeBases.clear();
+    typeIndex.clear();
 }
 
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
@@ -250,17 +304,22 @@ static bool spellingsEqual(Type a, Type b) {
 template<typename T> static Type getType(T&& typeBase, Location location, Location endLocation = Location()) {
     Type newType(&typeBase, location, endLocation);
 
-    // ponytail: linear interning scan, multiplied by spelling-twin bases; hash-cons the bases if compile time regresses.
-    // typeBases is creation-ordered, so the first structural match is the earliest twin.
-    TypeBase* firstTwin = nullptr;
-    for (auto* existingTypeBase : typeBases) {
-        Type existingType(existingTypeBase, location, endLocation);
-        if (existingType == newType) {
-            if (spellingsEqual(existingType, newType)) return existingType;
-            if (!firstTwin) firstTwin = existingTypeBase;
+    // Unresolved types and anonymous C types never compare equal, so each
+    // occurrence keeps its own base without polluting the index.
+    bool indexable = newType.getKind() != TypeKind::UnresolvedType && !(newType.isBasicType() && newType.getName().empty());
+    std::vector<TypeBase*>* twins = nullptr;
+    if (indexable) {
+        if (auto it = typeIndex.find(&typeBase); it != typeIndex.end()) {
+            twins = &it->second;
+            // Twins are creation-ordered, so the first spelling match is the earliest twin.
+            for (auto* existingTypeBase : *twins) {
+                Type existingType(existingTypeBase, location, endLocation);
+                if (spellingsEqual(existingType, newType)) return existingType;
+            }
         }
     }
 
+    TypeBase* firstTwin = twins && !twins->empty() ? twins->front() : nullptr;
     typeBases.push_back(makeAST<T>(std::forward<T>(typeBase)));
     typeBases.back()->firstTwin = firstTwin;
     typeBases.back()->identityIndex = typeBases.size() - 1;
@@ -269,6 +328,13 @@ template<typename T> static Type getType(T&& typeBase, Location location, Locati
     if (firstTwin) {
         if (auto* freshBasic = llvm::dyn_cast<BasicType>(typeBases.back())) {
             freshBasic->decl = llvm::cast<BasicType>(firstTwin)->decl;
+        }
+    }
+    if (indexable) {
+        if (twins) {
+            twins->push_back(typeBases.back());
+        } else {
+            typeIndex.emplace(typeBases.back(), std::vector<TypeBase*>{typeBases.back()});
         }
     }
     return Type(typeBases.back(), location, endLocation);
@@ -739,12 +805,14 @@ TypeDecl* Type::getDecl() const {
     // Spelling twins share one declaration, but it may be registered on any of them
     // (e.g. an instantiation built from spelled inference args), so resolve lazily
     // and cache. A miss caches nothing, so later registrations are still found.
-    Type self(typeBase, location);
-    for (auto* existingTypeBase : typeBases) {
-        if (auto* twin = llvm::dyn_cast<BasicType>(existingTypeBase)) {
-            if (twin->decl && self == Type(existingTypeBase, location)) {
-                basicType->decl = twin->decl;
-                break;
+    // The index bucket holds exactly the structural twins, creation-ordered.
+    if (auto it = typeIndex.find(typeBase); it != typeIndex.end()) {
+        for (auto* twinBase : it->second) {
+            if (auto* twin = llvm::dyn_cast<BasicType>(twinBase)) {
+                if (twin->decl) {
+                    basicType->decl = twin->decl;
+                    break;
+                }
             }
         }
     }
