@@ -597,6 +597,19 @@ struct CToCxConverter final : clang::ASTConsumer {
         return context->isTranslationUnit();
     }
 
+    // True when an identical alias was already imported, so repeated identical
+    // typedefs don't error with 'redefinition'. They are legal C and pervasive
+    // in system headers (`INT` in both winnt.h and minwindef.h, `__C_ASSERT__`
+    // from every C_ASSERT use); conflicting ones still error at the add below.
+    bool isAlreadyImported(llvm::StringRef name, Type underlyingType) {
+        for (auto* existing : module.symbolTable.findInTopLevelScope(name)) {
+            if (auto* existingAlias = llvm::dyn_cast<TypeAliasDecl>(existing)) {
+                if (existingAlias->aliasedType == underlyingType) return true;
+            }
+        }
+        return false;
+    }
+
     // True when an identical function (same signature) was already imported,
     // so re-inclusion doesn't produce duplicate declarations. Differing
     // signatures are overloads, which are all imported.
@@ -741,6 +754,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                     if (auto* stdModule = Module::getStdlibModule(); stdModule && !stdModule->symbolTable.findInTopLevelScope(typedefDecl.getName()).empty()) {
                         break;
                     }
+                    if (isAlreadyImported(typedefDecl.getName(), underlyingType)) break;
                     auto* alias = makeAST<TypeAliasDecl>(typedefDecl.getName(), underlyingType, AccessLevel::Default, module, toCx(typedefDecl.getLocation()));
                     module.addToSymbolTable(*alias);
                     module.sourceFiles.front().topLevelDecls.push_back(alias);

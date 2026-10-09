@@ -1,0 +1,13 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+import "inputs/c-repeated-typedef.h";
+
+void main() {
+    // Repeated identical typedefs in one import collapse to one (issue #88:
+    // importing windows.h failed with redefinition errors for INT,
+    // PFORMAT_STRING, and __C_ASSERT__).
+    WidgetInt w = 1;
+    println(w + 41); // CHECK:42
+    WidgetDirect d = 2;
+    println(d + 40); // CHECK:42
+    println(sizeof(RepeatedAssert)); // CHECK:1
+}
