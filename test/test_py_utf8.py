@@ -16,13 +16,18 @@ Run with: python3 test/test_py_utf8.py
 
 import io
 import re
+import subprocess
+import tempfile
 import tokenize
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-# Build/output trees may contain third-party or generated code (e.g. an
-# in-source build/ holding build/_deps/zstd-src), so they are not linted.
+# Only tracked files are linted: build/output trees and anything else dropped
+# next to the repo (an in-source build/ holding build/_deps/zstd-src, the
+# clang+llvm-* toolchain CI extracts at the repo root, caches) are untracked
+# third-party or generated code by construction. No denylist can enumerate
+# those, so the file list comes from git instead.
 # Compared case-insensitively: "Build" is a common Windows spelling.
 SKIP_DIRS = {"out", "build", ".vs", "__pycache__", ".git"}
 SKIP_DIR_PREFIXES = ("cmake-build-", "build-")
@@ -61,7 +66,28 @@ def is_skipped_path(path):
     )
 
 
+def git_tracked_files():
+    """Tracked paths relative to ROOT, or None when the list can't come from git."""
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=ROOT,
+            capture_output=True,
+            check=True,
+            encoding="utf-8",
+            errors="surrogateescape",
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [entry for entry in result.stdout.split("\0") if entry]
+
+
 def repo_python_files():
+    tracked = git_tracked_files()
+    if tracked is not None:
+        paths = [path for entry in tracked if (path := ROOT / entry).is_file()]
+        return sorted(path for path in paths if not is_skipped_path(path) and is_python_script(path))
+    # No git checkout (e.g. a source tarball): fall back to scanning the tree.
     return sorted(path for path in ROOT.rglob("*") if not is_skipped_path(path) and is_python_script(path))
 
 
@@ -210,6 +236,16 @@ class PyUtf8Test(unittest.TestCase):
                 self.assertFalse(is_skipped_path(ROOT / relative))
         # The helper above is the same filter repo_python_files() applies.
         self.assertIn(ROOT / "examples/build_examples.py", repo_python_files())
+
+    def test_untracked_files_are_not_linted(self):
+        if git_tracked_files() is None:
+            self.skipTest("no git checkout; the fallback scans the whole tree")
+        probe_dir = Path(self.enterContext(tempfile.TemporaryDirectory(prefix="py-utf8-probe-", dir=ROOT)))
+        probe = probe_dir / "violation.py"
+        probe.write_text("open('x')\n", encoding="utf-8")
+        # The probe really would fail the lint, so excluding it is meaningful.
+        self.assertNotEqual(check_file(probe), [])
+        self.assertNotIn(probe, repo_python_files())
 
     def test_checker_logic(self):
         # The checker flags locale-dependent calls and exempts the rest.
