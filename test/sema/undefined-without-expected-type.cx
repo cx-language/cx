@@ -1,0 +1,17 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+void foo(int[] x) { }
+void foo(string[] x) { }
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: couldn't infer type of 'undefined', add a type annotation
+    var x = undefined;
+    // In a multi-match call the argument is still genuinely ambiguous.
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
+    // CHECK: 3:6: note: candidate function:
+    // CHECK-NEXT: void foo(int[] x) { }
+    // CHECK: 4:6: note: candidate function:
+    // CHECK-NEXT: void foo(string[] x) { }
+    // CHECK-NOT: note
+    foo(undefined);
+}

@@ -187,6 +187,8 @@ struct Module {
     void addToSymbolTable(VarDecl& decl);
     void addToSymbolTable(Decl* decl);
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
+    void addSkippedFunctionLikeMacro(llvm::StringRef name, Location location) { skippedFunctionLikeMacros.try_emplace(name, location); }
+    void removeSkippedFunctionLikeMacro(llvm::StringRef name) { skippedFunctionLikeMacros.erase(name); }
     void print(llvm::raw_ostream& stream) const;
 
     static std::vector<Module*> getAllImportedModules();
@@ -209,6 +211,9 @@ public:
     bool isCxxHeaderImport = false;
     SymbolTable symbolTable;
     std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
+    // Function-like C macros, which are not imported, by name with their
+    // definition location: unknown identifiers matching one get a hint note.
+    llvm::StringMap<Location> skippedFunctionLikeMacros;
 };
 
 } // namespace cx

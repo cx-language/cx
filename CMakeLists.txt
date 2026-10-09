@@ -210,6 +210,28 @@ add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${L
 
 enable_testing()
 
+# Python for the test scripts below. A stock Windows install provides
+# `python.exe` but no `python3` alias, so resolve the interpreter once
+# instead of hard-coding the name in every test command. Not REQUIRED:
+# building the compiler needs no Python; only the test/lint targets do.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(NOT Python3_FOUND)
+    if(Python3_EXECUTABLE)
+        # An explicit -DPython3_EXECUTABLE that FindPython3 rejected: fail
+        # loudly instead of silently testing with another interpreter.
+        message(FATAL_ERROR "Python3_EXECUTABLE points at '${Python3_EXECUTABLE}', which FindPython3 rejected.")
+    endif()
+    # Building needs no Python, so keep configuring and resolve the
+    # interpreter from PATH at test time instead (`python` on Windows, where
+    # stock installs provide no `python3` alias).
+    if(WIN32)
+        set(Python3_EXECUTABLE python)
+    else()
+        set(Python3_EXECUTABLE python3)
+    endif()
+    message(STATUS "Python3 not found, test commands use '${Python3_EXECUTABLE}' from PATH")
+endif()
+
 file(GLOB_RECURSE LIBCX_SOURCES CONFIGURE_DEPENDS
     src/ast/*.h src/ast/*.cpp
     src/backend/*.h src/backend/*.cpp
@@ -304,19 +326,20 @@ set(SNIPPET_JOBS 4)
 if(CHECK_PARALLEL_JOBS LESS 4)
     set(SNIPPET_JOBS ${CHECK_PARALLEL_JOBS})
 endif()
-add_test(NAME examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
-add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
-add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--jobs=${SNIPPET_JOBS}")
-add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c" "--jobs=${SNIPPET_JOBS}")
-add_test(NAME docs-stdlib-unit COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_generate_std_docs.py")
-add_test(NAME docs-search-index COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_search_index.py")
-add_test(NAME website-serve COMMAND python3 "${PROJECT_SOURCE_DIR}/website/test_serve.py")
-add_test(NAME bench-corpus-sloc COMMAND python3 "${PROJECT_SOURCE_DIR}/scripts/test_bench_corpus.py")
-add_test(NAME lit-config COMMAND python3 "${PROJECT_SOURCE_DIR}/test/test_lit_cfg.py")
-add_test(NAME prose COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
-add_test(NAME jit-pins COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_jit_pins.py")
+add_test(NAME examples COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
+add_test(NAME examples-c-backend COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
+add_test(NAME docs-snippets COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--jobs=${SNIPPET_JOBS}")
+add_test(NAME docs-snippets-c-backend COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c" "--jobs=${SNIPPET_JOBS}")
+add_test(NAME docs-stdlib-unit COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/test_generate_std_docs.py")
+add_test(NAME docs-search-index COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/test_search_index.py")
+add_test(NAME website-serve COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/test_serve.py")
+add_test(NAME bench-corpus-sloc COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/scripts/test_bench_corpus.py")
+add_test(NAME lit-config COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/test_lit_cfg.py")
+add_test(NAME py-utf8 COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/test_py_utf8.py")
+add_test(NAME prose COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_prose.py")
+add_test(NAME jit-pins COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_jit_pins.py")
 # Language server end-to-end tests (query subprocess + stdio server session).
-add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
+add_test(NAME lsp COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
 # Bound the stdio session: a framing regression would otherwise block on a
 # pipe read forever instead of failing. Windows Debug runners need far more
 # than 600s (each query spawns a fresh unoptimized compiler build), so allow
@@ -515,7 +538,7 @@ if(MSVC)
 endif()
 
 add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" --check
-    COMMAND python3 "${PROJECT_SOURCE_DIR}/website/check_prose.py")
+    COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_prose.py")
 add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh")
 
 # Relocatable install layout: binaries in <prefix>/bin locate std/ at

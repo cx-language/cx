@@ -548,6 +548,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool rec
                 auto decls = findDecls(basicType->name);
 
                 if (decls.empty()) {
+                    if (auto note = getSkippedMacroNote(basicType->name)) {
+                        ERROR_WITH_NOTES_RANGE(type.location, type.endLocation, {*note},
+                                               "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
+                    }
                     ERROR_RANGE(type.location, type.endLocation, "unknown type '" << type << "'" << Type::didYouMeanBuiltin(basicType->name));
                 }
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));

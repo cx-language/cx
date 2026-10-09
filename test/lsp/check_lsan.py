@@ -81,7 +81,7 @@ def check_fixture_clean(cx_lsp, path):
     query = {
         "method": "check",
         "file": str(path),
-        "content": path.read_text(),
+        "content": path.read_text(encoding="utf-8"),
         "openDocs": {},
         "workspaceFolders": [],
         "importSearchPaths": [],

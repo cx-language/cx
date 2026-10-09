@@ -26,7 +26,7 @@ print_flags = [c.flag for c in checks_to_run]
 command = sys.argv[1:] + print_flags
 
 try:
-    raw_output = subprocess.check_output(command, text=True, stderr=subprocess.PIPE)
+    raw_output = subprocess.check_output(command, text=True, encoding="utf-8", stderr=subprocess.PIPE)
 except subprocess.CalledProcessError as error:
     print("Command:", " ".join(command), file=sys.stderr)
     print(error.output, file=sys.stderr)
@@ -62,19 +62,19 @@ for check in checks_to_run:
     output = sections[check.name]
 
     if "UPDATE_SNAPSHOTS" in os.environ:
-        with open(snapshot_path, "w") as snapshot_file:
+        with open(snapshot_path, "w", encoding="utf-8") as snapshot_file:
             snapshot_file.write(output)
         continue
 
     try:
-        with open(snapshot_path, "r") as snapshot_file:
+        with open(snapshot_path, "r", encoding="utf-8") as snapshot_file:
             snapshot = snapshot_file.read().replace("\r\n", "\n")
     except IOError:
         print("Command:", " ".join(command), file=sys.stderr)
         print("FAIL: snapshot file not found\n", file=sys.stderr)
         print("Output:", file=sys.stderr)
         print(output, file=sys.stderr)
-        print("To update: UPDATE_SNAPSHOTS=1 python3 " + shlex.join(sys.argv), file=sys.stderr)
+        print("To update: UPDATE_SNAPSHOTS=1 " + shlex.join([sys.executable, *sys.argv]), file=sys.stderr)
         sys.exit(1)
 
     if output != snapshot:
@@ -86,5 +86,5 @@ for check in checks_to_run:
         print("- Snapshot", file=sys.stderr)
         print("+ Received\n", file=sys.stderr)
         print("".join(diff), file=sys.stderr)
-        print("To update: UPDATE_SNAPSHOTS=1 python3 " + shlex.join(sys.argv), file=sys.stderr)
+        print("To update: UPDATE_SNAPSHOTS=1 " + shlex.join([sys.executable, *sys.argv]), file=sys.stderr)
         sys.exit(1)

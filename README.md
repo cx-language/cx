@@ -81,6 +81,20 @@ Visual Studio bundled CMake, Ninja, and the MSVC compiler on `PATH`.
 A cmake.org install works too, but not the MSYS2 CMake, which generates
 Unix-style paths that break the build.
 
+Before configuring, check the environment:
+
+- Keep MSYS2 off `PATH` entirely, not just its CMake: CMake may
+  otherwise pick up MSYS2's LibXml2 and leak its GCC-specific headers
+  into the MSVC build (100+ errors mentioning `__asm__` or
+  `__UINTPTR_TYPE__`). If the errors already happened, strip every
+  MSYS2 entry from `PATH` and configure in a fresh build directory.
+- Install Python 3 (the python.org installer provides the `py`
+  launcher), then install the test runner with
+  `py -m pip install lit psutil` (`python -m pip ...` works too; stock
+  Windows provides no `python3` alias). The test suite locates the
+  interpreter itself, but the `lit` executable that pip installs must
+  be on `PATH`.
+
 ```sh
 mkdir build
 cd build
@@ -132,6 +146,10 @@ Install [lit](https://llvm.org/docs/CommandGuide/lit.html) and its optional depe
 ```sh
 python3 -m pip install lit psutil
 ```
+
+On Windows, spell it `py -m pip install lit psutil` instead
+(`python -m pip ...` works too). See the Windows checklist above for
+the rest of the Windows setup.
 
 Some examples have extra prerequisites; see the README in each example directory for details.
 

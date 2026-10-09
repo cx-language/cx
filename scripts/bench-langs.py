@@ -212,7 +212,7 @@ def describe_build(lang, mode):
 def tool_version(tool):
     cmd = [tool, "version"] if tool in ("go", "odin", "zig") else [tool, "--version"]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=60)
         lines = result.stdout.splitlines()
         return lines[0].strip() if result.returncode == 0 and lines else "unknown"
     except (OSError, subprocess.TimeoutExpired):
@@ -221,13 +221,13 @@ def tool_version(tool):
 
 def cx_sha(cx):
     try:
-        result = subprocess.run([cx, "--version"], capture_output=True, text=True, timeout=60)
+        result = subprocess.run([cx, "--version"], capture_output=True, text=True, encoding="utf-8", timeout=60)
         for line in result.stdout.splitlines():
             if line.startswith("cx commit:"):
                 return line.split(":", 1)[1].strip()
     except (OSError, subprocess.TimeoutExpired):
         pass
-    fallback = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    fallback = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8").stdout.strip()
     return fallback or "unknown"
 
 
@@ -414,7 +414,7 @@ def main():
                         warmup = varied_source(workdir, lang, program, "warmup", src)
                         _, completed = run_timed(
                             build_command(lang, mode, args.cx, warmup, binary),
-                            capture_output=True, text=True, env=env,
+                            capture_output=True, text=True, encoding="utf-8", env=env,
                         )
                         if completed.returncode != 0:
                             failures.append(f"{lang}/{program}/{mode}: warmup compile failed:\n{completed.stderr}")
@@ -424,7 +424,7 @@ def main():
                             sample = varied_source(workdir, lang, program, str(i), src)
                             elapsed, completed = run_timed(
                                 build_command(lang, mode, args.cx, sample, binary),
-                                capture_output=True, text=True, env=env,
+                                capture_output=True, text=True, encoding="utf-8", env=env,
                             )
                             if completed.returncode != 0:
                                 failures.append(f"{lang}/{program}/{mode}: compile failed:\n{completed.stderr}")
@@ -444,14 +444,14 @@ def main():
                     else:
                         _, completed = run_timed(
                             build_command(lang, mode, args.cx, src, binary),
-                            capture_output=True, text=True,
+                            capture_output=True, text=True, encoding="utf-8",
                         )
                         if completed.returncode != 0:
                             failures.append(f"{lang}/{program}/{mode}: compile failed:\n{completed.stderr}")
                             continue
                     times, outputs = [], set()
                     for _ in range(args.runs):
-                        elapsed, completed = run_timed([binary], capture_output=True, text=True)
+                        elapsed, completed = run_timed([binary], capture_output=True, text=True, encoding="utf-8")
                         if completed.returncode != 0:
                             detail = completed.stderr.strip()
                             suffix_note = f"\n{detail}" if detail else ""
@@ -494,7 +494,7 @@ def main():
         "programs": results,
     }
     for path, content in [(args.output, json.dumps(record, indent=2) + "\n"), (args.html, render_html(record))]:
-        with open(path, "w") as file:
+        with open(path, "w", encoding="utf-8") as file:
             file.write(content)
         print(f"wrote {path}")
     if failures:

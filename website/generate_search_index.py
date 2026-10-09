@@ -107,7 +107,7 @@ def collect_pages(docs_dir, generated_dir):
 def build_index(docs_dir, generated_dir):
     entries = []
     for path, base_dir in collect_pages(docs_dir, generated_dir):
-        markdown = path.read_text()
+        markdown = path.read_text(encoding="utf-8")
         entries.append(
             {
                 "id": page_id(path, base_dir),
@@ -128,7 +128,7 @@ def main(argv=None):
     entries = build_index(pathlib.Path(args.docs_dir), pathlib.Path(args.generated_dir))
     output = pathlib.Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("var CxSearchIndex = " + json.dumps(entries) + ";\n")
+    output.write_text("var CxSearchIndex = " + json.dumps(entries) + ";\n", encoding="utf-8")
     print(f"Wrote {len(entries)} search entries to {output}.")
     return 0
 

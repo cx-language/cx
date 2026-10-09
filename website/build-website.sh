@@ -171,7 +171,7 @@ def docs_source(page):
     matches = glob.glob("../docs/[0-9]*-%s.md" % page)
     return matches[0] if matches else None
 path = "build/" + outpath + ".html"
-with open(path) as file:
+with open(path, encoding="utf-8") as file:
     template = file.read()
 
 # Pages below the site root resolve sibling links and assets relatively,
@@ -216,13 +216,13 @@ if "##PAGELINKS##" in template:
 
 def docs_order():
     """Guide reading order: sidebar links backed by a docs/ source file."""
-    toc = open("toc.html").read()
+    toc = open("toc.html", encoding="utf-8").read()
     ids = re.findall(r'href="\./([^"#]+)"', toc)
     return [page for page in ids if docs_source(page) is not None]
 
 
 def page_title(page):
-    with open(docs_source(page)) as file:
+    with open(docs_source(page), encoding="utf-8") as file:
         for line in file:
             if line.startswith("# "):
                 return re.sub(r"^\[(.*)\]\(.*", r"\1", line[2:].strip())
@@ -252,7 +252,7 @@ if "##NEXTPAGE##" in template:
 showcase = ["unions.cx", "null-safety.cx", "vectors.cx", "lambdas.cx", "cleanup.cx", "errors.cx"]
 
 if "##EXAMPLECODE##" in template:
-    with open("../examples/" + showcase[0]) as file:
+    with open("../examples/" + showcase[0], encoding="utf-8") as file:
         example = html.escape(file.read().rstrip("\n"), quote=False)
     template = template.replace("##EXAMPLECODE##", example)
 
@@ -284,14 +284,14 @@ template = re.sub(
     flags=re.S,
 )
 
-with open(path, "w") as file:
+with open(path, "w", encoding="utf-8") as file:
     file.write(template)
 
 if outpath == "index":
-    examples = [{"name": name, "code": open("../examples/" + name).read().rstrip("\n")} for name in showcase]
+    examples = [{"name": name, "code": open("../examples/" + name, encoding="utf-8").read().rstrip("\n")} for name in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]
-    with open("build/playground-examples.js", "w") as file:
+    with open("build/playground-examples.js", "w", encoding="utf-8") as file:
         file.write("var CxExamples = " + json.dumps(examples) + ";\n")
 EOF
 }

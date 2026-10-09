@@ -635,8 +635,23 @@ Decl* Typechecker::tryFindDecl(llvm::StringRef name, Location location) {
     return nullptr;
 }
 
+std::optional<Note> Typechecker::getSkippedMacroNote(llvm::StringRef name) const {
+    std::vector<Module*> modules;
+    if (currentModule) modules.push_back(currentModule);
+    if (currentSourceFile) llvm::append_range(modules, currentSourceFile->importedModules);
+    for (Module* module : modules) {
+        if (auto it = module->skippedFunctionLikeMacros.find(name); it != module->skippedFunctionLikeMacros.end()) {
+            return Note{it->second, (StringBuilder() << "'" << name << "' is a function-like macro, which is not imported").string};
+        }
+    }
+    return std::nullopt;
+}
+
 Decl* Typechecker::findDecl(llvm::StringRef name, Location location, Location endLocation) {
     if (Decl* match = tryFindDecl(name, location)) return match;
+    if (auto note = getSkippedMacroNote(name)) {
+        ERROR_WITH_NOTES_RANGE(location, endLocation, {*note}, "unknown identifier '" << name << "'");
+    }
     ERROR_RANGE(location, endLocation, "unknown identifier '" << name << "'");
 }
 

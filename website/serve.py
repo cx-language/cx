@@ -128,7 +128,7 @@ def watch(website_dir, on_change, interval=0.5, settle=0.4):
 def rebuild(website_dir):
     build = subprocess.run(
         ["sh", "build-website.sh"], cwd=website_dir,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8")
     if build.returncode == 0:
         with _VERSION_LOCK:
             _VERSION[0] += 1

@@ -174,12 +174,12 @@ def check_calls_cx(directory, caller, binary, expected, compilers, gen_flags, li
             # The C backend's -c output is C source, so compile it to an
             # object instead of linking it directly.
             gen = subprocess.run([args.cx, "cxlib.cx", "--backend=c", "--print-c", "-Werror"],
-                                 cwd=directory, capture_output=True, text=True, timeout=600)
+                                 cwd=directory, capture_output=True, text=True, encoding="utf-8", timeout=600)
             if gen.returncode != 0:
                 print(gen.stdout)
                 print(gen.stderr)
                 sys.exit(1)
-            with open(os.path.join(directory, "cxlib_gen.c"), "w") as file:
+            with open(os.path.join(directory, "cxlib_gen.c"), "w", encoding="utf-8") as file:
                 file.write(gen.stdout)
             steps = [[cc, "/nologo", "/c", "cxlib_gen.c", "/Fo" + cxlib_obj, *_msvc_flags(gen_flags)]]
         else:
@@ -193,7 +193,7 @@ def check_calls_cx(directory, caller, binary, expected, compilers, gen_flags, li
         # not against cwd=.
         exe_path = os.path.abspath(os.path.join(directory, exe))
         try:
-            run = subprocess.run([exe_path], cwd=directory, capture_output=True, text=True, timeout=600)
+            run = subprocess.run([exe_path], cwd=directory, capture_output=True, text=True, encoding="utf-8", timeout=600)
         except subprocess.TimeoutExpired:
             print(f"timed out: {exe}")
             sys.exit(1)
@@ -209,12 +209,12 @@ def check_calls_cx(directory, caller, binary, expected, compilers, gen_flags, li
         # The C backend's -c output is C source, so compile it to an object
         # instead of linking it directly.
         gen = subprocess.run([args.cx, "cxlib.cx", "--backend=c", "--print-c", "-Werror"],
-                             cwd=directory, capture_output=True, text=True, timeout=600)
+                             cwd=directory, capture_output=True, text=True, encoding="utf-8", timeout=600)
         if gen.returncode != 0:
             print(gen.stdout)
             print(gen.stderr)
             sys.exit(1)
-        with open(os.path.join(directory, "cxlib_gen.c"), "w") as file:
+        with open(os.path.join(directory, "cxlib_gen.c"), "w", encoding="utf-8") as file:
             file.write(gen.stdout)
         steps = [[cc, *gen_flags, "-c", "cxlib_gen.c", "-o", "cxlib.o"]]
     else:
@@ -224,7 +224,7 @@ def check_calls_cx(directory, caller, binary, expected, compilers, gen_flags, li
         if _call(cmd, cwd=directory) != 0:
             sys.exit(1)
     try:
-        run = subprocess.run([f"./{binary}"], cwd=directory, capture_output=True, text=True, timeout=600)
+        run = subprocess.run([f"./{binary}"], cwd=directory, capture_output=True, text=True, encoding="utf-8", timeout=600)
     except subprocess.TimeoutExpired:
         print(f"timed out: ./{binary}")
         sys.exit(1)

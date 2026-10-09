@@ -1,0 +1,41 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+// An unresolved call argument reports the argument, not an ambiguity at
+// the callee, even when the callee has several candidates (issue #88:
+// a call through two printf overloads reported 'ambiguous reference to
+// printf' instead of the unknown macro in the argument).
+import "inputs/c-printf.h";
+
+void pick(int x) { }
+void pick(float x) { }
+
+void take(Optional<int> x) { }
+void take(Optional<string> x) { }
+
+void main() {
+    // CHECK-NOT: ambiguous reference
+    // CHECK: [[@LINE+3]]:10: error: unknown identifier 'ONE_ARG'
+    // CHECK: {{.*}}c-printf.h:3:9: note: 'ONE_ARG' is a function-like macro, which is not imported
+    // CHECK-NEXT: #define ONE_ARG(x) ((x) + 1)
+    pick(ONE_ARG);
+    // CHECK-NOT: ambiguous reference
+    // CHECK: [[@LINE+3]]:17: error: unknown identifier 'ONE_ARG'
+    // CHECK: {{.*}}c-printf.h:3:9: note: 'ONE_ARG' is a function-like macro, which is not imported
+    // CHECK-NEXT: #define ONE_ARG(x) ((x) + 1)
+    printf("a", ONE_ARG(12.3));
+    // CHECK-NOT: ambiguous reference
+    // A mapped argument that only needs an expected type (here the bare
+    // enum case) still reports the ambiguity: every candidate probed it
+    // successfully, so the error is genuinely about overload choice.
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'take'
+    // CHECK: 12:6: note: candidate function:
+    // CHECK-NEXT: void take(Optional<int> x) { }
+    // CHECK: 13:6: note: candidate function:
+    // CHECK-NEXT: void take(Optional<string> x) { }
+    // CHECK-NOT: note
+    take(None);
+    // An #undef'd macro leaves no hint behind.
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'TEMP_MACRO'
+    print(TEMP_MACRO);
+    // CHECK-NOT: 'TEMP_MACRO' is a function-like macro
+}
