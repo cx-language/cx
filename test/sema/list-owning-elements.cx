@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s --allow-empty
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
 
 // List.from-slice copies each element, so owning element types are rejected
 // instead of aliasing the temporary's storage (use-after-free). Push owning
@@ -10,8 +10,18 @@ void pushConstructedOwningListWorks() {
     a.push(StringBuf("pear"));
 }
 
+void pushConstructedOwningSmallListWorks() {
+    // No error: push moves each owning value in.
+    var a = SmallList<StringBuf, 4>();
+    a.push(StringBuf("pear"));
+}
+
 void listLiteralOfOwningValuesIsRejected() {
-    // TODO: Fix non-copyable element append() and construction from array.
-    // COM: error: invalid argument #1 type 'StringBuf&' to 'push', expected 'StringBuf'
-    // var a = List([StringBuf("pear"), StringBuf("apple")]);
+    // CHECK: error: invalid argument #1 type 'StringBuf&' to 'push', expected 'StringBuf'
+    var a = List([StringBuf("pear"), StringBuf("apple")]);
+}
+
+void smallListLiteralOfOwningValuesIsRejected() {
+    // CHECK: error: invalid argument #1 type 'StringBuf&' to 'push', expected 'StringBuf'
+    var a = SmallList<StringBuf, 4>([StringBuf("pear")]);
 }

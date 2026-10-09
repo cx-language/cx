@@ -36,9 +36,13 @@ struct SmallList<Element, int N> {
 
     /// Initializes a list containing the elements of the given array.
     /// Copies each element, so the element type must be Copyable.
+    /// Push owning values one at a time instead.
     SmallList(Element[] elements) {
         init();
-        append(elements);
+        reserve(elements.size());
+        for element in elements {
+            push(element);
+        }
     }
 
     /// Frees the elements and backing storage.
@@ -143,16 +147,6 @@ struct SmallList<Element, int N> {
         assert(size != 0, "Called pop() on empty SmallList");
         size--;
         return moveOut(size);
-    }
-
-    /// Adds all elements from the given array to the end of the list.
-    /// Copies each element, so the element type must be Copyable.
-    void append(Element[] elements) {
-        if elements.empty() return;
-        reserve(size + elements.size());
-        for element in elements {
-            push(element);
-        }
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.

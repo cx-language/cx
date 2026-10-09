@@ -48,23 +48,21 @@ void testListInitFromLiteral() {
 }
 
 @test
-void testAppendArray() {
-    var a = List([1, 2]);
+void testInitFromArrayVariable() {
     var b = [3, 4, 5];
-    a.append(b);
+    var a = List(b);
 
-    assert(a.size() == 5);
-    assert(a[2] == 3);
-    assert(a[4] == 5);
+    assert(a.size() == 3);
+    assert(a[0] == 3);
+    assert(a[2] == 5);
 }
 
 @test
-void testNestedPushAppend() {
+void testNestedPush() {
     var a = List<int[]>();
     a.push([]);
-    assert(a.size() == 1 && a[0].size() == 0);
-    a.append([]);
-    assert(a.size() == 1);
+    a.push([]);
+    assert(a.size() == 2 && a[0].size() == 0);
 }
 
 @test

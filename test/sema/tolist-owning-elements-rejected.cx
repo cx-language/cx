@@ -1,0 +1,38 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 2>&1 | %FileCheck %s
+
+// toList() copies out of borrowed iterator state, so owning element types are
+// rejected instead of aliasing the source.
+
+void filterToListOverOwningIsRejected() {
+    var src = List<StringBuf>();
+    src.push(StringBuf("a"));
+    // CHECK: error: cannot move out of dereference; borrow it instead
+    var out = src.filter(s => s.size() > 0).toList();
+}
+
+void mapToListWithOwningOutputIsRejected() {
+    var src = List([1, 2]);
+    // CHECK: error: cannot move out of dereference; borrow it instead
+    var out = src.map(n => StringBuf("x")).toList();
+}
+
+void chainToListOverOwningIsRejected() {
+    var a = List<StringBuf>();
+    a.push(StringBuf("x"));
+    var b = List<StringBuf>();
+    // CHECK: error: cannot move out of dereference; borrow it instead
+    var out = a.chain(b.iterator()).toList();
+}
+
+void arrayIteratorToListOverOwningIsRejected() {
+    var arr = [StringBuf("x")];
+    // CHECK: error: cannot move out of dereference; borrow it instead
+    var out = arr.iterator().toList();
+}
+
+void smallListIteratorToListOverOwningIsRejected() {
+    var s = SmallList<StringBuf, 4>();
+    s.push(StringBuf("x"));
+    // CHECK: error: invalid argument #1 type 'StringBuf&' to 'List<StringBuf>.push', expected 'StringBuf'
+    var out = s.iterator().toList();
+}
