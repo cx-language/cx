@@ -164,7 +164,25 @@ void main() {
 }
 ```
 
-Function-like macros and casts are not imported.
+Macros that cast an integer literal to a pointer are imported as constants,
+which covers null pointers such as `#define NULL ((void*)0)`:
+
+```cs {.noCompile}
+import "windows.h";
+
+void main() {
+    MessageBoxA(NULL, "hi", "cap", 0);
+}
+```
+
+The cast must spell a single-token pointee (`void`, a builtin type, or a
+typedef name) with optional leading `const`/`volatile` qualifiers and at least one
+`*` (or a typedef that already denotes a pointer), applied to an integer
+literal with optional `-`. Other casts are not imported. A zero cast behaves
+like `null`: it converts to any pointer-implemented optional, while a nonzero
+cast such as `((HANDLE)-1)` keeps its exact pointer type.
+
+Function-like macros are not imported.
 
 Individual functions can also be declared with `extern`, without importing a header.
 The standard library uses `extern` declarations in `std/system/libc.cx`

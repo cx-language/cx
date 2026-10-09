@@ -2438,6 +2438,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 
             if (initializerType.isNull() && !declaredType.isOptionalType()) {
                 hint = " (add '?' to the type to make it nullable)";
+            } else if (decl.initializer->isNullConstant() && declaredType.isOptionalType()) {
+                // The literal converts to any optional, so a null constant that
+                // fails against one is always a named null outside pointer types.
+                hint = " (named null only converts between pointer types)";
             } else {
                 hint = narrowingHint(initializerType, declaredType);
             }

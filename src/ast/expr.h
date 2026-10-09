@@ -107,6 +107,10 @@ struct Expr {
     bool isAssignment() const;
     bool isReferenceExpr() const;
     bool isConstant() const;
+    // True for `null` and for constants whose value is `null` (null literals,
+    // casts of zero, and constants built from either). Only const-rooted shapes
+    // count; a direct `cast<void*>(0)` keeps its exact type.
+    bool isNullConstant() const;
     // True when getConstantIntegerValue/getConstantBoolValue handle the expression. Stricter than
     // isConstant: ternary conditions and &&/|| operands must be boolean-foldable, comparisons must
     // be over integers, and implicit casts must be numeric widenings.

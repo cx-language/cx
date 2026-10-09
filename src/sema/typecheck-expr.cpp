@@ -333,9 +333,9 @@ void Typechecker::applyNarrowings(const Expr& condition, bool polarity) {
         const Expr* lhs = withoutCasts(binary.getLHS());
         const Expr* rhs = withoutCasts(binary.getRHS());
         const Expr* operand = nullptr;
-        if (lhs->isNullLiteralExpr() && !rhs->isNullLiteralExpr()) {
+        if (lhs->isNullConstant() && !rhs->isNullConstant()) {
             operand = rhs;
-        } else if (rhs->isNullLiteralExpr() && !lhs->isNullLiteralExpr()) {
+        } else if (rhs->isNullConstant() && !lhs->isNullConstant()) {
             operand = lhs;
         } else {
             narrowEnumCaseComparison(*lhs, *rhs, binary.op, polarity);
@@ -964,21 +964,27 @@ static std::string mixedPointerOperandHint(const BinaryExpr& expr) {
 static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
     std::string hint;
 
-    if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && (op == Token::Equal || op == Token::NotEqual)) {
-        if (expr.getRHS().isNullLiteralExpr() && expr.getLHS().isNullLiteralExpr()) {
+    if ((expr.getRHS().isNullConstant() || expr.getLHS().isNullConstant()) && (op == Token::Equal || op == Token::NotEqual)) {
+        bool bothNull = expr.getRHS().isNullConstant() && expr.getLHS().isNullConstant();
+        bool eitherIsLiteral = expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr();
+        if (bothNull && eitherIsLiteral) {
             hint += " (cannot compare 'null' with 'null')";
-        } else {
-            hint += " (non-optional type '";
-            if (expr.getRHS().isNullLiteralExpr()) {
-                hint += expr.getLHS().type.toString();
+        } else if (!bothNull) {
+            const Expr& other = expr.getRHS().isNullConstant() ? expr.getLHS() : expr.getRHS();
+            if (!other.type.isOptionalType()) {
+                hint += " (non-optional type '";
+                hint += other.type.toString();
+                hint += "' cannot be null)";
             } else {
-                hint += expr.getRHS().type.toString();
+                // The literal converts to any optional, so the null side here is
+                // always a named null, which converts only between pointer types.
+                hint += " (named null only converts between pointer types)";
             }
-            hint += "' cannot be null)";
         }
-    } else if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && isComparisonOperator(op)) {
+        // Two named nulls of incomparable type report plainly.
+    } else if ((expr.getRHS().isNullConstant() || expr.getLHS().isNullConstant()) && isComparisonOperator(op)) {
         hint += " (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)";
-    } else if (expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) {
+    } else if (expr.getRHS().isNullConstant() || expr.getLHS().isNullConstant()) {
         hint += " (null can only be compared with '==' or '!=')";
     } else {
         auto isPointerOperand = [](Type type) {
@@ -1255,43 +1261,59 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (op == Token::Equal || op == Token::NotEqual) {
         // Null checks are builtin for all optionals so they don't depend on stdlib comparison operators.
-        if (expr.getLHS().isNullLiteralExpr() && rightType.isOptionalType()) {
-            expr.setLHS(NOTNULL(convert(&expr.getLHS(), rightType)));
-            return Type::getBool();
+        // A named null converts only to pointer-implemented optionals; anything
+        // else falls through to the error below. (The literal always converts.)
+        // The type check guards no-op successes: converting HANDLE? to void*?
+        // succeeds by returning the source, which still mismatches the operand.
+        if (expr.getLHS().isNullConstant() && rightType.isOptionalType()) {
+            if (Expr* converted = convert(&expr.getLHS(), rightType); converted && converted->type == rightType) {
+                expr.setLHS(converted);
+                return Type::getBool();
+            }
         }
-        if (expr.getRHS().isNullLiteralExpr() && leftType.isOptionalType()) {
-            expr.setRHS(NOTNULL(convert(&expr.getRHS(), leftType)));
-            return Type::getBool();
+        if (expr.getRHS().isNullConstant() && leftType.isOptionalType()) {
+            if (Expr* converted = convert(&expr.getRHS(), leftType); converted && converted->type == leftType) {
+                expr.setRHS(converted);
+                return Type::getBool();
+            }
         }
         // A narrowed optional compared against null is provably non-null: warn instead of erroring.
         // Unnarrow so codegen emits a real null check; the analyzer skips its own warning via the flag.
-        bool lhsIsNull = expr.getLHS().isNullLiteralExpr();
-        bool rhsIsNull = expr.getRHS().isNullLiteralExpr();
+        bool lhsIsNull = expr.getLHS().isNullConstant();
+        bool rhsIsNull = expr.getRHS().isNullConstant();
         if (lhsIsNull != rhsIsNull) {
             Expr& other = lhsIsNull ? expr.getRHS() : expr.getLHS();
             if (isNarrowedOptionalUse(&other, other.assignableType)) {
-                WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "value cannot be null here; null check can be removed");
-                unnarrow(other);
-                Type optionalType = other.type;
-                if (lhsIsNull) {
-                    expr.setLHS(NOTNULL(convert(&expr.getLHS(), optionalType)));
-                } else {
-                    expr.setRHS(NOTNULL(convert(&expr.getRHS(), optionalType)));
+                Expr* nullSide = lhsIsNull ? &expr.getLHS() : &expr.getRHS();
+                if (Expr* converted = convert(nullSide, other.assignableType); converted && converted->type == other.assignableType) {
+                    WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "value cannot be null here; null check can be removed");
+                    unnarrow(other);
+                    if (lhsIsNull) {
+                        expr.setLHS(converted);
+                    } else {
+                        expr.setRHS(converted);
+                    }
+                    expr.redundantNullCheckWarned = true;
+                    return Type::getBool();
                 }
-                expr.redundantNullCheckWarned = true;
-                return Type::getBool();
             }
             // Non-optional against null errors uniformly here so structs report the same
             // diagnostic as builtins instead of falling through to overload resolution.
             throwInvalidOperandsToBinaryExpr(expr, op);
         }
-        if (lhsIsNull && rhsIsNull) {
+        // Anything with a literal errors here like `null == null`. Two named
+        // nulls that convert nowhere (e.g. across pointer and value
+        // implementations) skip the throw so the typed comparison below
+        // reports plainly instead.
+        if (lhsIsNull && rhsIsNull && (expr.getLHS().isNullLiteralExpr() || expr.getRHS().isNullLiteralExpr())) {
             throwInvalidOperandsToBinaryExpr(expr, op);
         }
     }
 
     // Any other binary operator applied to null is invalid; report uniformly before overloads.
-    if (expr.getLHS().isNullLiteralExpr() || expr.getRHS().isNullLiteralExpr()) {
+    // (==/!= never reach here with a literal, those return or throw above,
+    // but same-typed named nulls legitimately fall through to typed handling.)
+    if (op != Token::Equal && op != Token::NotEqual && (expr.getLHS().isNullConstant() || expr.getRHS().isNullConstant())) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
@@ -1621,8 +1643,11 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         rhs = converted;
     } else {
         diagnoseClosureConversion(rhsType, lhsType, *rhs);
+        // The literal converts to any optional, so a null constant that fails
+        // against one is always a named null outside pointer types.
+        std::string nullHint = rhs->isNullConstant() && lhsType.isOptionalType() ? " (named null only converts between pointer types)" : "";
         ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
-                    "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType)
+                    "cannot assign '" << rhsType << "' to '" << lhsType << "'" << narrowingHint(rhsType, lhsType) << nullHint
                                       << ambiguousConversionHint(rhs, rhsType, lhsType));
     }
 
@@ -2289,6 +2314,16 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Operator borrows stay disabled through the dereference, as before; only the user-conversion flag passes through.
         return isImplicitlyConvertible(expr, source.getPointee(), target, allowPointerToTemporary, implicitCastKind, diagnoseOutOfRange, false,
                                        allowUserConversion, usesUserConversion);
+    }
+
+    // A named null (e.g. C's `NULL`) converts like the literal, but only
+    // between pointer-implemented optionals: conversion retypes in place,
+    // which is only sound when both sides are a bare address. In particular
+    // a null-typed-as-value constant (`const X: int? = null`) converts nowhere.
+    // Runs before the no-op rule below, which would otherwise accept e.g.
+    // `char*?` to `void*?` by returning the still-mismatched source.
+    if (expr && expr->isNullConstant() && expr->type.isImplementedAsPointer() && target.isOptionalType() && target.isImplementedAsPointer()) {
+        return target;
     }
 
     // The wrapped check below probes with a null expression, so the source's

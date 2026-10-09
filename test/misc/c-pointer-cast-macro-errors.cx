@@ -1,0 +1,33 @@
+// RUN: %not %cx -typecheck %s --error-limit=0 2>&1 | %FileCheck %s
+import "inputs/c-pointer-cast-macro.h";
+
+void main() {
+    // Unsupported cast shapes are not imported.
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'C_INT_CAST'
+    print(C_INT_CAST);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'C_MULTIWORD'
+    print(C_MULTIWORD);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'C_PLUS'
+    print(C_PLUS);
+    // CHECK: [[@LINE+1]]:11: error: unknown identifier 'C_FLOAT_CAST'
+    print(C_FLOAT_CAST);
+    // A zero cast converts only to pointer-implemented optionals.
+    // CHECK: [[@LINE+1]]:14: error: cannot assign 'void*?' to 'int?' (named null only converts between pointer types)
+    int? x = C_NULL;
+    int? z = 5;
+    // CHECK: [[@LINE+1]]:5: error: cannot assign 'void*?' to 'int?' (named null only converts between pointer types)
+    z = C_NULL;
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'void*?' and 'int' to '+' (null can only be compared with '==' or '!=')
+    int y = C_NULL + 1;
+    // CHECK: [[@LINE+1]]:14: error: invalid operands 'void*?' and 'int' to '==' (non-optional type 'int' cannot be null)
+    bool c = C_NULL == 5;
+    // CHECK: [[@LINE+1]]:14: error: invalid operands 'void*?' and 'int?' to '==' (named null only converts between pointer types)
+    bool e = C_NULL == z;
+    // CHECK: [[@LINE+1]]:14: error: invalid operands 'void*?' and 'void*?' to '<' (ordering comparisons against null are not allowed; use '==' or '!=' to check for null)
+    bool d = C_NULL < C_NULL;
+    // Nonzero casts keep their exact pointer type.
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'void*?' to 'takePhandle', expected 'Handle__*?'
+    takePhandle(C_INVALID);
+    // CHECK: [[@LINE+1]]:14: error: comparison of distinct pointer types ('Handle__*?' and 'void*?')
+    bool b = C_BAD_HANDLE == C_INVALID;
+}

@@ -1961,6 +1961,12 @@ Value* IRGenerator::emitPlainExpr(const Expr& expr) {
     if (expr.hasType() && expr.type.isBool() && expr.isFoldableBoolConstant()) {
         return createConstantBool(expr.getConstantBoolValue());
     }
+    // Named nulls (e.g. C's `NULL`) may have been retyped to another pointer
+    // type; fold to a null of the use type like the literal, instead of loading
+    // the differently-typed global. Value-implemented nullables keep loading.
+    if (expr.hasType() && expr.type.isOptionalType() && expr.type.isImplementedAsPointer() && expr.isNullConstant()) {
+        return createConstantNull(expr.type);
+    }
 
     switch (expr.kind) {
     case ExprKind::VarExpr:

@@ -975,6 +975,19 @@ struct MacroImporter final : clang::PPCallbacks {
     MacroImporter(Module& module, CToCxConverter& cToCxConverter, clang::CompilerInstance& compilerInstance, Typechecker& typechecker)
     : module(module), cToCxConverter(cToCxConverter), compilerInstance(compilerInstance), typechecker(typechecker) {}
 
+    // Integer-to-pointer cast macro (`((void*)0)`, `((HANDLE)-1)`) awaiting
+    // type resolution. The value evaluates now; the type resolves at flush so
+    // typedefs work wherever they are defined. Builtin pointees stash the clang
+    // type directly; named ones stash the spelling for symbol-table lookup.
+    // Declared up here: parameter lists use it before the trailing block.
+    struct PendingPointerConst {
+        std::string name;
+        clang::QualType pointeeType;
+        std::string namedType;
+        unsigned starCount = 0;
+        llvm::APSInt value{32, true};
+    };
+
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) override {
         auto* info = macro->getMacroInfo();
         llvm::StringRef macroName = name.getIdentifierInfo()->getName();
@@ -1022,6 +1035,8 @@ struct MacroImporter final : clang::PPCallbacks {
         }
         // Compound literals (`(Color){ 245, ... }`) import as constructor calls.
         if (tryImportCompoundLiteral(macroName, tokens)) return;
+        // Integer-to-pointer casts (`((void*)0)`) import as pointer constants.
+        if (tryImportPointerCast(macroName, tokens)) return;
         // Anything else imports only if it evaluates to a number. Failures skip
         // silently: most multi-token macros aren't constants (`#define BEGIN {`).
         if (auto value = evaluateMacroExpression(tokens)) importEvaluatedConstant(macroName, *value);
@@ -1053,6 +1068,79 @@ struct MacroImporter final : clang::PPCallbacks {
             cToCxConverter.addConstantToSymbolTable(pending.name, call, typeDecl->getType());
         }
         pendingCompounds.clear();
+    }
+
+    // Imports stashed pointer casts as explicit-cast constants (`cast<void*>(0)`).
+    // Unknown spellings, non-pointer named types, and values fitting no 64-bit
+    // cx type all skip silently, like the scalar evaluator's failures. Runs after
+    // parsing so typedefs resolve wherever they are defined.
+    void flushPendingPointerConsts() {
+        llvm::SaveAndRestore setModule(typechecker.currentModule, &module);
+        llvm::SaveAndRestore setSourceFile(typechecker.currentSourceFile, &module.sourceFiles.front());
+        for (auto& pending : pendingPointerConsts) {
+            Type type = resolvePointerConstType(pending);
+            if (!type || !type.isOptionalType() || !type.isImplementedAsPointer()) continue;
+            auto* operand = makeIntLiteralExpr(pending.value);
+            if (!operand) continue;
+            AstVector<NamedValue> args;
+            args.push_back(operand);
+            AstVector<GenericArg> genericArgs;
+            genericArgs.push_back(type);
+            auto* cast = makeAST<CallExpr>(makeAST<VarExpr>("cast", Location()), std::move(args), std::move(genericArgs), Location());
+            // Cannot throw through the Clang API; invalid casts skip.
+            try {
+                typechecker.typecheckExpr(*cast);
+            } catch (...) {
+                continue;
+            }
+            if (isIdenticalPointerConst(pending.name, type, pending.value)) continue;
+            cToCxConverter.addConstantToSymbolTable(pending.name, cast, type);
+        }
+        pendingPointerConsts.clear();
+    }
+
+    // Resolves the stashed cast type to cx; null when it denotes no pointer type.
+    Type resolvePointerConstType(const PendingPointerConst& pending) {
+        if (!pending.pointeeType.isNull()) {
+            if (pending.starCount == 0) return Type();
+            clang::QualType pointee = pending.pointeeType;
+            for (unsigned i = 0; i < pending.starCount; ++i) pointee = compilerInstance.getASTContext().getPointerType(pointee);
+            return cToCxConverter.toCx(pointee);
+        }
+        Type named;
+        for (Decl* decl : module.symbolTable.findInTopLevelScope(pending.namedType)) {
+            if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+                named = alias->aliasedType;
+                break;
+            }
+            if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                named = typeDecl->getType();
+                break;
+            }
+        }
+        if (!named) return Type();
+        if (pending.starCount == 0) return named.isOptionalType() && named.isImplementedAsPointer() ? named : Type();
+        for (unsigned i = 0; i < pending.starCount; ++i) named = OptionalType::get(PointerType::get(named, PointerKind::Pointer));
+        return named;
+    }
+
+    // True when the module already holds this name as an identical pointer
+    // constant, collapsing benign redefinitions across headers (like repeated
+    // identical typedefs). Anything else redefines and reports as usual.
+    bool isIdenticalPointerConst(llvm::StringRef name, Type type, const llvm::APSInt& value) {
+        for (Decl* decl : module.symbolTable.findInTopLevelScope(name)) {
+            auto* varDecl = llvm::dyn_cast<VarDecl>(decl);
+            if (!varDecl || !varDecl->isConst || !varDecl->initializer || varDecl->type != type) continue;
+            if (varDecl->initializer->kind != ExprKind::CallExpr) continue;
+            auto& call = llvm::cast<CallExpr>(*varDecl->initializer);
+            if (!call.isBuiltinCast() || call.args.size() != 1) continue;
+            const Expr* operand = call.args.front().value;
+            if (operand->isFoldableIntConstant()
+                && operand->getConstantIntegerValue().extOrTrunc(64).getZExtValue() == value.extOrTrunc(64).getZExtValue()) {
+                return true;
+            }
+        }
+        return false;
     }
 
 private:
@@ -1163,6 +1251,98 @@ private:
         auto args = parseCompoundLiteralArgs(tokens, pos);
         if (!args || pos != tokens.size()) return false;
         pendingCompounds.push_back({macroName.str(), std::move(*typeName), std::move(*args)});
+        return true;
+    }
+
+    // Stashes `(type*)value` for import after parsing; false when the tokens are
+    // no pointer cast. Accepts redundant outer parens (`((void*)0)`) and the bare
+    // form (`(void*)0`). The value must be an integer literal with optional `-`;
+    // anything else (including call-like `(f)(0)`) falls through to the scalar
+    // evaluator. A starless identifier (`(HANDLE)-1`) is ambiguous with
+    // arithmetic, so it stashes only when the name isn't a known constant.
+    bool tryImportPointerCast(llvm::StringRef macroName, llvm::ArrayRef<clang::Token> tokens) {
+        llvm::ArrayRef<clang::Token> inner = tokens;
+        while (inner.size() >= 2 && inner.front().getKind() == clang::tok::l_paren) {
+            size_t pos = 0;
+            if (!skipBalancedParens(inner, pos) || pos != inner.size()) break;
+            inner = inner.slice(1, inner.size() - 2);
+        }
+        size_t pos = 0;
+        if (!skipBalancedParens(inner, pos)) return false;
+        PendingPointerConst pending;
+        pending.name = macroName.str();
+        if (!parsePointerCastType(inner.slice(1, pos - 2), pending)) return false;
+        if (!parsePointerCastValue(inner.slice(pos), pending.value)) return false;
+        if (!pending.namedType.empty() && pending.starCount == 0 && importedConstants.count(pending.namedType)) return false;
+        pendingPointerConsts.push_back(std::move(pending));
+        return true;
+    }
+
+    // Parses `[const|volatile] (void|builtin|identifier) [*]*` into the pending cast.
+    bool parsePointerCastType(llvm::ArrayRef<clang::Token> tokens, PendingPointerConst& pending) {
+        size_t pos = 0;
+        while (pos < tokens.size() && (tokens[pos].getKind() == clang::tok::kw_const || tokens[pos].getKind() == clang::tok::kw_volatile)) ++pos;
+        if (pos >= tokens.size()) return false;
+        auto kind = tokens[pos].getKind();
+        if (kind == clang::tok::identifier) {
+            pending.namedType = tokens[pos].getIdentifierInfo()->getName().str();
+        } else {
+            pending.pointeeType = builtinPointeeType(kind);
+            if (pending.pointeeType.isNull()) return false;
+        }
+        ++pos;
+        while (pos < tokens.size() && tokens[pos].getKind() == clang::tok::star) {
+            ++pos;
+            ++pending.starCount;
+        }
+        return pos == tokens.size();
+    }
+
+    // Single-token C types valid as a cast pointee; null for anything else.
+    clang::QualType builtinPointeeType(clang::tok::TokenKind kind) {
+        auto& context = compilerInstance.getASTContext();
+        switch (kind) {
+        case clang::tok::kw_void:
+            return context.VoidTy;
+        case clang::tok::kw_bool:
+            return context.BoolTy;
+        case clang::tok::kw_char:
+            return context.CharTy;
+        case clang::tok::kw_short:
+            return context.ShortTy;
+        case clang::tok::kw_int:
+            return context.IntTy;
+        case clang::tok::kw_long:
+            return context.LongTy;
+        case clang::tok::kw_float:
+            return context.FloatTy;
+        case clang::tok::kw_double:
+            return context.DoubleTy;
+        case clang::tok::kw_signed:
+            return context.IntTy;
+        case clang::tok::kw_unsigned:
+            return context.UnsignedIntTy;
+        default:
+            return clang::QualType();
+        }
+    }
+
+    // Parses `[-]integer-literal` to its C value, wrapping and negating exactly
+    // like the scalar evaluator. Floats and oversized integers fail.
+    bool parsePointerCastValue(llvm::ArrayRef<clang::Token> tokens, llvm::APSInt& value) {
+        size_t pos = 0;
+        bool negate = false;
+        if (pos < tokens.size() && tokens[pos].getKind() == clang::tok::minus) {
+            negate = true;
+            ++pos;
+        }
+        if (pos + 1 != tokens.size() || tokens[pos].getKind() != clang::tok::numeric_constant) return false;
+        auto parsed = parseIntegerLiteral(tokens[pos]);
+        if (!parsed || parsed->type.isNull()) return false;
+        auto& context = compilerInstance.getASTContext();
+        value = convertInt(llvm::APSInt(parsed->rawValue, parsed->type->isUnsignedIntegerType()), context.getTypeSize(parsed->type),
+                           parsed->type->isUnsignedIntegerType());
+        if (negate) value = -value;
         return true;
     }
 
@@ -1590,6 +1770,7 @@ private:
     clang::CompilerInstance& compilerInstance;
     Typechecker& typechecker;
     std::vector<PendingCompound> pendingCompounds;
+    std::vector<PendingPointerConst> pendingPointerConsts;
     // Integer and float constants imported so far, for identifiers in later macro
     // bodies. Only macros defined above the use are visible, and #undef does not
     // remove them; both are rare enough in practice to leave unhandled.
@@ -1715,6 +1896,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext(), false, clang::TU_Complete, nullptr, /*SkipFunctionBodies*/ true);
     macroImporterPtr->flushPendingCompounds();
+    macroImporterPtr->flushPendingPointerConsts();
     ci.getDiagnosticClient().EndSourceFile();
 
     if (ci.getDiagnosticClient().getNumErrors() > 0) {

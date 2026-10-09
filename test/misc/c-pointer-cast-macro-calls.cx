@@ -1,0 +1,27 @@
+// RUN: %cx --print-ir -Werror %s 2>&1 | %FileCheck %s
+import "inputs/c-pointer-cast-macro.h";
+
+void takeRaw(Handle__* h) {}
+
+Phandle getHandle() {
+    return C_BAD_HANDLE;
+}
+
+void main() {
+    // Zero casts pass to any pointer-typed parameter, like null.
+    // CHECK: call takePhandle(Handle__* null)
+    takePhandle(C_NULL);
+    // CHECK: call takePhandle(Handle__* null)
+    takePhandle(C_CHAR_NULL);
+    // Nonzero casts of the parameter type pass through.
+    // CHECK: call takePhandle(Handle__* inttoptr(-1))
+    takePhandle(C_BAD_HANDLE);
+    // Comparisons against a named null narrow like null (regression: the
+    // -Werror above fails if the warning below fires, i.e. if m doesn't
+    // narrow to non-optional here).
+    Phandle m = getHandle();
+    if (m == C_NULL) {
+        return;
+    }
+    takeRaw(m);
+}

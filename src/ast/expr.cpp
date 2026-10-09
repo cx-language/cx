@@ -225,6 +225,42 @@ bool Expr::isConstant() const {
     llvm_unreachable("all cases handled");
 }
 
+static bool isCastOfZero(const Expr& expr) {
+    if (expr.kind != ExprKind::CallExpr) return false;
+    auto& call = llvm::cast<CallExpr>(expr);
+    if (!call.isBuiltinCast() || call.args.size() != 1) return false;
+    if (call.genericArgs.size() != 1 || !call.genericArgs.front().getType().isImplementedAsPointer()) return false;
+    const Expr* operand = call.args.front().value;
+    return operand->isFoldableIntConstant() && operand->getConstantIntegerValue().isZero();
+}
+
+bool Expr::isNullConstant() const {
+    if (isNullLiteralExpr()) return true;
+    // Only const-rooted shapes count below: a direct `cast<void*>(0)` keeps its
+    // exact type (else `cast == cast` would error like `null == null` instead
+    // of comparing addresses).
+    llvm::SmallPtrSet<const VarDecl*, 8> seen;
+    const Expr* current = this;
+    while (true) {
+        const Expr* next = nullptr;
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(current)) {
+            if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(varExpr->decl); varDecl && varDecl->isConst && seen.insert(varDecl).second) {
+                next = varDecl->initializer;
+            }
+        } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(current)) {
+            if (auto* varDecl = llvm::dyn_cast_or_null<VarDecl>(memberExpr->decl); varDecl && varDecl->isConst && seen.insert(varDecl).second) {
+                next = varDecl->initializer;
+            }
+        } else if (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current)) {
+            // Optional wraps preserve null; other casts re-evaluate.
+            if (cast->castKind == ImplicitCastExpr::OptionalWrap) next = cast->operand;
+        }
+        if (!next) return false;
+        if (next->isNullLiteralExpr() || isCastOfZero(*next)) return true;
+        current = next;
+    }
+}
+
 bool Expr::isFoldableIntConstant() const {
     switch (kind) {
     case ExprKind::VarExpr: {

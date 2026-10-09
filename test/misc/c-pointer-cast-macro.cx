@@ -1,0 +1,54 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// C macros that cast an integer literal to a pointer import as consts.
+// The zero case behaves like null; nonzero keeps its address value.
+
+// CHECK:C_NULL-is-null
+// CHECK:C_CHAR_NULL-is-null
+// CHECK:C_CONST_NULL-is-null
+// CHECK:C_BARE_NULL-is-null
+// CHECK:C_PPTR-is-null
+// CHECK:C_SHARED_NULL-is-null
+// CHECK:C_INVALID-eq-minus-1
+// CHECK:C_BAD_HANDLE-eq-minus-1
+// CHECK:C_FWD_REF-eq-minus-1
+// CHECK:neg-42
+// CHECK:char-null-eq-void-param
+// CHECK:void-param-eq-char-null
+// CHECK:handle-null-eq-void-param
+// CHECK:void-param-eq-handle-null
+// CHECK:null-eq-char-param
+// CHECK:char-param-eq-null
+// CHECK:done
+
+import "inputs/c-pointer-cast-macro.h";
+
+// Typed nulls convert to any pointer-optional, in both operand positions.
+void checkVoid(void*? w) {
+    if (C_CHAR_NULL == w) println("char-null-eq-void-param");
+    if (w == C_CHAR_NULL) println("void-param-eq-char-null");
+    if (C_HANDLE_NULL == w) println("handle-null-eq-void-param");
+    if (w == C_HANDLE_NULL) println("void-param-eq-handle-null");
+}
+
+void checkChar(char*? c) {
+    if (C_NULL == c) println("null-eq-char-param");
+    if (c == C_NULL) println("char-param-eq-null");
+}
+
+int main() {
+    if (C_NULL == null) println("C_NULL-is-null");
+    if (C_CHAR_NULL == null) println("C_CHAR_NULL-is-null");
+    if (C_CONST_NULL == null) println("C_CONST_NULL-is-null");
+    if (C_BARE_NULL == null) println("C_BARE_NULL-is-null");
+    if (C_PPTR == null) println("C_PPTR-is-null");
+    if (C_SHARED_NULL == null) println("C_SHARED_NULL-is-null");
+    if (cast<int>(C_INVALID) == -1) println("C_INVALID-eq-minus-1");
+    if (cast<int>(C_BAD_HANDLE) == -1) println("C_BAD_HANDLE-eq-minus-1");
+    if (cast<int>(C_FWD_REF) == -1) println("C_FWD_REF-eq-minus-1");
+    if (cast<int>(C_NEG) == -42) println("neg-42");
+    checkVoid(null);
+    checkChar(null);
+    println("done");
+    return 0;
+}
