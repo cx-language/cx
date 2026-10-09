@@ -80,6 +80,10 @@ jobs:
           mkdir -p "$STAGE_DIR"
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp "${{runner.workspace}}/build/Release/cx.exe" "${{runner.workspace}}/build/Release/cx-lsp.exe" "$STAGE_DIR/"
+            # lld-link powers native builds on machines with no C compiler on
+            # PATH (the driver prefers it next to cx.exe over the build-time
+            # LLVM tools dir, which doesn't exist on user machines).
+            cp "${LLVMDIR}\\bin\\lld-link.exe" "$STAGE_DIR/"
           else
             cp "${{runner.workspace}}/build/cx" "${{runner.workspace}}/build/cx-lsp" "$STAGE_DIR/"
             strip "$STAGE_DIR/cx" "$STAGE_DIR/cx-lsp"
@@ -146,7 +150,7 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then
             # Dash, not slash: git-bash would rewrite /dependents to a
             # Windows path (C:\Program Files\Git\dependents).
-            deps=$(dumpbin -dependents "$STAGE_DIR/cx.exe" "$STAGE_DIR/cx-lsp.exe")
+            deps=$(dumpbin -dependents "$STAGE_DIR/cx.exe" "$STAGE_DIR/cx-lsp.exe" "$STAGE_DIR/lld-link.exe")
             echo "$deps"
             if echo "$deps" | grep -Ei 'vcruntime|msvcp|msvcr'; then
               echo "ERROR: binaries need the Visual C++ redistributable (/MT did not apply)"
@@ -182,6 +186,12 @@ jobs:
           # Also exercise the native compile+link path (uses the system linker).
           "$pkg/cx" hello.cx -o hello-native
           ./hello-native
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            # Bare-machine simulation: with no compiler on PATH, native builds
+            # must still link through the bundled lld-link.
+            PATH="/usr/bin:/bin" "$pkg/cx" hello.cx -o hello-embedded
+            ./hello-embedded
+          fi
           "$pkg/cx-lsp" --help > /dev/null
 
       - name: Create archive
@@ -218,7 +228,7 @@ jobs:
           files: dist/*
           generate_release_notes: true
           body: |
-            Prebuilt cx binaries for Linux (x64), macOS (Apple Silicon), and Windows (x64). Each archive holds the `cx` compiler, the `cx-lsp` language server, and the standard library. Unpack it anywhere and run `cx` directly; no installer and no dependencies, though compiling to native binaries uses your system C compiler as the linker.
+            Prebuilt cx binaries for Linux (x64), macOS (Apple Silicon), and Windows (x64). Each archive holds `cx`, `cx-lsp`, and the standard library (Windows also bundles the lld linker). No installer, no dependencies: unpack and run. Native compilation needs a C toolchain: `cc` on PATH on Linux/macOS, Visual Studio Build Tools installed on Windows.
 
             Fastest install on Linux/macOS: `curl https://cx-language.github.io/cx/install.sh | bash`
 

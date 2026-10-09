@@ -902,9 +902,18 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         // Embedded Clang locates the MSVC and Windows SDK libraries itself; pass the CRT
         // libraries in -l form so they are found along its search paths, plus the same
         // 8MB stack reservation as the MSVC link above.
+        // Prebuilt installs bundle lld-link next to cx.exe: prefer it, since the
+        // build-time LLVM tools directory below doesn't exist on user machines.
+        // (ccArgs borrows from it, so it must outlive the link.)
+        std::string bundledToolsFlag;
+        std::string rootDir = getCxRootDir();
+        if (!rootDir.empty() && llvm::sys::fs::exists(rootDir + "/lld-link.exe")) {
+            bundledToolsFlag = "-B" + rootDir;
+            ccArgs.push_back(bundledToolsFlag.c_str());
+        }
 #ifdef CX_LLVM_TOOLS_DIR
-        // Point the driver at its own subprograms (lld-link): there are none next to
-        // cx.exe, and LLVM's bin directory is not on PATH on a bare machine.
+        // Point the driver at its own subprograms (lld-link): LLVM's bin
+        // directory is not on PATH on a bare machine.
         ccArgs.push_back("-B" CX_LLVM_TOOLS_DIR);
 #endif
         ccArgs.push_back("-l");
