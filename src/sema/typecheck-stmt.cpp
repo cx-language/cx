@@ -1060,7 +1060,8 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
     if (module->name == "std") return;
     if (!type || type.isVoid() || type.isNeverType()) return;
     auto* call = llvm::dyn_cast<CallExpr>(&expr);
-    auto* ctor = call ? llvm::dyn_cast_or_null<ConstructorDecl>(call->calleeDecl) : nullptr;
+    auto* callee = call ? llvm::dyn_cast_or_null<FunctionDecl>(call->calleeDecl) : nullptr;
+    auto* ctor = llvm::dyn_cast_or_null<ConstructorDecl>(callee);
     // `init` on another instance reinitializes it, and in constructors bare,
     // `this`, or qualified init delegates to `this`; neither builds a
     // temporary. Only explicit `Type.init(...)` construction falls through.
@@ -1073,6 +1074,10 @@ void Typechecker::warnIfUnusedResult(const Expr& expr, Type type) const {
         WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "unused result of type '" << type << "'; use 'init(...)' to delegate to another constructor");
         return;
     }
+    // `@discardableResult` callees (e.g. `List.pop`) are called for their side
+    // effects; ignoring the result is fine. Checked after the delegation
+    // warning above so the attribute never silences that bug-catcher.
+    if (callee && callee->isDiscardableResult) return;
     WARN_RANGE(getExprRangeStart(expr), expr.endLocation, "unused result of type '" << type << "'");
 }
 

@@ -1,0 +1,5 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:1: error: only functions can be marked as '@discardableResult'
+@discardableResult
+int x = 1;

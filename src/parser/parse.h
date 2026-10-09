@@ -193,6 +193,11 @@ private:
     // Records function-level check attributes, or rejects them on a non-function declaration.
     void applyFunctionChecks(Decl* decl, DisabledChecks disabledChecks, Location checksLocation);
     void rejectMisplacedChecks(DisabledChecks disabledChecks, Location checksLocation);
+    // Records `@discardableResult` on a function declaration, or rejects it on anything else.
+    // Bodyless functions qualify, extern ones included: unlike `@test` and the
+    // check attributes, this one constrains callers, not the body.
+    void applyDiscardableResult(Decl* decl, bool isDiscardableResult, Location discardableResultLocation);
+    void rejectMisplacedDiscardableResult(bool isDiscardableResult, Location discardableResultLocation);
     void rejectGenericStaticConst(const AstVector<GenericParamDecl>* genericParams);
     // Current token is `=`. Parses the initializer and adds a static constant.
     void addParsedStaticConst(TypeDecl& typeDecl, Type type, llvm::StringRef name, Location location, AccessLevel accessLevel);
@@ -219,7 +224,7 @@ private:
     bool skipToRecoveryPoint(llvm::ArrayRef<Token::Kind> endTokens, bool consumeClosingBrace);
     Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel, bool cppLinkage = false);
     void parseAttributes(bool& isTest, Location& testLocation, bool& isManuallyDestroy, Location& manuallyDestroyLocation, DisabledChecks& disabledChecks,
-                         Location& checksLocation);
+                         Location& checksLocation, bool& isDiscardableResult, Location& discardableResultLocation);
     [[noreturn]] void errorMisplacedManuallyDestroy(Location location);
 
 private:

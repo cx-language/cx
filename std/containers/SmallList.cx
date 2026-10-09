@@ -135,6 +135,7 @@ struct SmallList<Element, int N> {
     }
 
     /// Adds the given element to the end of the list, returning a reference to it.
+    @discardableResult
     Element& push(Element element) {
         if size == capacity() {
             grow();
@@ -145,6 +146,7 @@ struct SmallList<Element, int N> {
     }
 
     /// Removes and returns the last element.
+    @discardableResult
     Element pop() {
         assert(size != 0, "Called pop() on empty SmallList");
         size--;
@@ -171,6 +173,7 @@ struct SmallList<Element, int N> {
 
     /// Removes the first element from the list and returns it.
     /// Other elements are moved towards the beginning of the list by one index.
+    @discardableResult
     Element removeFirst() {
         assert(size != 0, "Called removeFirst() on empty SmallList");
         return unsafeRemoveAt(0);
@@ -215,6 +218,7 @@ struct SmallList<Element, int N> {
 
     /// Removes the element at the given index from the list and returns it.
     /// Elements following the removed element are moved towards the beginning of the list by one index.
+    @discardableResult
     Element removeAt(int index) {
         assert(index >= 0 && index < size, "SmallList index out of bounds");
 

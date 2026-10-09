@@ -170,12 +170,14 @@ struct StringBuf: Comparable, Hashable, Printable {
 
     /// Removes the first character from the string and returns it.
     /// Other characters are moved towards the beginning of the string by one index.
+    @discardableResult
     char removeFirst() {
         assert(!empty(), "Called removeFirst() on empty StringBuf");
         return characters.removeFirst();
     }
 
     /// Removes and returns the last character.
+    @discardableResult
     char pop() {
         assert(!empty(), "Called pop() on empty StringBuf");
         return characters.removeAt(characters.size() - 2);

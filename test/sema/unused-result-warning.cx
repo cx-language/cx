@@ -1,6 +1,23 @@
 // RUN: %cx -typecheck %s -Wunused-result 2>&1 | %FileCheck %s
 // RUN: %cx -typecheck %s -Werror
 
+@discardableResult
+int maybeIgnored() { return 42; }
+
+@discardableResult
+T genericIdent<T>(T value) { return value; }
+
+struct Counter {
+    int n;
+    @discardableResult
+    int bump() {
+        n++;
+        return n;
+    }
+    @discardableResult
+    T echo<T>(T value) { return value; }
+}
+
 int compute() { return 42; }
 void doWork() {}
 
@@ -24,5 +41,13 @@ void main() {
     const arr = [1, 2];
     // CHECK: [[@LINE+1]]:5: warning: unused result of type 'int'
     arr[0];
+    maybeIgnored();
+    genericIdent(5);
+    var counter = Counter(n = 0);
+    counter.bump();
+    counter.echo(5);
+    var list = List<int>();
+    list.push(1);
+    list.pop();
 }
 

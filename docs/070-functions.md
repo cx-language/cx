@@ -111,6 +111,25 @@ void main() {
 }
 ```
 
+A function that is often called for its side effects can mark its return
+value as discardable with `@discardableResult`. Callers who ignore the
+result then get no unused-result warning, even with `--Wunused-result`:
+
+```cs
+@discardableResult
+int popOrZero(List<int>& list) {
+    if list.empty() return 0;
+    return list.pop();
+}
+
+void main() {
+    var list = List<int>();
+    list.push(1);
+    popOrZero(list);
+    println(list.size()); // prints 0
+}
+```
+
 ## Planned features
 
 - Destructuring for multiple return values

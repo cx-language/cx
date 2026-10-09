@@ -1,0 +1,7 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+struct S {
+    // CHECK: [[@LINE+1]]:5: error: only functions can be marked as '@discardableResult'
+    @discardableResult
+    const answer = 42;
+}
