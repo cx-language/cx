@@ -119,7 +119,7 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\b(break|case|continue|default|defer|do|else|for|if|import|in|return|switch|then|while)\\b",
+          "match": "\\b(break|case|continue|default|defer|do|else|for|if|import|in|namespace|return|switch|then|while)\\b",
           "name": "keyword.control.cx"
         },
         {

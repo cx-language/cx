@@ -592,8 +592,19 @@ Type Parser::parseArrayType(Type elementType) {
 }
 
 /// simple-type ::= id | id generic-argument-list | id '[' (const-int-expr | '*')? ']'
+std::string Parser::parseDottedName(const char* contextInfo) {
+    auto identifier = parse(Token::Identifier, contextInfo);
+    std::string name = identifier.getString().str();
+    while (currentToken() == Token::Dot) {
+        consumeToken();
+        name += "." + parse(Token::Identifier, "after '.'").getString().str();
+    }
+    return name;
+}
+
 Type Parser::parseSimpleType() {
-    auto identifier = parse(Token::Identifier);
+    auto location = getCurrentLocation();
+    std::string name = parseDottedName();
     AstVector<GenericArg> genericArgs;
 
     switch (currentToken()) {
@@ -601,9 +612,9 @@ Type Parser::parseSimpleType() {
         genericArgs = parseGenericArgumentList();
         LLVM_FALLTHROUGH;
     default:
-        return BasicType::get(identifier.getString(), std::move(genericArgs), identifier.location);
+        return BasicType::get(name, std::move(genericArgs), location);
     case Token::LeftBracket:
-        return parseArrayType(BasicType::get(identifier.getString(), {}, identifier.location));
+        return parseArrayType(BasicType::get(name, {}, location));
     }
 }
 
@@ -853,7 +864,8 @@ IfExpr* Parser::parseIfThenElseExpr() {
 bool Parser::shouldParseVarStmt() {
     if (currentToken().is({Token::Var, Token::Const})) return true;
     if (!currentToken().is({Token::Identifier, Token::LeftParen})) return false;
-    if (lookAhead(1).is(Token::Dot) || isCompoundAssignmentOperator(lookAhead(1))) return false;
+    if (isCompoundAssignmentOperator(lookAhead(1))) return false;
+    if (lookAhead(1).is(Token::Dot)) return shouldParseQualifiedVarStmt();
     int offset = 2;
     // Walk back over any ', name' pairs of a multi-variable declaration.
     auto declaratorStart = [&](int from) {
@@ -898,6 +910,45 @@ bool Parser::shouldParseVarStmt() {
     }
 }
 
+bool Parser::shouldParseQualifiedVarStmt() {
+    ASSERT(currentToken().is(Token::Identifier) && lookAhead(1).is(Token::Dot));
+    int startLine = getCurrentLocation().line;
+    auto sameLine = [&](int index) { return lookAhead(index).location.line == startLine; };
+    // Skip the dotted qualifier (`ns.Type`, `a.b.c`): what follows decides
+    // between a declaration with a qualified type and member access.
+    int dot = 1;
+    while (lookAhead(dot).is(Token::Dot) && lookAhead(dot + 1).is(Token::Identifier)) {
+        dot += 2;
+    }
+    int pos = dot;
+    // `ns.Box<T> x` declares, `a.b<T>(...)` calls: match the `<>` first.
+    if (lookAhead(pos).is(Token::Less)) {
+        pos = matchGenericArgs(pos);
+        if (pos < 0) return false;
+    }
+    // `ns.T[3] x` declares, `a.b[i] = ...` assigns: skip bracket groups.
+    while (lookAhead(pos).is(Token::LeftBracket)) {
+        pos = skipBrackets(pos);
+        if (pos < 0) return false;
+    }
+    // `ns.T* p = ...` and `ns.T? x = ...` declare, while `a.b * c`,
+    // `a.b ? c : d` and `a.b ?? c` don't: an initializer or another declarator
+    // follows the name in a declaration, but a member statement ends or
+    // branches there. (Uninitialized `ns.T* p;` needs `= null`.)
+    if (lookAhead(pos).is({Token::Star, Token::QuestionMark, Token::QuestionQuestion, Token::And})) {
+        int run = pos;
+        while (lookAhead(run).is({Token::Star, Token::QuestionMark, Token::QuestionQuestion, Token::And})) {
+            ++run;
+        }
+        if (!lookAhead(run).is(Token::Identifier) || !sameLine(run)) return false;
+        return lookAhead(run + 1).is({Token::Assignment, Token::Comma});
+    }
+    // `ns.Type name` declares; anything else (`a.b = ...`, `a.b(...)`) is member access.
+    // The qualifier and name share one line: `a.b` newline `c = 5` is member
+    // access plus assignment, not a declaration.
+    return lookAhead(pos).is(Token::Identifier) && sameLine(dot - 1) && sameLine(pos);
+}
+
 void Parser::splitRightShiftIfPresent() {
     if (currentToken() != Token::RightShift) return;
     Location location = currentToken().location;
@@ -926,18 +977,23 @@ bool Parser::shouldParseGenericArgumentListAfterMember() {
     }
     // A generic argument list is always followed by a call, so only treat '<' as one if the
     // matching '>' is followed by '('; otherwise it's a less-than comparison (e.g. 'box.value<2').
+    int after = matchGenericArgs(0);
+    return after >= 0 && lookAhead(after) == Token::LeftParen;
+}
+
+int Parser::matchGenericArgs(int pos) {
     int depth = 0;
-    for (int offset = 0;; ++offset) {
-        switch (lookAhead(offset)) {
+    for (int scan = pos;; ++scan) {
+        switch (lookAhead(scan)) {
         case Token::Less:
             ++depth;
             break;
         case Token::Greater:
-            if (--depth == 0) return lookAhead(offset + 1) == Token::LeftParen;
+            if (--depth == 0) return scan + 1;
             break;
         case Token::RightShift: // Closes two levels, mirroring the '>>' split in parseNonEmptyTypeList.
             depth -= 2;
-            if (depth <= 0) return lookAhead(offset + 1) == Token::LeftParen;
+            if (depth <= 0) return scan + 1;
             break;
         case Token::Identifier:
         case Token::Const:
@@ -953,7 +1009,25 @@ bool Parser::shouldParseGenericArgumentListAfterMember() {
         case Token::RightParen:
             break;
         default:
-            return false;
+            return -1;
+        }
+    }
+}
+
+int Parser::skipBrackets(int pos) {
+    int depth = 0;
+    for (int scan = pos;; ++scan) {
+        switch (lookAhead(scan)) {
+        case Token::LeftBracket:
+            ++depth;
+            break;
+        case Token::RightBracket:
+            if (--depth == 0) return scan + 1;
+            break;
+        case Token::None:
+            return -1;
+        default:
+            break;
         }
     }
 }
@@ -2292,6 +2366,8 @@ EnumDecl* Parser::parseEnumDecl(AstVector<GenericParamDecl>* genericParams, Acce
     AstVector<Type> interfaces;
     auto name = parseTypeHeader(interfaces, genericParams);
     auto* enumDecl = makeAST<EnumDecl>(name.getString(), AstVector<EnumCase>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr, name.location);
+    // Stamp before parsing cases: their types are built from the enum type name during parsing.
+    if (!currentNamespace.empty()) enumDecl->namespaceName = internString(currentNamespace);
 
     parse(Token::LeftBrace);
     uint64_t valueCounter = 0;
@@ -2428,6 +2504,46 @@ ImportDecl* Parser::parseImportDecl() {
 
     parseStmtTerminator("after 'import' declaration");
     return makeAST<ImportDecl>(std::move(importTarget), *currentModule, location);
+}
+
+/// namespace-decl ::= 'namespace' identifier ('.' identifier)* terminator
+/// @throws CompileError
+void Parser::parseNamespaceDecl() {
+    ASSERT(currentToken() == Token::Namespace);
+    auto location = getCurrentLocation();
+    consumeToken();
+
+    std::string name = parseDottedName("after 'namespace'");
+    parseStmtTerminator("after 'namespace' declaration");
+
+    // A namespace root must not collide with a top-level declaration name (the
+    // reverse check in addToSymbolTable covers declarations parsed later).
+    llvm::StringRef root(name);
+    root = root.substr(0, root.find('.'));
+    if (auto existing = currentModule->symbolTable.findInCurrentScope(root); !existing.empty()) {
+        REPORT_ERROR_WITH_NOTES(location, getPreviousDefinitionNotes(existing),
+                                "cannot declare namespace '" << name << "': '" << root << "' is already declared in this module");
+    }
+    currentModule->namespaces.try_emplace(name, location);
+    currentNamespace = std::move(name);
+}
+
+void Parser::stampNamespace(Decl* decl, bool forceGlobal) {
+    if (currentNamespace.empty() || forceGlobal || !decl) return;
+    llvm::StringRef ns = internString(currentNamespace);
+    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+        functionDecl->namespaceName = ns;
+    } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
+        functionTemplate->functionDecl->namespaceName = ns;
+    } else if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+        typeDecl->namespaceName = ns;
+    } else if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(decl)) {
+        typeTemplate->typeDecl->namespaceName = ns;
+    } else if (auto* aliasDecl = llvm::dyn_cast<TypeAliasDecl>(decl)) {
+        aliasDecl->namespaceName = ns;
+    } else if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+        varDecl->namespaceName = ns;
+    }
 }
 
 void Parser::parseIfdefBody(std::vector<Decl*>* activeDecls) {
@@ -2605,9 +2721,11 @@ start:
         rejectMisplacedDiscardableResult(isDiscardableResult, discardableResultLocation);
         if (lookAhead(2) == Token::Less) {
             decl = parseTypeTemplate(accessLevel);
+            stampNamespace(decl, false);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
         } else {
             decl = parseTypeDecl(nullptr, accessLevel);
+            stampNamespace(decl, false);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeDecl>(*decl));
         }
         break;
@@ -2616,9 +2734,11 @@ start:
         rejectMisplacedDiscardableResult(isDiscardableResult, discardableResultLocation);
         if (lookAhead(2) == Token::Less) {
             decl = parseEnumTemplate(accessLevel);
+            stampNamespace(decl, false);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
         } else {
             decl = parseEnumDecl(nullptr, accessLevel);
+            stampNamespace(decl, false);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
         }
         break;
@@ -2626,8 +2746,11 @@ start:
         rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
         rejectMisplacedDiscardableResult(isDiscardableResult, discardableResultLocation);
         decl = parseTypeAliasDecl(accessLevel);
+        stampNamespace(decl, false);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeAliasDecl>(*decl));
         break;
+    case Token::Namespace:
+        ERROR_CURRENT_TOKEN("namespace declaration must be the first declaration in the file");
     case Token::Var:
     case Token::Const:
         rejectMisplacedDeclAttributes(isTest, isManuallyDestroy, manuallyDestroyLocation, disabledChecks, checksLocation);
@@ -2643,6 +2766,7 @@ start:
         }
         rejectMisplacedDiscardableResult(isDiscardableResult, discardableResultLocation);
         decl = parseVarDecl(nullptr, accessLevel);
+        stampNamespace(decl, false);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
     case Token::Import:
@@ -2702,6 +2826,8 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
     size_t returnTypeIndex = currentTokenIndex;
     auto type = parseType();
     auto location = getCurrentLocation();
+    // Operator overloads resolve through global lookup, so they stay global like externs.
+    bool forceGlobal = isExtern || (currentToken() == Token::Identifier && currentToken().getString() == "operator");
     auto name = parseFunctionName(nullptr);
 
     if (isConst && (currentToken() == Token::LeftParen || currentToken() == Token::Less)) {
@@ -2714,19 +2840,26 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
         } else {
             decl = parseFunctionDecl(nullptr, accessLevel, false, type, name, location);
         }
+        stampNamespace(decl, forceGlobal);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
         break;
     case Token::Less:
         if (isExtern) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "extern functions cannot be generic");
         reparseGenericReturnType(type, location, name, returnTypeIndex, nullptr);
         decl = parseFunctionTemplate(nullptr, accessLevel, type, name, location);
+        stampNamespace(decl, forceGlobal);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
         break;
     default:
         if (cppLinkage) ERROR_RANGE(location, getIdentifierEndLocation(location, name), "extern \"C++\" is only supported for functions, not variables");
         decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location, isConst);
+        stampNamespace(decl, forceGlobal);
         if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
         break;
+    }
+
+    if (!isExtern && !currentNamespace.empty() && (llvm::isa<FunctionDecl>(decl) || llvm::isa<FunctionTemplate>(decl)) && decl->getName() == "main") {
+        ERROR_RANGE(decl->getLocation(), getIdentifierEndLocation(*decl), "'main' cannot be declared inside a namespace");
     }
 
     return decl;
@@ -2735,10 +2868,15 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
 void Parser::parse() {
     std::vector<Decl*> topLevelDecls;
     SourceFile sourceFile(lexer.getFilePath(), currentModule);
+    currentNamespace.clear();
 
+    bool isFirstDecl = true;
     while (currentToken() != Token::None) {
         try {
-            if (currentToken() == Token::HashIf) {
+            if (currentToken() == Token::Namespace) {
+                if (!isFirstDecl) ERROR_CURRENT_TOKEN("namespace declaration must be the first declaration in the file");
+                parseNamespaceDecl();
+            } else if (currentToken() == Token::HashIf) {
                 parseIfdef(&topLevelDecls);
             } else {
                 auto previousTokenIndex = currentTokenIndex;
@@ -2752,6 +2890,7 @@ void Parser::parse() {
             }
             if (!recoverFromParseError(error, {}, /*consumeClosingBrace=*/true)) break;
         }
+        isFirstDecl = false;
     }
 
     sourceFile.topLevelDecls = std::move(topLevelDecls);

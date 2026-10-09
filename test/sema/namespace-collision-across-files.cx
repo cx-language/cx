@@ -1,0 +1,8 @@
+// A namespace declared in a later file still collides with an earlier declaration.
+// RUN: %not %cx -parse %s %S/inputs/namespace-collision-lib.cx 2>&1 | %FileCheck %s
+
+// CHECK: namespace-collision-lib.cx:1:1: error: cannot declare namespace 'fs': 'fs' is already declared in this module
+struct fs {
+    int x;
+}
+// CHECK: 5:8: note: previous definition here

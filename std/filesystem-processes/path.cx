@@ -1,3 +1,5 @@
+namespace Path;
+
 // Lexical path manipulation: pure string logic, no filesystem access.
 //
 // All functions treat '/' and '\' as separators, so Windows-style paths
@@ -14,15 +16,15 @@ bool isSeparator(char c) {
 /// The drive is "C:" for drive-letter paths, "//server/share" for UNC
 /// paths, or "" when there is no prefix.
 (string drive, string rest) splitDrive(string path) {
-    if path.size() >= 2 && isSeparator(path[0]) && isSeparator(path[1]) {
+    if path.size() >= 2 && Path.isSeparator(path[0]) && Path.isSeparator(path[1]) {
         var i = 2;
-        while i < path.size() && !isSeparator(path[i]) {
+        while i < path.size() && !Path.isSeparator(path[i]) {
             i++;
         }
         if i < path.size() {
             i++;
             var shareStart = i;
-            while i < path.size() && !isSeparator(path[i]) {
+            while i < path.size() && !Path.isSeparator(path[i]) {
                 i++;
             }
             if i > shareStart {
@@ -31,7 +33,7 @@ bool isSeparator(char c) {
         }
         return (drive = "", rest = path);
     }
-    if path.size() >= 2 && path[1] == ':' && isDriveLetter(path[0]) {
+    if path.size() >= 2 && path[1] == ':' && Path.isDriveLetter(path[0]) {
         return (drive = path.substr(0..2), rest = path.substr(2));
     }
     return (drive = "", rest = path);
@@ -40,52 +42,52 @@ bool isSeparator(char c) {
 /// Returns true for rooted paths: "/a", "C:/a", "C:\a", and UNC roots.
 /// "C:a" is relative, as is anything else without a root.
 bool isAbsolute(string path) {
-    var drive = splitDrive(path);
-    if drive.drive.size() >= 2 && isSeparator(drive.drive[0]) {
+    var drive = Path.splitDrive(path);
+    if drive.drive.size() >= 2 && Path.isSeparator(drive.drive[0]) {
         return true; // UNC root, absolute even with nothing after the share
     }
-    return drive.rest.size() > 0 && isSeparator(drive.rest[0]);
+    return drive.rest.size() > 0 && Path.isSeparator(drive.rest[0]);
 }
 
 /// Returns true when the path is not absolute.
 bool isRelative(string path) {
-    return !isAbsolute(path);
+    return !Path.isAbsolute(path);
 }
 
 /// Splits the path into (dir, base) at the last separator.
 ///
-/// Mirrors Python's posixpath.split: split("a/b") is ("a", "b"),
-/// split("a/") is ("a", ""), split("a") is ("", "a"), and
-/// split("/a") is ("/", "a").
+/// Mirrors Python's posixpath.split: Path.split("a/b") is ("a", "b"),
+/// Path.split("a/") is ("a", ""), Path.split("a") is ("", "a"), and
+/// Path.split("/a") is ("/", "a").
 (string dir, string base) split(string path) {
     var i = path.size();
-    while i > 0 && !isSeparator(path[i - 1]) {
+    while i > 0 && !Path.isSeparator(path[i - 1]) {
         i--;
     }
     var base = path.substr(i);
     var headEnd = i;
     var allSeps = true;
     for j in 0..headEnd {
-        if !isSeparator(path[j]) {
+        if !Path.isSeparator(path[j]) {
             allSeps = false;
         }
     }
     if !allSeps {
-        while headEnd > 0 && isSeparator(path[headEnd - 1]) {
+        while headEnd > 0 && Path.isSeparator(path[headEnd - 1]) {
             headEnd--;
         }
     }
     return (dir = path.substr(0..headEnd), base = base);
 }
 
-/// Returns the directory half of split(path).
+/// Returns the directory half of Path.split(path).
 string dirname(string path) {
-    return split(path).dir;
+    return Path.split(path).dir;
 }
 
-/// Returns the file half of split(path).
+/// Returns the file half of Path.split(path).
 string basename(string path) {
-    return split(path).base;
+    return Path.split(path).base;
 }
 
 /// Splits off the last extension; the extension keeps its dot, or is "".
@@ -93,7 +95,7 @@ string basename(string path) {
 /// A dot counts only if it follows the last separator and a non-dot
 /// precedes it within the basename, so dotfiles have no extension.
 (string root, string ext) splitExtension(string path) {
-    var base = basename(path);
+    var base = Path.basename(path);
     var dot = base.size();
     while dot > 0 && base[dot - 1] != '.' {
         dot--;
@@ -115,19 +117,19 @@ string basename(string path) {
 
 /// Returns the extension with its dot, or "" when there is none.
 string extension(string path) {
-    return splitExtension(path).ext;
+    return Path.splitExtension(path).ext;
 }
 
 /// Returns the basename without its last extension.
 string stem(string path) {
-    var base = basename(path);
-    var ext = splitExtension(path).ext;
+    var base = Path.basename(path);
+    var ext = Path.splitExtension(path).ext;
     return base.substr(0..base.size() - ext.size());
 }
 
 /// Returns the path without its last extension.
 StringBuf stripExtension(string path) {
-    return StringBuf(splitExtension(path).root);
+    return StringBuf(Path.splitExtension(path).root);
 }
 
 /// Returns the path with its last extension replaced.
@@ -135,7 +137,7 @@ StringBuf stripExtension(string path) {
 /// The new extension may be given with or without the dot, and ""
 /// strips the extension.
 StringBuf withExtension(string path, string newExt) {
-    var root = splitExtension(path).root;
+    var root = Path.splitExtension(path).root;
     if newExt.empty() {
         return StringBuf(root);
     }
@@ -147,13 +149,13 @@ StringBuf withExtension(string path, string newExt) {
 
 /// Returns true when the path has an extension.
 bool hasExtension(string path) {
-    return !splitExtension(path).ext.empty();
+    return !Path.splitExtension(path).ext.empty();
 }
 
 /// Returns true when the basename starts with '.'. The special names
 /// "." and ".." don't count.
 bool isHidden(string path) {
-    var base = basename(path);
+    var base = Path.basename(path);
     return base.size() > 0 && base[0] == '.' && base != "." && base != "..";
 }
 
@@ -167,7 +169,7 @@ StringBuf join(string a, string b) {
         if a.empty() {
             return StringBuf();
         }
-        if isSeparator(a[a.size() - 1]) {
+        if Path.isSeparator(a[a.size() - 1]) {
             return StringBuf(a);
         }
         return a + "/";
@@ -175,12 +177,12 @@ StringBuf join(string a, string b) {
     if a.empty() {
         return StringBuf(b);
     }
-    var splitA = splitDrive(a);
-    var splitB = splitDrive(b);
+    var splitA = Path.splitDrive(a);
+    var splitB = Path.splitDrive(b);
     if splitB.drive.size() > 0 && splitB.drive != splitA.drive {
         return StringBuf(b);
     }
-    if splitB.rest.size() > 0 && isSeparator(splitB.rest[0]) {
+    if splitB.rest.size() > 0 && Path.isSeparator(splitB.rest[0]) {
         if splitB.drive.size() == 0 && splitA.drive.size() > 0 {
             return splitA.drive + splitB.rest;
         }
@@ -188,7 +190,7 @@ StringBuf join(string a, string b) {
     }
     var restA = a;
     var prefix = "";
-    if isDriveLetterPrefix(splitA.drive) && (splitB.drive.size() == 0 || splitB.drive == splitA.drive) {
+    if Path.isDriveLetterPrefix(splitA.drive) && (splitB.drive.size() == 0 || splitB.drive == splitA.drive) {
         restA = splitA.rest;
         prefix = splitA.drive;
         if splitB.drive.size() > 0 {
@@ -196,7 +198,7 @@ StringBuf join(string a, string b) {
         }
     }
     var end = restA.size();
-    while end > 0 && isSeparator(restA[end - 1]) {
+    while end > 0 && Path.isSeparator(restA[end - 1]) {
         end--;
     }
     var head = restA.substr(0..end);
@@ -212,20 +214,20 @@ StringBuf join(string a, string b) {
     return prefix + head + "/" + b;
 }
 
-/// Folds join over the parts.
+/// Folds Path.join over the parts.
 StringBuf joinAll(string[] parts) {
     var result = StringBuf();
     for part in parts {
-        result = join(string(result), part);
+        result = Path.join(string(result), part);
     }
     return result;
 }
 
-/// Folds join over a list; handy for rejoining components() output.
+/// Folds Path.join over a list; handy for rejoining Path.components() output.
 StringBuf joinAll(List<string>& parts) {
     var result = StringBuf();
     for part in parts {
-        result = join(string(result), part);
+        result = Path.join(string(result), part);
     }
     return result;
 }
@@ -249,14 +251,14 @@ StringBuf toPosixSeparators(string path) {
 /// Going above the root stays at the root; leading ".." is preserved
 /// in relative paths. The drive prefix is preserved, and "" becomes ".".
 StringBuf normalize(string path) {
-    var drive = splitDrive(path);
+    var drive = Path.splitDrive(path);
     var rest = drive.rest;
-    var rooted = rest.size() > 0 && isSeparator(rest[0]);
+    var rooted = rest.size() > 0 && Path.isSeparator(rest[0]);
     var parts = List<string>();
     var start = 0;
     var i = 0;
     while i <= rest.size() {
-        if i == rest.size() || isSeparator(rest[i]) {
+        if i == rest.size() || Path.isSeparator(rest[i]) {
             if i > start {
                 var part = rest.substr(start..i);
                 if part == ".." {
@@ -305,22 +307,22 @@ StringBuf normalize(string path) {
 /// When the drives differ or exactly one side is absolute, returns
 /// the normalized `to`.
 StringBuf relativePath(string from, string to) {
-    var nfrom = normalize(from);
-    var nto = normalize(to);
+    var nfrom = Path.normalize(from);
+    var nto = Path.normalize(to);
     var sfrom = string(nfrom);
     var sto = string(nto);
-    var dfrom = splitDrive(sfrom);
-    var dto = splitDrive(sto);
-    var fromRooted = dfrom.rest.size() > 0 && isSeparator(dfrom.rest[0]);
-    var toRooted = dto.rest.size() > 0 && isSeparator(dto.rest[0]);
+    var dfrom = Path.splitDrive(sfrom);
+    var dto = Path.splitDrive(sto);
+    var fromRooted = dfrom.rest.size() > 0 && Path.isSeparator(dfrom.rest[0]);
+    var toRooted = dto.rest.size() > 0 && Path.isSeparator(dto.rest[0]);
     if dfrom.drive != dto.drive || fromRooted != toRooted {
         return nto;
     }
-    var fromParts = components(sfrom);
+    var fromParts = Path.components(sfrom);
     if sfrom == "." {
         fromParts = List<string>();
     }
-    var toParts = components(sto);
+    var toParts = Path.components(sto);
     if sto == "." {
         toParts = List<string>();
     }
@@ -358,14 +360,14 @@ StringBuf relativePath(string from, string to) {
 /// the first element.
 List<string> components(string path) {
     var parts = List<string>();
-    var drive = splitDrive(path);
+    var drive = Path.splitDrive(path);
     if drive.drive.size() > 0 {
         parts.push(drive.drive);
     }
     var start = drive.drive.size();
     var i = start;
     while i <= path.size() {
-        if i == path.size() || isSeparator(path[i]) {
+        if i == path.size() || Path.isSeparator(path[i]) {
             if i > start {
                 parts.push(path.substr(start..i));
             }
@@ -383,5 +385,5 @@ private bool isDriveLetter(char c) {
 }
 
 private bool isDriveLetterPrefix(string drive) {
-    return drive.size() > 0 && !isSeparator(drive[0]);
+    return drive.size() > 0 && !Path.isSeparator(drive[0]);
 }

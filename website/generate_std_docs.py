@@ -41,6 +41,7 @@ NAME_RE = re.compile(r"(operator(?:\[-?\]=?|==|!=|<=|>=|<|>|\+)|~?\w+)$")
 FIELD_RE = re.compile(r"(.+?)\s+(\w+)\s*;$")
 CONST_RE = re.compile(r"const\s+(?:.*\s)?(\w+)\s*=")
 VARIANT_RE = re.compile(r"(\w+),?$")
+NAMESPACE_RE = re.compile(r"namespace\s+([\w.]+)\s*;")
 
 
 class Declaration:
@@ -156,6 +157,19 @@ def parse_file(path):
     current = None
     depth = 0
     doc = []
+    namespace = ""
+
+    def qualify(signature, name):
+        # Operators stay global even in namespaced files, like externs.
+        if not namespace or name.startswith("operator"):
+            return signature, name
+        qualified = namespace + "." + name
+        # The declaration name is the last `name(`/`name<`; the return type precedes it.
+        matches = list(re.finditer(r"\b" + re.escape(name) + r"(?=[<(])", signature))
+        if matches:
+            start, _ = matches[-1].span()
+            signature = signature[:start] + qualified + signature[start + len(name):]
+        return signature, qualified
 
     def add_free(signature, doc_lines, lineno):
         # Type aliases are documented with their aliased type, not as functions.
@@ -164,11 +178,17 @@ def parse_file(path):
         if signature.startswith("const "):
             match = CONST_RE.match(signature)
             if match:
-                constants.append((match.group(1), Declaration(signature, doc_lines, path.name, lineno)))
+                name = match.group(1)
+                if namespace:
+                    qualified = namespace + "." + name
+                    signature = re.sub(r"\b" + name + r"\b(?=\s*=)", qualified, signature, count=1)
+                    name = qualified
+                constants.append((name, Declaration(signature, doc_lines, path.name, lineno)))
             return
         name = member_name(signature)
         if name is None:
             return
+        signature, name = qualify(signature, name)
         functions.setdefault(name, Group(name)).add(signature, doc_lines, path.name, lineno)
 
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
@@ -182,12 +202,20 @@ def parse_file(path):
             continue
         if code.startswith("#"):
             continue
+        if match := NAMESPACE_RE.match(code):
+            namespace = match.group(1)
+            doc = []
+            continue
         if code == "private" or code.startswith("private "):
             doc = []
         elif depth == 0 and (match := TYPE_RE.match(code)):
             kind = match.group(1)
             header = code.split("{", 1)[0].rstrip()
             name = header.split(None, 1)[1].split("<", 1)[0].split(":", 1)[0].strip()
+            if namespace:
+                name = namespace + "." + name
+                kind_word, rest = header.split(None, 1)
+                header = kind_word + " " + namespace + "." + rest
             current = Type(kind, name, header, doc, path.name, lineno)
             types.append(current)
             doc = []

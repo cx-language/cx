@@ -2,7 +2,7 @@ import glfw;
 import gl;
 
 uint compileShader(string path, uint kind) {
-    var source = readFile(path);
+    var source = File.read(path);
     if source == Err {
         abort("cannot read shader file: ", path);
     }

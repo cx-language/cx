@@ -1,0 +1,5 @@
+namespace outer.inner;
+
+int deep() {
+    return 3;
+}

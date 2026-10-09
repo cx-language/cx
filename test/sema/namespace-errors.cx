@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck -Wno-unused %s 2>&1 | %FileCheck %s
+
+namespace ns;
+
+int answer() {
+    return 42;
+}
+
+void use() {
+    // CHECK: [[@LINE+1]]:13: error: namespace 'ns' has no member 'typo'
+    println(ns.typo);
+    // CHECK: [[@LINE+1]]:13: error: unknown identifier 'answer'
+    println(answer);
+}

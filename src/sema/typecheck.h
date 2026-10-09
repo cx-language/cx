@@ -267,6 +267,11 @@ struct Typechecker {
     // instead of defaulting. Placeholder-containing types keep today's leniency.
     void ensureNestedInstantiations(TypeDecl& instantiation);
     void ensureNestedInstantiations(Type type);
+    // Resolves `ns.member` when the base names no declaration, collecting the
+    // dotted qualifier and looking up the qualified name. Returns false for
+    // plain member access; reports when a known namespace lacks the member.
+    bool tryResolveNamespaceMember(const MemberExpr& expr, std::string& qualifiedName, std::vector<Decl*>& decls);
+    bool isKnownNamespace(llvm::StringRef name) const;
     EnumCase* getEnumCase(const Expr& expr, Type expectedType = Type(), CallExpr* call = nullptr);
     EnumCase* getExpectedEnumCase(llvm::StringRef name, Type expectedType);
     VarDecl* getStaticConst(const Expr& expr);

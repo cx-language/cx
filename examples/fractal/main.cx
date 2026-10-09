@@ -11,7 +11,7 @@ void scrollCallback(GLFWwindow* window, float64 xoff, float64 yoff) {
 }
 
 uint compileShader(string path, uint kind) {
-    var source = readFile(path);
+    var source = File.read(path);
     if source == Err {
         abort("cannot read shader file: ", path);
     }
@@ -264,7 +264,7 @@ int runScreenshot(string path) {
     var body = string(cast<char*>(&flipped[0]), res.x * res.y * 3);
     var out = StringBuf("P6\n{res.x} {res.y}\n255\n");
     out.append(body);
-    if !writeFile(path, string(out)) {
+    if !File.write(path, string(out)) {
         abort("screenshot: cannot write file");
     }
     println("wrote ", path);

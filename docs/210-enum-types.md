@@ -26,7 +26,7 @@ void main() {
 }
 ```
 
-The standard library provides its own `JsonValue` tagged union,
+The standard library provides its own `Json.Value` tagged union,
 with JSON parsing and printing, on the `json` reference page.
 
 Enums can be generic, in which case the type parameters can be used

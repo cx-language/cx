@@ -1,0 +1,7 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+namespace ns;
+
+// CHECK: [[@LINE+1]]:6: error: 'main' cannot be declared inside a namespace
+void main() {
+}

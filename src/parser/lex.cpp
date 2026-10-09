@@ -412,6 +412,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"in", Token::In},
     {"interface", Token::Interface},
     {"is", Token::Is},
+    {"namespace", Token::Namespace},
     {"null", Token::Null},
     {"private", Token::Private},
     {"public", Token::Public},

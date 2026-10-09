@@ -44,6 +44,7 @@ struct Token {
         In,
         Interface,
         Is,
+        Namespace,
         Null,
         Private,
         Public,

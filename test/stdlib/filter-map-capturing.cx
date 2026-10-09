@@ -92,8 +92,8 @@ void testDistinctCapturesSameSignature() {
 // The env roundtrip keeps the value opaque to the optimizer, so this exercises
 // a genuinely runtime capture rather than a constant-folded one.
 int runtimeThreshold() {
-    setenv("CX_FILTER_MAP_THRESHOLD", "abcd");
-    return getenv("CX_FILTER_MAP_THRESHOLD")!.size();
+    Process.setenv("CX_FILTER_MAP_THRESHOLD", "abcd");
+    return Process.getenv("CX_FILTER_MAP_THRESHOLD")!.size();
 }
 
 List<int> filterAbove(List<int>& numbers, int threshold) {

@@ -1535,6 +1535,11 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
         return value;
     }
 
+    // A namespaced function used as a value (`var f = ns.func;`).
+    if (llvm::isa_and_nonnull<FunctionDecl>(expr.decl)) {
+        return getValue(expr.decl);
+    }
+
     if (expr.base->type.removePointer().isAnonymousStructType()) {
         return emitAnonymousStructElementAccess(expr);
     }

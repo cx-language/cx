@@ -308,6 +308,62 @@ class StructConstTest(unittest.TestCase):
         self.assertNotIn("{#int8-127}", markdown)
 
 
+NAMESPACE_FIXTURE = """\
+namespace ns;
+
+struct Box<T> {
+    T content;
+}
+
+/// Makes a box.
+Box<T> makeBox<T>(T content) {
+    return Box(content = content);
+}
+
+/// The answer.
+const int answer = 42;
+
+bool operator==(Box<int> a, Box<int> b) {
+    return a.content == b.content;
+}
+"""
+
+
+class NamespaceTest(unittest.TestCase):
+    def test_namespaced_names_qualified(self):
+        directory, (types, functions, constants) = parse_fixture(NAMESPACE_FIXTURE)
+        try:
+            self.assertEqual([t.name for t in types], ["ns.Box"])
+            self.assertEqual(types[0].header, "struct ns.Box<T>")
+            self.assertIn("ns.makeBox", functions)
+            self.assertEqual(
+                functions["ns.makeBox"].declarations[0].signature,
+                "Box<T> ns.makeBox<T>(T content)",
+            )
+            self.assertEqual([name for name, _ in constants], ["ns.answer"])
+            self.assertEqual(constants[0][1].signature, "const int ns.answer = 42;")
+        finally:
+            directory.cleanup()
+
+    def test_namespaced_operator_stays_global(self):
+        directory, (types, functions, constants) = parse_fixture(NAMESPACE_FIXTURE)
+        try:
+            self.assertIn("operator==", functions)
+            self.assertEqual(
+                functions["operator=="].declarations[0].signature,
+                "bool operator==(Box<int> a, Box<int> b)",
+            )
+        finally:
+            directory.cleanup()
+
+    def test_nested_namespace(self):
+        directory, (types, functions, constants) = parse_fixture("namespace outer.inner;\n\nint deep() {\n    return 3;\n}\n")
+        try:
+            self.assertIn("outer.inner.deep", functions)
+        finally:
+            directory.cleanup()
+
+
 class ConditionalTest(unittest.TestCase):
     def test_if_marked_conditional(self):
         with tempfile.TemporaryDirectory() as std_dir:
@@ -525,11 +581,13 @@ class StdlibTest(unittest.TestCase):
                      "printSigned", "printUnsigned", "skipEmptySlots", "rebalance",
                      "rotateLeft", "rotateRight", "grow", "indexOutOfBounds",
                      "setBalance", "height", "minInSubtree", "maxInSubtree",
-                     "writeMessage", "JsonParser", "hexValue", "pushUtf8", "byteValue",
-                     "writeIndent", "writeQuoted", "writeNumber", "writeJson",
-                     "maxJsonDepth"]:
+                     "writeMessage", "Parser", "hexValue", "pushUtf8", "byteValue",
+                     "writeIndent", "writeQuoted", "writeNumber",
+                     "maxDepth"]:
             self.assertNotIn(f"`{name}`", combined, name)
             self.assertNotIn(f" {name}(", combined, name)
+        # Bare `write` would also match members, so check its anchor instead.
+        self.assertNotIn("{#fn-write}", combined)
 
     def test_fences_are_all_highlighted_and_not_runnable(self):
         for relpath, markdown in self.rendered.items():

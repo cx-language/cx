@@ -190,7 +190,7 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
         if (auto* typeDecl = functionDecl.getTypeDecl()) {
             stream << 'M';
             mangleIdentifier(stream, typeDecl->getModule()->name);
-            mangleIdentifier(stream, typeDecl->getName());
+            mangleIdentifier(stream, getNamespacedName(*typeDecl));
             mangleGenericArgs(stream, typeDecl->genericArgs);
         }
 
@@ -203,7 +203,7 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
                 mangleIdentifier(stream, functionDecl.getName());
             }
         } else {
-            mangleIdentifier(stream, functionDecl.getName());
+            mangleIdentifier(stream, getNamespacedName(functionDecl));
         }
 
         mangleGenericArgs(stream, functionDecl.genericArgs);
@@ -245,7 +245,7 @@ std::string cx::mangleGlobalVar(const VarDecl& varDecl) {
     llvm::raw_string_ostream stream(mangled);
     stream << cxPrefix << 'G';
     mangleIdentifier(stream, varDecl.module.name);
-    mangleIdentifier(stream, varDecl.getName());
+    mangleIdentifier(stream, getNamespacedName(varDecl));
     stream << 'E';
     stream.flush();
     return mangled;

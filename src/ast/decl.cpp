@@ -237,6 +237,7 @@ FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<Generi
         auto clonedBody = ::cx::instantiate(*functionDecl->body, fixedArgs);
         instantiation->body = unrollPackLoops(clonedBody, packName, expandedNames, instantiation, *instantiation->getModule(), false);
     }
+    instantiation->namespaceName = functionDecl->namespaceName;
     instantiation->isPackInstantiation = true;
     instantiation->disabledChecks = functionDecl->disabledChecks;
     instantiation->isDiscardableResult = functionDecl->isDiscardableResult;
@@ -256,9 +257,16 @@ std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, ll
     return result;
 }
 
+llvm::StringRef FunctionDecl::getNamespaceName() const {
+    if (TypeDecl* typeDecl = getTypeDecl()) return typeDecl->getNamespaceName();
+    return namespaceName;
+}
+
 std::string FunctionDecl::getQualifiedName() const {
     Type receiver = getTypeDecl() ? getTypeDecl()->getType() : Type();
-    return getQualifiedFunctionName(receiver, getName(), genericArgs);
+    std::string result = getQualifiedFunctionName(receiver, getName(), genericArgs);
+    if (!receiver && !namespaceName.empty()) result = namespaceName.str() + "." + result;
+    return result;
 }
 
 FunctionType* FunctionDecl::getFunctionType() const {
@@ -292,6 +300,7 @@ FunctionDecl* FunctionDecl::instantiate(const llvm::StringMap<GenericArg>& gener
         auto proto = this->proto.instantiate(genericArgs);
         auto instantiation =
             makeAST<FunctionDecl>(std::move(proto), AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end()), accessLevel, module, location);
+        instantiation->namespaceName = namespaceName;
         instantiation->body = ::instantiate(*body, genericArgs);
         instantiation->disabledChecks = disabledChecks;
         instantiation->isDiscardableResult = isDiscardableResult;
@@ -375,7 +384,8 @@ AstVector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, con
 }
 
 std::string TypeDecl::getQualifiedName() const {
-    return getQualifiedTypeName(getName(), genericArgs);
+    if (namespaceName.empty()) return getQualifiedTypeName(getName(), genericArgs);
+    return getQualifiedTypeName(namespaceName.str() + "." + getName().str(), genericArgs);
 }
 
 bool TypeDecl::hasInterface(const TypeDecl& interface) const {
@@ -505,7 +515,8 @@ DestructorDecl* TypeDecl::getOrSynthesizeDefaultDestructor() {
 }
 
 Type TypeDecl::getType() const {
-    return BasicType::get(name, genericArgs, location);
+    if (namespaceName.empty()) return BasicType::get(name, genericArgs, location);
+    return BasicType::get(namespaceName.str() + "." + name.str(), genericArgs, location);
 }
 
 unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
@@ -649,6 +660,7 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
         auto interfaces = mapAst(typeDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
         auto instantiation = makeAST<TypeDecl>(typeDecl->tag, typeDecl->getName(), AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end()),
                                                std::move(interfaces), accessLevel, *typeDecl->getModule(), typeDecl, typeDecl->getLocation());
+        instantiation->namespaceName = typeDecl->namespaceName;
         for (auto& field : typeDecl->fields) {
             auto defaultValue = field.defaultValue ? field.defaultValue->instantiate(genericArgs) : nullptr;
             instantiation->addField(FieldDecl(field.type.resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.accessLevel,
@@ -675,6 +687,7 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
         auto interfaces = mapAst(enumDecl->interfaces, [&](Type type) { return type.resolve(genericArgs); });
         auto instantiation = makeAST<EnumDecl>(enumDecl->getName(), std::move(cases), std::move(interfaces), accessLevel, *enumDecl->getModule(), enumDecl,
                                                enumDecl->getLocation());
+        instantiation->namespaceName = enumDecl->namespaceName;
         instantiation->genericArgs = AstVector<GenericArg>(genericArgsArray.begin(), genericArgsArray.end());
         for (auto& enumCase : instantiation->cases) {
             enumCase.type = NOTNULL(instantiation->getType());
@@ -691,6 +704,7 @@ Decl* Decl::instantiate(const llvm::StringMap<GenericArg>& genericArgs, llvm::Ar
         auto initializer = varDecl->initializer ? varDecl->initializer->instantiate(genericArgs) : nullptr;
         auto* instantiation =
             makeAST<VarDecl>(type, varDecl->getName(), initializer, varDecl->parent, accessLevel, *varDecl->getModule(), varDecl->getLocation());
+        instantiation->namespaceName = varDecl->namespaceName;
         instantiation->isManuallyDestroy = varDecl->isManuallyDestroy;
         instantiation->isConst = varDecl->isConst;
         return instantiation;

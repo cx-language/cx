@@ -47,7 +47,7 @@ struct Program {
 }
 
 void main() {
-    var text = readFile("inputs/mandel.b").unwrap();
+    var text = File.read("inputs/mandel.b").unwrap();
     var program = Program(string(text));
     var tape = Tape();
     var pc = 0;

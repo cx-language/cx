@@ -310,7 +310,7 @@ int runScreenshot(string path) {
     out.append(height);
     out.append("\n255\n");
     out.append(string(cast<char*>(&pixels[0]), pixels.size()));
-    if !writeFile(path, string(out)) {
+    if !File.write(path, string(out)) {
         abort("screenshot: cannot write file");
     }
     println("wrote ", path);

@@ -200,7 +200,7 @@ bool writePpm(string path, int width, int height, List<uint8>& pixels) {
     out.append(height);
     out.append("\n255\n");
     out.append(string(cast<char*>(&pixels[0]), pixels.size()));
-    return writeFile(path, string(out));
+    return File.write(path, string(out));
 }
 
 void check(bool ok, string what) {

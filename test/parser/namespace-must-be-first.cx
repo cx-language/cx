@@ -1,0 +1,5 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+int x;
+// CHECK: [[@LINE+1]]:1: error: namespace declaration must be the first declaration in the file
+namespace ns;

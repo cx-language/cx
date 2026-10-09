@@ -22,7 +22,7 @@
             "break": true, "case": true, "const": true, "continue": true, "default": true,
             "defer": true, "do": true, "else": true, "enum": true, "extern": true,
             "for": true, "if": true, "implicit": true, "import": true, "in": true,
-            "interface": true, "is": true, "private": true, "public": true, "return": true,
+            "interface": true, "is": true, "namespace": true, "private": true, "public": true, "return": true,
             "sizeof": true, "struct": true, "switch": true, "then": true, "this": true,
             "union": true, "using": true, "var": true, "while": true,
             "#if": true, "#else": true, "#endif": true

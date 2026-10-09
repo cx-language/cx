@@ -31,7 +31,7 @@ void testToCStringSpillPathSuccess() {
         digits.push('0');
     }
     digits.push('5');
-    var r = parseJson(string(digits));
+    var r = Json.parse(string(digits));
     switch (r) {
         case Ok v:
             assert(v.toString() == "1");
@@ -44,8 +44,8 @@ void testToCStringSpillPathSuccess() {
 @test
 void testToCStringThroughRealCalls() {
     // Exercises both paths through real C calls.
-    assert(!exists("definitely-not-a-real-file-name-12345"));
-    assert(!exists("" + "x".repeat(500)));
-    assert(getenv("CX_DEFINITELY_UNSET_VARIABLE_12345") == null);
-    assert(getenv("" + "y".repeat(500)) == null);
+    assert(!File.exists("definitely-not-a-real-file-name-12345"));
+    assert(!File.exists("" + "x".repeat(500)));
+    assert(Process.getenv("CX_DEFINITELY_UNSET_VARIABLE_12345") == null);
+    assert(Process.getenv("" + "y".repeat(500)) == null);
 }

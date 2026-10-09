@@ -187,11 +187,27 @@ struct Module {
     void addToSymbolTable(VarDecl& decl);
     void addToSymbolTable(Decl* decl);
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
+    // True when the module declares the namespace itself or a nested one (`a` for `namespace a.b;`).
+    bool declaresNamespaceRoot(llvm::StringRef name) const {
+        if (namespaces.contains(name)) return true;
+        std::string prefix = (name + ".").str();
+        for (auto& entry : namespaces) {
+            if (entry.getKey().starts_with(prefix)) return true;
+        }
+        return false;
+    }
     void addSkippedFunctionLikeMacro(llvm::StringRef name, Location location) { skippedFunctionLikeMacros.try_emplace(name, location); }
     void removeSkippedFunctionLikeMacro(llvm::StringRef name) { skippedFunctionLikeMacros.erase(name); }
     void print(llvm::raw_ostream& stream) const;
 
     static std::vector<Module*> getAllImportedModules();
+    // True when any registered module declares the namespace.
+    static bool declaresNamespace(llvm::StringRef name) {
+        for (auto& entry : allImportedModules) {
+            if (entry.second->namespaces.contains(name)) return true;
+        }
+        return false;
+    }
     static Module* findImportedModule(llvm::StringRef name);
     static void registerImportedModule(llvm::StringRef name, Module* module);
     static Module* getStdlibModule();
@@ -214,6 +230,8 @@ public:
     // Function-like C macros, which are not imported, by name with their
     // definition location: unknown identifiers matching one get a hint note.
     llvm::StringMap<Location> skippedFunctionLikeMacros;
+    // Namespaces declared in this module by `namespace foo;`, with declaration locations.
+    llvm::StringMap<Location> namespaces;
 };
 
 } // namespace cx

@@ -49,5 +49,5 @@ void enumPayloadLocal() {
     MaybeBuf e;
 }
 
-// Imported enums check payloads the same way (JsonValue owns a StringBuf).
-void importedEnumPayload(JsonValue x) {}
+// Imported enums check payloads the same way (Json.Value owns a StringBuf).
+void importedEnumPayload(Json.Value x) {}

@@ -1,3 +1,5 @@
+namespace File;
+
 // File system operations: existence checks, directories, renaming,
 // the current directory, directory listing, and whole-file reading/writing.
 // Lexical path manipulation without file system access lives in path.cx.
@@ -26,7 +28,7 @@ private bool pathExists(char* path) { return access(path, 0) == 0; }
 /// Returns true if a file or directory exists at the path.
 bool exists(string path) {
     var pathBuf = toCString(path);
-    return pathExists(pathBuf.data());
+    return File.pathExists(pathBuf.data());
 }
 
 #if Windows
@@ -95,7 +97,7 @@ bool changeDirectory(string path) {
 #endif
 
 /// An error reading a file.
-enum FileError : Printable {
+enum Error : Printable {
     CouldNotOpen,
 
     /// Writes the error as text.
@@ -107,10 +109,10 @@ enum FileError : Printable {
 }
 
 /// Reads the entire file into a string, or returns an error if the file can't be opened.
-Result<StringBuf, FileError> readFile(string path) {
+Result<StringBuf, File.Error> read(string path) {
     var pathBuf = toCString(path);
     var file = fopen(pathBuf.data(), "rb");
-    if !file return Err(FileError.CouldNotOpen);
+    if !file return Err(File.Error.CouldNotOpen);
     defer fclose(file);
 
     fseek(file, 0, SEEK_END);
@@ -124,7 +126,7 @@ Result<StringBuf, FileError> readFile(string path) {
 }
 
 /// Writes the string to the named file.
-bool writeFile(string path, string content) {
+bool write(string path, string content) {
     var pathBuf = toCString(path);
     var file = fopen(pathBuf.data(), "wb");
     if !file return false;
@@ -135,7 +137,7 @@ bool writeFile(string path, string content) {
 }
 
 /// Returns the size of the file, or null if it can't be opened.
-int64? fileSize(string path) {
+int64? size(string path) {
     var pathBuf = toCString(path);
     var file = fopen(pathBuf.data(), "rb");
     if !file return null;
@@ -152,14 +154,14 @@ int64? fileSize(string path) {
 ///
 /// Names come from the shell, so a name containing a line break is split in two.
 List<StringBuf> listDirectory(string path) {
-    return readDirectoryListing(StringBuf("dir /b ") + quotedPath(path) + " 2>nul", true);
+    return File.readDirectoryListing(StringBuf("dir /b ") + File.quotedPath(path) + " 2>nul", true);
 }
 #else
 /// Returns the names in the directory, sorted, or an empty list if it can't be opened.
 ///
 /// Names come from the shell, so a name containing a line break is split in two.
 List<StringBuf> listDirectory(string path) {
-    return readDirectoryListing(StringBuf("ls -1 -- ") + quotedPath(path) + " 2>/dev/null", false);
+    return File.readDirectoryListing(StringBuf("ls -1 -- ") + File.quotedPath(path) + " 2>/dev/null", false);
 }
 #endif
 

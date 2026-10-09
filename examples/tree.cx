@@ -19,7 +19,7 @@ bool isDirectory(string path) {
 }
 
 void listdir(string name, int indent) {
-    var names = listDirectory(name);
+    var names = File.listDirectory(name);
     for i in 0..names.size() {
         var path = name + '/' + string(names[i]);
         print(" ".repeat(indent));

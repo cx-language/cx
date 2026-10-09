@@ -485,8 +485,9 @@ bool Expr::isLvalue() const {
         }
         if (llvm::isa<EnumCase>(member.decl)) return false;
         // Static consts are named through a type, not a value; the base never
-        // typechecks, so it cannot be asked for lvalueness either.
-        if (llvm::isa<VarDecl>(member.decl)) return false;
+        // typechecks, so it cannot be asked for lvalueness either. Namespaced
+        // globals behave like plain globals instead.
+        if (auto* varDecl = llvm::dyn_cast<VarDecl>(member.decl)) return !varDecl->getNamespaceName().empty();
         if (member.base->type.removeOptional().isPointerType()) return true;
         return member.base->isLvalue();
     }

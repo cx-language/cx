@@ -4,7 +4,7 @@
 // RUN: check_exit_status 0 %cx test -Werror --no-leak-check --backend=c %s
 
 void checkPretty(string name, string input, string expected) {
-    var r = parseJson(input);
+    var r = Json.parse(input);
     switch (r) {
         case Ok v:
             var actual = v.toString(pretty = true);
@@ -19,7 +19,7 @@ void checkPretty(string name, string input, string expected) {
 }
 
 void checkCompact(string name, string input, string expected) {
-    var r = parseJson(input);
+    var r = Json.parse(input);
     switch (r) {
         case Ok v:
             var actual = v.toString();
@@ -33,8 +33,8 @@ void checkCompact(string name, string input, string expected) {
     }
 }
 
-void checkError(string name, string input, JsonError& expected) {
-    var r = parseJson(input);
+void checkError(string name, string input, Json.Error& expected) {
+    var r = Json.parse(input);
     switch (r) {
         case Ok v:
             println("FAIL ", name, ": expected error, got: ", v.toString());
@@ -49,7 +49,7 @@ void checkError(string name, string input, JsonError& expected) {
     }
 }
 
-void checkMessage(JsonError& error, string expected) {
+void checkMessage(Json.Error& error, string expected) {
     var actual = error.toString();
     if actual != expected {
         println("FAIL message\nexpected: ", expected, "\nactual: ", actual);
@@ -58,11 +58,11 @@ void checkMessage(JsonError& error, string expected) {
 }
 
 void checkRoundTrip(string name, string input) {
-    var r1 = parseJson(input);
+    var r1 = Json.parse(input);
     switch (r1) {
         case Ok v1:
             var once = v1.toString(pretty = true);
-            var r2 = parseJson(string(once));
+            var r2 = Json.parse(string(once));
             switch (r2) {
                 case Ok v2:
                     var twice = v2.toString(pretty = true);
@@ -127,52 +127,52 @@ void testRawUtf8() {
 
 @test
 void testErrors() {
-    checkError("empty input", "", JsonError.UnexpectedCharacter(0));
-    checkError("blank input", "   ", JsonError.UnexpectedCharacter(3));
-    checkError("lone brace", "\{", JsonError.ExpectedStringKey(1));
-    checkError("lone bracket", "[", JsonError.UnexpectedCharacter(1));
-    checkError("trailing comma", "[1,]", JsonError.UnexpectedCharacter(3));
-    checkError("missing comma array", "[1 2]", JsonError.ExpectedCommaOrBracket(3));
-    checkError("missing comma object", "\{\"a\": 1 2}", JsonError.ExpectedCommaOrBrace(8));
-    checkError("missing colon", "\{\"a\"}", JsonError.ExpectedColon(4));
-    checkError("missing key", "\{1: 2}", JsonError.ExpectedStringKey(1));
-    checkError("bad literal", "tru", JsonError.InvalidLiteral(3));
-    checkError("bad escape", "\"\\x\"", JsonError.InvalidEscape(3));
-    checkError("unpaired surrogate", "\"\\uD834\"", JsonError.UnpairedSurrogate(7));
-    checkError("lone low surrogate", "\"\\uDD1E\"", JsonError.UnpairedSurrogate(7));
-    checkError("bad unicode offset", "\"\\u12xz\"", JsonError.InvalidUnicodeEscape(3));
-    checkError("unclosed string", "\"abc", JsonError.UnterminatedString(4));
-    checkError("unclosed escape", "\"abc\\", JsonError.UnterminatedEscape(5));
-    checkError("control character", "\"a\nb\"", JsonError.UnescapedControlCharacter(2));
-    checkError("leading zero", "01", JsonError.UnexpectedTrailingCharacters(1));
-    checkError("bare minus", "-", JsonError.InvalidNumber(1));
-    checkError("plus", "+1", JsonError.UnexpectedCharacter(0));
-    checkError("trailing dot", "1.", JsonError.InvalidNumber(2));
-    checkError("trailing garbage", "1 2", JsonError.UnexpectedTrailingCharacters(2));
-    checkError("single quotes", "'x'", JsonError.UnexpectedCharacter(0));
-    checkError("huge exponent", "1e999", JsonError.NumberOutOfRange(0));
-    checkError("message position", "\{\"a\": tru}", JsonError.InvalidLiteral(9));
-    checkError("message nested", "[1, \{\"b\": 2}] trailing", JsonError.UnexpectedTrailingCharacters(14));
+    checkError("empty input", "", Json.Error.UnexpectedCharacter(0));
+    checkError("blank input", "   ", Json.Error.UnexpectedCharacter(3));
+    checkError("lone brace", "\{", Json.Error.ExpectedStringKey(1));
+    checkError("lone bracket", "[", Json.Error.UnexpectedCharacter(1));
+    checkError("trailing comma", "[1,]", Json.Error.UnexpectedCharacter(3));
+    checkError("missing comma array", "[1 2]", Json.Error.ExpectedCommaOrBracket(3));
+    checkError("missing comma object", "\{\"a\": 1 2}", Json.Error.ExpectedCommaOrBrace(8));
+    checkError("missing colon", "\{\"a\"}", Json.Error.ExpectedColon(4));
+    checkError("missing key", "\{1: 2}", Json.Error.ExpectedStringKey(1));
+    checkError("bad literal", "tru", Json.Error.InvalidLiteral(3));
+    checkError("bad escape", "\"\\x\"", Json.Error.InvalidEscape(3));
+    checkError("unpaired surrogate", "\"\\uD834\"", Json.Error.UnpairedSurrogate(7));
+    checkError("lone low surrogate", "\"\\uDD1E\"", Json.Error.UnpairedSurrogate(7));
+    checkError("bad unicode offset", "\"\\u12xz\"", Json.Error.InvalidUnicodeEscape(3));
+    checkError("unclosed string", "\"abc", Json.Error.UnterminatedString(4));
+    checkError("unclosed escape", "\"abc\\", Json.Error.UnterminatedEscape(5));
+    checkError("control character", "\"a\nb\"", Json.Error.UnescapedControlCharacter(2));
+    checkError("leading zero", "01", Json.Error.UnexpectedTrailingCharacters(1));
+    checkError("bare minus", "-", Json.Error.InvalidNumber(1));
+    checkError("plus", "+1", Json.Error.UnexpectedCharacter(0));
+    checkError("trailing dot", "1.", Json.Error.InvalidNumber(2));
+    checkError("trailing garbage", "1 2", Json.Error.UnexpectedTrailingCharacters(2));
+    checkError("single quotes", "'x'", Json.Error.UnexpectedCharacter(0));
+    checkError("huge exponent", "1e999", Json.Error.NumberOutOfRange(0));
+    checkError("message position", "\{\"a\": tru}", Json.Error.InvalidLiteral(9));
+    checkError("message nested", "[1, \{\"b\": 2}] trailing", Json.Error.UnexpectedTrailingCharacters(14));
 }
 
 @test
 void testMessages() {
-    checkMessage(JsonError.UnexpectedCharacter(3), "unexpected character at offset 3");
-    checkMessage(JsonError.InvalidLiteral(9), "invalid literal at offset 9");
-    checkMessage(JsonError.ExpectedStringKey(1), "expected string key at offset 1");
-    checkMessage(JsonError.ExpectedColon(4), "expected ':' at offset 4");
-    checkMessage(JsonError.ExpectedCommaOrBrace(8), "expected ',' or '}' at offset 8");
-    checkMessage(JsonError.ExpectedCommaOrBracket(3), "expected ',' or ']' at offset 3");
-    checkMessage(JsonError.UnterminatedString(4), "unterminated string at offset 4");
-    checkMessage(JsonError.UnterminatedEscape(5), "unterminated escape at offset 5");
-    checkMessage(JsonError.InvalidEscape(3), "invalid escape at offset 3");
-    checkMessage(JsonError.InvalidUnicodeEscape(3), "invalid unicode escape at offset 3");
-    checkMessage(JsonError.UnpairedSurrogate(7), "unpaired surrogate at offset 7");
-    checkMessage(JsonError.UnescapedControlCharacter(2), "unescaped control character at offset 2");
-    checkMessage(JsonError.InvalidNumber(2), "invalid number at offset 2");
-    checkMessage(JsonError.NumberOutOfRange(0), "number out of range at offset 0");
-    checkMessage(JsonError.UnexpectedTrailingCharacters(14), "unexpected trailing characters at offset 14");
-    checkMessage(JsonError.MaximumDepthExceeded(1000), "maximum nesting depth exceeded at offset 1000");
+    checkMessage(Json.Error.UnexpectedCharacter(3), "unexpected character at offset 3");
+    checkMessage(Json.Error.InvalidLiteral(9), "invalid literal at offset 9");
+    checkMessage(Json.Error.ExpectedStringKey(1), "expected string key at offset 1");
+    checkMessage(Json.Error.ExpectedColon(4), "expected ':' at offset 4");
+    checkMessage(Json.Error.ExpectedCommaOrBrace(8), "expected ',' or '}' at offset 8");
+    checkMessage(Json.Error.ExpectedCommaOrBracket(3), "expected ',' or ']' at offset 3");
+    checkMessage(Json.Error.UnterminatedString(4), "unterminated string at offset 4");
+    checkMessage(Json.Error.UnterminatedEscape(5), "unterminated escape at offset 5");
+    checkMessage(Json.Error.InvalidEscape(3), "invalid escape at offset 3");
+    checkMessage(Json.Error.InvalidUnicodeEscape(3), "invalid unicode escape at offset 3");
+    checkMessage(Json.Error.UnpairedSurrogate(7), "unpaired surrogate at offset 7");
+    checkMessage(Json.Error.UnescapedControlCharacter(2), "unescaped control character at offset 2");
+    checkMessage(Json.Error.InvalidNumber(2), "invalid number at offset 2");
+    checkMessage(Json.Error.NumberOutOfRange(0), "number out of range at offset 0");
+    checkMessage(Json.Error.UnexpectedTrailingCharacters(14), "unexpected trailing characters at offset 14");
+    checkMessage(Json.Error.MaximumDepthExceeded(1000), "maximum nesting depth exceeded at offset 1000");
 }
 
 @test
@@ -180,7 +180,7 @@ void testDepth() {
     var nested = "[".repeat(100) + "]".repeat(100);
     checkRoundTrip("deep nesting", string(nested));
     var tooDeep = "[".repeat(1500) + "]".repeat(1500);
-    checkError("nesting depth exceeded", string(tooDeep), JsonError.MaximumDepthExceeded(1000));
+    checkError("nesting depth exceeded", string(tooDeep), Json.Error.MaximumDepthExceeded(1000));
 }
 
 @test
@@ -190,7 +190,7 @@ void testRoundTrips() {
 
 @test
 void testPrint() {
-    var r = parseJson("\{\"a\": [1, true, null]}");
+    var r = Json.parse("\{\"a\": [1, true, null]}");
     switch (r) {
         case Ok v:
             print(&v);

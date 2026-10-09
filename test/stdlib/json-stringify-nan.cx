@@ -2,8 +2,8 @@
 
 
 void main() {
-    var v = JsonValue.Number(0.0 / 0.0);
+    var v = Json.Value.Number(0.0 / 0.0);
     print(v.toString());
 }
 
-// CHECK: JsonValue.Number must be finite
+// CHECK: Json.Value.Number must be finite

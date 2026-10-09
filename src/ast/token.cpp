@@ -355,6 +355,7 @@ const char* cx::toString(Token::Kind tokenKind) {
         "in",
         "interface",
         "is",
+        "namespace",
         "null",
         "private",
         "public",

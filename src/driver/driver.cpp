@@ -438,8 +438,8 @@ static bool synthesizeTestMain(Module& mainModule) {
                                            tests.empty() ? Location() : tests.front()->getLocation());
     AstVector<Stmt*> body;
     for (FunctionDecl* test : tests) {
-        body.push_back(makeAST<ExprStmt>(
-            makeAST<CallExpr>(makeAST<VarExpr>(test->getName(), test->getLocation()), AstVector<NamedValue>(), AstVector<GenericArg>(), test->getLocation())));
+        body.push_back(makeAST<ExprStmt>(makeAST<CallExpr>(makeAST<VarExpr>(test->getQualifiedName(), test->getLocation()), AstVector<NamedValue>(),
+                                                           AstVector<GenericArg>(), test->getLocation())));
         AstVector<NamedValue> printArgs;
         printArgs.emplace_back(makeAST<StringLiteralExpr>("ok ", test->getLocation()));
         printArgs.emplace_back(makeAST<StringLiteralExpr>(test->getName(), test->getLocation()));

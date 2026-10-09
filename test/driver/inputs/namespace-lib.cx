@@ -1,0 +1,52 @@
+namespace ns;
+
+int answer() {
+    return 42;
+}
+
+StringBuf greet(string name) {
+    return "hi " + name;
+}
+
+StringBuf greet(string a, string b) {
+    return a + b;
+}
+
+T identity<T>(T value) {
+    return value;
+}
+
+struct Point {
+    int x;
+    int y;
+
+    int sum() {
+        return x + y;
+    }
+}
+
+struct Box<T> {
+    T content;
+}
+
+enum Color {
+    Red,
+    Green,
+}
+
+const int limit = 10;
+var counter = 0;
+
+using Number = int;
+
+bool operator==(ns.Point a, ns.Point b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+private int helper() {
+    return 7;
+}
+
+int viaHelper() {
+    return ns.helper() * 2;
+}

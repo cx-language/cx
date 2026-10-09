@@ -35,6 +35,26 @@ Module* Module::getStdlibModule() {
     return findImportedModule("std");
 }
 
+// A namespace root must not collide with a top-level declaration name in the
+// same module: `fs.x` would otherwise be ambiguous between the two.
+static void rejectNamespaceRootCollision(Module& module, Decl& decl, llvm::StringRef name) {
+    if (name.empty() || !module.declaresNamespaceRoot(name)) return;
+    Location nsLocation;
+    if (auto it = module.namespaces.find(name); it != module.namespaces.end()) {
+        nsLocation = it->second;
+    } else {
+        std::string prefix = (name + ".").str();
+        for (auto& entry : module.namespaces) {
+            if (entry.getKey().starts_with(prefix)) {
+                nsLocation = entry.second;
+                break;
+            }
+        }
+    }
+    std::vector<Note> notes{Note{nsLocation, (StringBuilder() << "namespace declared here").string}};
+    REPORT_ERROR_WITH_NOTES(decl.getLocation(), notes, "'" << name << "' collides with a namespace declared in this module");
+}
+
 void Module::resetImportedModules() {
     allImportedModules.clear();
 }
@@ -62,6 +82,7 @@ template<typename DeclT> static bool rejectMatchingPrototype(SymbolTable& symbol
 }
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
+    if (!decl.functionDecl->isMethodDecl()) rejectNamespaceRootCollision(*this, decl, decl.functionDecl->getName());
     rejectMatchingPrototype(symbolTable, decl, *decl.functionDecl);
     symbolTable.addGlobal(decl.getQualifiedName(), &decl);
 }
@@ -73,6 +94,7 @@ void Module::addToSymbolTable(FunctionDecl& decl) {
     for (Decl* candidate : symbolTable.findFirst(decl.getQualifiedName())) {
         if (candidate == &decl) return;
     }
+    if (!decl.isMethodDecl()) rejectNamespaceRootCollision(*this, decl, decl.getName());
     if (!rejectMatchingPrototype(symbolTable, decl, decl) && decl.isExtern()) {
         // C has no overloading: same-name externs share one symbol even with different signatures.
         for (Decl* candidate : symbolTable.findFirst(decl.getQualifiedName())) {
@@ -86,10 +108,12 @@ void Module::addToSymbolTable(FunctionDecl& decl) {
 }
 
 void Module::addToSymbolTable(TypeTemplate& decl) {
-    addToSymbolTableWithName(decl, decl.typeDecl->getName());
+    rejectNamespaceRootCollision(*this, decl, decl.typeDecl->getName());
+    addToSymbolTableWithName(decl, decl.typeDecl->getQualifiedName());
 }
 
 void Module::addToSymbolTable(TypeDecl& decl) {
+    rejectNamespaceRootCollision(*this, decl, decl.getName());
     if (addToSymbolTableWithName(decl, decl.getQualifiedName())) return;
     bindTypeSpelling(decl.getType(), decl);
 
@@ -101,7 +125,8 @@ void Module::addToSymbolTable(TypeDecl& decl) {
 }
 
 void Module::addToSymbolTable(TypeAliasDecl& decl) {
-    addToSymbolTableWithName(decl, decl.getName());
+    rejectNamespaceRootCollision(*this, decl, decl.getName());
+    addToSymbolTableWithName(decl, getNamespacedName(decl));
 }
 
 void Module::addToSymbolTable(EnumDecl& decl) {
@@ -109,7 +134,8 @@ void Module::addToSymbolTable(EnumDecl& decl) {
 }
 
 void Module::addToSymbolTable(VarDecl& decl) {
-    addToSymbolTableWithName(decl, decl.getName());
+    if (decl.isGlobal()) rejectNamespaceRootCollision(*this, decl, decl.getName());
+    addToSymbolTableWithName(decl, getNamespacedName(decl));
 }
 
 void Module::addToSymbolTable(Decl* decl) {

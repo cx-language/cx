@@ -1,0 +1,5 @@
+namespace ns;
+
+int more() {
+    return ns.answer() + 1;
+}

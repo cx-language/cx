@@ -1,22 +1,24 @@
+namespace Json;
+
 /// A JSON value: a tagged union of all JSON types.
 ///
 /// Whole numbers that fit in 64 bits parse as `Integer`; fractional and
 /// overlarge numbers parse as `Number`. Objects preserve insertion order and
 /// allow duplicate keys.
-enum JsonValue : Printable {
+enum Value : Printable {
     String(StringBuf value),
     Integer(int64 value),
     Number(float64 value),
     Boolean(bool value),
     Null,
-    Array(List<JsonValue> value),
-    Object(List<JsonMember> value),
+    Array(List<Json.Value> value),
+    Object(List<Json.Member> value),
 
     /// Writes the value in compact JSON form.
     ///
     /// Printable's `toString()` renders this same form.
     void print(OutputStream& stream) {
-        writeJson(stream, this, 0, false);
+        Json.write(stream, this, 0, false);
     }
 
     /// Renders the value as JSON, indented with 2 spaces per level when
@@ -27,21 +29,21 @@ enum JsonValue : Printable {
     StringBuf toString(bool pretty) {
         var out = StringBuf();
         var stream = OutputStream(out);
-        writeJson(stream, this, 0, pretty);
+        Json.write(stream, this, 0, pretty);
         return out;
     }
 }
 
 /// One key-value pair of a JSON object.
-struct JsonMember {
+struct Member {
     /// The member's key.
     StringBuf key;
     /// The member's value.
-    JsonValue value;
+    Json.Value value;
 }
 
 /// A JSON parse error: what went wrong and the byte offset where parsing stopped.
-enum JsonError: Printable {
+enum Error: Printable {
     UnexpectedCharacter(int offset),
     InvalidLiteral(int offset),
     ExpectedStringKey(int offset),
@@ -62,22 +64,22 @@ enum JsonError: Printable {
     /// Writes the error as text, with its byte offset.
     void print(OutputStream& stream) {
         switch this {
-            case UnexpectedCharacter e: writeMessage(stream, "unexpected character", e);
-            case InvalidLiteral e: writeMessage(stream, "invalid literal", e);
-            case ExpectedStringKey e: writeMessage(stream, "expected string key", e);
-            case ExpectedColon e: writeMessage(stream, "expected ':'", e);
-            case ExpectedCommaOrBrace e: writeMessage(stream, "expected ',' or '}'", e);
-            case ExpectedCommaOrBracket e: writeMessage(stream, "expected ',' or ']'", e);
-            case UnterminatedString e: writeMessage(stream, "unterminated string", e);
-            case UnterminatedEscape e: writeMessage(stream, "unterminated escape", e);
-            case InvalidEscape e: writeMessage(stream, "invalid escape", e);
-            case InvalidUnicodeEscape e: writeMessage(stream, "invalid unicode escape", e);
-            case UnpairedSurrogate e: writeMessage(stream, "unpaired surrogate", e);
-            case UnescapedControlCharacter e: writeMessage(stream, "unescaped control character", e);
-            case InvalidNumber e: writeMessage(stream, "invalid number", e);
-            case NumberOutOfRange e: writeMessage(stream, "number out of range", e);
-            case UnexpectedTrailingCharacters e: writeMessage(stream, "unexpected trailing characters", e);
-            case MaximumDepthExceeded e: writeMessage(stream, "maximum nesting depth exceeded", e);
+            case UnexpectedCharacter e: Json.writeMessage(stream, "unexpected character", e);
+            case InvalidLiteral e: Json.writeMessage(stream, "invalid literal", e);
+            case ExpectedStringKey e: Json.writeMessage(stream, "expected string key", e);
+            case ExpectedColon e: Json.writeMessage(stream, "expected ':'", e);
+            case ExpectedCommaOrBrace e: Json.writeMessage(stream, "expected ',' or '}'", e);
+            case ExpectedCommaOrBracket e: Json.writeMessage(stream, "expected ',' or ']'", e);
+            case UnterminatedString e: Json.writeMessage(stream, "unterminated string", e);
+            case UnterminatedEscape e: Json.writeMessage(stream, "unterminated escape", e);
+            case InvalidEscape e: Json.writeMessage(stream, "invalid escape", e);
+            case InvalidUnicodeEscape e: Json.writeMessage(stream, "invalid unicode escape", e);
+            case UnpairedSurrogate e: Json.writeMessage(stream, "unpaired surrogate", e);
+            case UnescapedControlCharacter e: Json.writeMessage(stream, "unescaped control character", e);
+            case InvalidNumber e: Json.writeMessage(stream, "invalid number", e);
+            case NumberOutOfRange e: Json.writeMessage(stream, "number out of range", e);
+            case UnexpectedTrailingCharacters e: Json.writeMessage(stream, "unexpected trailing characters", e);
+            case MaximumDepthExceeded e: Json.writeMessage(stream, "maximum nesting depth exceeded", e);
         }
     }
 }
@@ -89,19 +91,19 @@ enum JsonError: Printable {
 /// `Number`, with out-of-range numbers an error. Inputs nested more than 1000
 /// levels deep are rejected. On failure returns which error occurred and at
 /// which byte offset.
-Result<JsonValue, JsonError> parseJson(string text) {
-    var parser = JsonParser(text);
+Result<Json.Value, Json.Error> parse(string text) {
+    var parser = Json.Parser(text);
     var r = parser.parseValue(0);
     if r == Ok {
         parser.skipWhitespace();
         if parser.pos < text.size() {
-            return Err(JsonError.UnexpectedTrailingCharacters(parser.pos));
+            return Err(Json.Error.UnexpectedTrailingCharacters(parser.pos));
         }
     }
     return r;
 }
 
-private const int maxJsonDepth = 1000;
+private const int maxDepth = 1000;
 
 private void writeMessage(OutputStream& stream, string text, int offset) {
     stream.append(text);
@@ -109,7 +111,7 @@ private void writeMessage(OutputStream& stream, string text, int offset) {
     offset.print(stream);
 }
 
-private struct JsonParser {
+private struct Parser {
     string input;
     int pos = 0;
 
@@ -132,7 +134,7 @@ private struct JsonParser {
         }
     }
 
-    Result<JsonValue, JsonError> parseValue(int depth) {
+    Result<Json.Value, Json.Error> parseValue(int depth) {
         skipWhitespace();
         char c = peek();
         if c == '{' {
@@ -142,58 +144,58 @@ private struct JsonParser {
         } else if c == '"' {
             var r = parseString();
             switch (r) {
-                case Ok s: return Ok(JsonValue.String(s));
+                case Ok s: return Ok(Json.Value.String(s));
                 case Err e: return Err(e);
             }
         } else if c == 't' {
-            return parseLiteral("true", JsonValue.Boolean(true));
+            return parseLiteral("true", Json.Value.Boolean(true));
         } else if c == 'f' {
-            return parseLiteral("false", JsonValue.Boolean(false));
+            return parseLiteral("false", Json.Value.Boolean(false));
         } else if c == 'n' {
-            return parseLiteral("null", JsonValue.Null);
+            return parseLiteral("null", Json.Value.Null);
         } else if c == '-' || c.isDigit() {
             return parseNumber();
         }
-        return Err(JsonError.UnexpectedCharacter(pos));
+        return Err(Json.Error.UnexpectedCharacter(pos));
     }
 
-    Result<JsonValue, JsonError> parseLiteral(string word, JsonValue value) {
+    Result<Json.Value, Json.Error> parseLiteral(string word, Json.Value value) {
         for c in word {
             if pos >= input.size() || input[pos] != c {
-                return Err(JsonError.InvalidLiteral(pos));
+                return Err(Json.Error.InvalidLiteral(pos));
             }
             pos++;
         }
         return Ok(value);
     }
 
-    Result<JsonValue, JsonError> parseObject(int depth) {
-        if depth >= maxJsonDepth {
-            return Err(JsonError.MaximumDepthExceeded(pos));
+    Result<Json.Value, Json.Error> parseObject(int depth) {
+        if depth >= Json.maxDepth {
+            return Err(Json.Error.MaximumDepthExceeded(pos));
         }
         pos++; // '{'
-        var members = List<JsonMember>();
+        var members = List<Json.Member>();
         skipWhitespace();
         if peek() == '}' {
             pos++;
-            return Ok(JsonValue.Object(members));
+            return Ok(Json.Value.Object(members));
         }
         while true {
             skipWhitespace();
             if peek() != '"' {
-                return Err(JsonError.ExpectedStringKey(pos));
+                return Err(Json.Error.ExpectedStringKey(pos));
             }
             var key = parseString();
             switch (key) {
                 case Ok k:
                     skipWhitespace();
                     if peek() != ':' {
-                        return Err(JsonError.ExpectedColon(pos));
+                        return Err(Json.Error.ExpectedColon(pos));
                     }
                     pos++;
                     var value = parseValue(depth + 1);
                     switch (value) {
-                        case Ok v: members.push(JsonMember(k, v));
+                        case Ok v: members.push(Json.Member(k, v));
                         case Err e: return Err(e);
                     }
                 case Err e: return Err(e);
@@ -203,24 +205,24 @@ private struct JsonParser {
                 pos++;
             } else if peek() == '}' {
                 pos++;
-                return Ok(JsonValue.Object(members));
+                return Ok(Json.Value.Object(members));
             } else {
-                return Err(JsonError.ExpectedCommaOrBrace(pos));
+                return Err(Json.Error.ExpectedCommaOrBrace(pos));
             }
         }
         abort("unreachable");
     }
 
-    Result<JsonValue, JsonError> parseArray(int depth) {
-        if depth >= maxJsonDepth {
-            return Err(JsonError.MaximumDepthExceeded(pos));
+    Result<Json.Value, Json.Error> parseArray(int depth) {
+        if depth >= Json.maxDepth {
+            return Err(Json.Error.MaximumDepthExceeded(pos));
         }
         pos++; // '['
-        var elements = List<JsonValue>();
+        var elements = List<Json.Value>();
         skipWhitespace();
         if peek() == ']' {
             pos++;
-            return Ok(JsonValue.Array(elements));
+            return Ok(Json.Value.Array(elements));
         }
         while true {
             var r = parseValue(depth + 1);
@@ -233,20 +235,20 @@ private struct JsonParser {
                 pos++;
             } else if peek() == ']' {
                 pos++;
-                return Ok(JsonValue.Array(elements));
+                return Ok(Json.Value.Array(elements));
             } else {
-                return Err(JsonError.ExpectedCommaOrBracket(pos));
+                return Err(Json.Error.ExpectedCommaOrBracket(pos));
             }
         }
         abort("unreachable");
     }
 
-    Result<StringBuf, JsonError> parseString() {
+    Result<StringBuf, Json.Error> parseString() {
         pos++; // opening quote
         var out = StringBuf();
         while true {
             if pos >= input.size() {
-                return Err(JsonError.UnterminatedString(pos));
+                return Err(Json.Error.UnterminatedString(pos));
             }
             char c = input[pos];
             if c == '"' {
@@ -255,7 +257,7 @@ private struct JsonParser {
             } else if c == '\\' {
                 pos++;
                 if pos >= input.size() {
-                    return Err(JsonError.UnterminatedEscape(pos));
+                    return Err(Json.Error.UnterminatedEscape(pos));
                 }
                 char e = input[pos];
                 pos++;
@@ -278,27 +280,27 @@ private struct JsonParser {
                 } else if e == 'u' {
                     int code = parseHex4();
                     if code < 0 {
-                        return Err(JsonError.InvalidUnicodeEscape(pos));
+                        return Err(Json.Error.InvalidUnicodeEscape(pos));
                     }
                     if code >= 0xD800 && code <= 0xDBFF {
                         if pos + 6 > input.size() || input[pos] != '\\' || input[pos + 1] != 'u' {
-                            return Err(JsonError.UnpairedSurrogate(pos));
+                            return Err(Json.Error.UnpairedSurrogate(pos));
                         }
                         pos += 2;
                         int lo = parseHex4();
                         if lo < 0xDC00 || lo > 0xDFFF {
-                            return Err(JsonError.UnpairedSurrogate(pos));
+                            return Err(Json.Error.UnpairedSurrogate(pos));
                         }
                         code = 0x10000 + ((code - 0xD800) << 10) + (lo - 0xDC00);
                     } else if code >= 0xDC00 && code <= 0xDFFF {
-                        return Err(JsonError.UnpairedSurrogate(pos));
+                        return Err(Json.Error.UnpairedSurrogate(pos));
                     }
-                    pushUtf8(out, code);
+                    Json.pushUtf8(out, code);
                 } else {
-                    return Err(JsonError.InvalidEscape(pos));
+                    return Err(Json.Error.InvalidEscape(pos));
                 }
-            } else if byteValue(c) < 32 {
-                return Err(JsonError.UnescapedControlCharacter(pos));
+            } else if Json.byteValue(c) < 32 {
+                return Err(Json.Error.UnescapedControlCharacter(pos));
             } else {
                 out.push(c);
                 pos++;
@@ -315,7 +317,7 @@ private struct JsonParser {
         int start = pos;
         int code = 0;
         for _ in 0..4 {
-            int digit = hexValue(input[pos]);
+            int digit = Json.hexValue(input[pos]);
             if digit < 0 {
                 pos = start;
                 return -1;
@@ -326,7 +328,7 @@ private struct JsonParser {
         return code;
     }
 
-    Result<JsonValue, JsonError> parseNumber() {
+    Result<Json.Value, Json.Error> parseNumber() {
         int start = pos;
         if peek() == '-' {
             pos++;
@@ -338,14 +340,14 @@ private struct JsonParser {
                 pos++;
             }
         } else {
-            return Err(JsonError.InvalidNumber(pos));
+            return Err(Json.Error.InvalidNumber(pos));
         }
         bool isFloat = false;
         if peek() == '.' {
             isFloat = true;
             pos++;
             if !peek().isDigit() {
-                return Err(JsonError.InvalidNumber(pos));
+                return Err(Json.Error.InvalidNumber(pos));
             }
             while peek().isDigit() {
                 pos++;
@@ -358,7 +360,7 @@ private struct JsonParser {
                 pos++;
             }
             if !peek().isDigit() {
-                return Err(JsonError.InvalidNumber(pos));
+                return Err(Json.Error.InvalidNumber(pos));
             }
             while peek().isDigit() {
                 pos++;
@@ -388,16 +390,16 @@ private struct JsonParser {
                 i++;
             }
             if !overflow {
-                return Ok(JsonValue.Integer(integer));
+                return Ok(Json.Value.Integer(integer));
             }
         }
         var text = toCString(lexeme);
         float64 value = strtod(text.data(), null);
         // Only infinite values equal their own half.
         if value != 0.0 && value / 2.0 == value {
-            return Err(JsonError.NumberOutOfRange(start));
+            return Err(Json.Error.NumberOutOfRange(start));
         }
-        return Ok(JsonValue.Number(value));
+        return Ok(Json.Value.Number(value));
     }
 }
 
@@ -449,7 +451,7 @@ private void writeIndent(OutputStream& out, int count) {
 private void writeQuoted(OutputStream& out, StringBuf& s) {
     out.push('"');
     for c in s {
-        int code = byteValue(c);
+        int code = Json.byteValue(c);
         if code == 34 {
             out.append("\\\"");
         } else if code == 92 {
@@ -482,7 +484,7 @@ private void writeNumber(OutputStream& out, float64 value) {
     // because `value != value` is false for NaN.) Only infinite values equal
     // their own half.
     if !(value == value) || (value != 0.0 && value / 2.0 == value) {
-        abort("JsonValue.Number must be finite");
+        abort("Json.Value.Number must be finite");
     }
     char[32] result = undefined;
     int bestPrecision = 17;
@@ -499,11 +501,11 @@ private void writeNumber(OutputStream& out, float64 value) {
     out.append(string(result));
 }
 
-private void writeJson(OutputStream& out, JsonValue& value, int level, bool indented) {
+private void write(OutputStream& out, Json.Value& value, int level, bool indented) {
     switch (value) {
-        case String s: writeQuoted(out, s);
+        case String s: Json.writeQuoted(out, s);
         case Integer n: n.print(out);
-        case Number f: writeNumber(out, f);
+        case Number f: Json.writeNumber(out, f);
         case Boolean b:
             if b {
                 out.append("true");
@@ -524,13 +526,13 @@ private void writeJson(OutputStream& out, JsonValue& value, int level, bool inde
                     first = false;
                     if indented {
                         out.push('\n');
-                        writeIndent(out, (level + 1) * 2);
+                        Json.writeIndent(out, (level + 1) * 2);
                     }
-                    writeJson(out, element, level + 1, indented);
+                    Json.write(out, element, level + 1, indented);
                 }
                 if indented {
                     out.push('\n');
-                    writeIndent(out, level * 2);
+                    Json.writeIndent(out, level * 2);
                 }
                 out.push(']');
             }
@@ -547,18 +549,18 @@ private void writeJson(OutputStream& out, JsonValue& value, int level, bool inde
                     first = false;
                     if indented {
                         out.push('\n');
-                        writeIndent(out, (level + 1) * 2);
+                        Json.writeIndent(out, (level + 1) * 2);
                     }
-                    writeQuoted(out, member.key);
+                    Json.writeQuoted(out, member.key);
                     out.push(':');
                     if indented {
                         out.push(' ');
                     }
-                    writeJson(out, member.value, level + 1, indented);
+                    Json.write(out, member.value, level + 1, indented);
                 }
                 if indented {
                     out.push('\n');
-                    writeIndent(out, level * 2);
+                    Json.writeIndent(out, level * 2);
                 }
                 out.push('}');
             }

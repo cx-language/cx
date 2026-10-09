@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s 2>&1 | %FileCheck %s
+
+namespace fs;
+
+// CHECK: [[@LINE+1]]:8: error: 'fs' collides with a namespace declared in this module
+struct fs {
+    int x;
+}
+// CHECK: 3:1: note: namespace declared here

@@ -1,3 +1,5 @@
+namespace Process;
+
 // Process management: environment variables and running subprocesses.
 
 /// Returns the value of the environment variable, or null if it's not set.
@@ -24,7 +26,7 @@ void setenv(string name, string value) {
 #endif
 
 /// The exit code and standard output of a finished subprocess.
-struct ProcessResult {
+struct Result {
     int status;
     StringBuf output;
 }
@@ -33,7 +35,7 @@ struct ProcessResult {
 ///
 /// Standard error is inherited, not captured. Status is -1 if the process
 /// was killed by a signal.
-ProcessResult run(string command) {
+Process.Result run(string command) {
     var commandBuf = toCString(command);
     var pipe = popen(commandBuf.data(), "r");
     if !pipe abort("run failed for command: ", command);
@@ -45,7 +47,7 @@ ProcessResult run(string command) {
         output.push(char(c));
     }
 
-    return ProcessResult(status = decodeStatus(pclose(pipe)), output = output);
+    return Process.Result(status = Process.decodeStatus(pclose(pipe)), output = output);
 }
 
 // pclose reports the raw wait status, mirroring the WIFEXITED/WEXITSTATUS

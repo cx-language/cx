@@ -3,15 +3,15 @@
 @test
 void testReadWriteFile() {
     var text = "The quick brown fox jumps over the lazy dog\n";
-    bool success = writeFile("test.txt", text);
+    bool success = File.write("test.txt", text);
     assert(success);
-    var content = readFile("test.txt").unwrap();
-    remove("test.txt");
+    var content = File.read("test.txt").unwrap();
+    File.remove("test.txt");
     assert(string(content) == text);
 }
 
 @test
 void testReadNonExistentFile() {
-    var content = readFile("dog.txt");
+    var content = File.read("dog.txt");
     assert(content == Err);
 }

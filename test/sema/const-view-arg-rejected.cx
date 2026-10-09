@@ -117,11 +117,11 @@ void foreignInitCaptures() {
 
 void stdObserversPass() {
     const path = "some/path.txt";
-    println(exists(path));
-    println(readFile(path));
-    println(writeFile(path, "data"));
-    println(fileSize(path));
-    println(getenv(path));
+    println(File.exists(path));
+    println(File.read(path));
+    println(File.write(path, "data"));
+    println(File.size(path));
+    println(Process.getenv(path));
 }
 
 const g = "hello";

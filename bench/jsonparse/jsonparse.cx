@@ -1,7 +1,7 @@
 // JSON parse and walk. Workload: a realistic generated document parsed
 // repeatedly with the stdlib JSON parser, checksummed by walking the value
 // tree. Output must be stable.
-int64 checksum(JsonValue& value) {
+int64 checksum(Json.Value& value) {
     switch (value) {
         case String s:
             return s.size();
@@ -53,7 +53,7 @@ void main() {
     var text = makeDocument();
     var total = int64(0);
     for _ in 0..100 {
-        var parsed = parseJson(text).unwrap();
+        var parsed = Json.parse(text).unwrap();
         total += checksum(parsed);
     }
     println(total);

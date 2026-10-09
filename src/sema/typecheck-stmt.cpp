@@ -1361,7 +1361,7 @@ EnumCase* Typechecker::typecheckSwitchCaseValue(Expr*& value, Type conditionType
             auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
             if (enumDecl->getCaseByName(varExpr->identifier)) {
                 // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                value = makeAST<MemberExpr>(makeAST<VarExpr>(enumDecl->getName(), varExpr->location), varExpr->identifier, varExpr->location);
+                value = makeAST<MemberExpr>(makeAST<VarExpr>(getNamespacedName(*enumDecl), varExpr->location), varExpr->identifier, varExpr->location);
                 value->endLocation = varExpr->endLocation;
             }
         }
@@ -1712,7 +1712,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                 auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
                 if (enumDecl->getCaseByName(varExpr->identifier)) {
                     // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
-                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(enumDecl->getName(), varExpr->location), varExpr->identifier, varExpr->location);
+                    switchCase.value =
+                        makeAST<MemberExpr>(makeAST<VarExpr>(getNamespacedName(*enumDecl), varExpr->location), varExpr->identifier, varExpr->location);
                     switchCase.value->endLocation = varExpr->endLocation;
                 }
             }
@@ -2011,40 +2012,56 @@ void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type condi
 }
 
 bool Typechecker::tryDesugarEnumIteration(ForEachStmt& forEachStmt) {
-    auto* varExpr = llvm::dyn_cast<VarExpr>(forEachStmt.range);
-    if (!varExpr) return false;
-    Decl* target = findDecl(varExpr->identifier, varExpr->location, varExpr->endLocation);
+    std::string qualifiedName;
+    llvm::StringRef baseName;
+    Location location;
+    Decl* target = nullptr;
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(forEachStmt.range)) {
+        baseName = varExpr->identifier;
+        location = varExpr->location;
+        target = findDecl(varExpr->identifier, varExpr->location, varExpr->endLocation);
+    } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(forEachStmt.range)) {
+        std::vector<Decl*> decls;
+        if (!tryResolveNamespaceMember(*memberExpr, qualifiedName, decls) || decls.size() != 1) return false;
+        baseName = qualifiedName;
+        location = memberExpr->location;
+        target = decls.front();
+    } else {
+        return false;
+    }
     if (auto* alias = llvm::dyn_cast<TypeAliasDecl>(target)) {
         Type aliasedType = resolveTypeAliases(alias->aliasedType);
         typecheckType(aliasedType, AccessLevel::None);
         target = aliasedType.getDecl();
         if (!target) return false;
     }
+    Location endLocation = forEachStmt.range->endLocation;
     if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(target)) {
         if (llvm::isa<EnumDecl>(typeTemplate->typeDecl)) {
-            ERROR_RANGE(getExprRangeStart(*varExpr), varExpr->endLocation, "cannot iterate cases of generic enum '" << typeTemplate->getName() << "'");
+            ERROR_RANGE(location, endLocation, "cannot iterate cases of generic enum '" << typeTemplate->getName() << "'");
         }
         return false;
     }
     auto* enumDecl = llvm::dyn_cast<EnumDecl>(target);
     if (!enumDecl) return false;
     if (enumDecl->instantiatedFrom) {
-        ERROR_RANGE(getExprRangeStart(*varExpr), varExpr->endLocation, "cannot iterate cases of generic enum '" << enumDecl->getName() << "'");
+        ERROR_RANGE(location, endLocation, "cannot iterate cases of generic enum '" << getNamespacedName(*enumDecl) << "'");
     }
-    checkHasAccess(*enumDecl, varExpr->location, AccessLevel::None);
+    checkHasAccess(*enumDecl, location, AccessLevel::None);
     for (auto& enumCase : enumDecl->cases) {
         if (enumCase.associatedType) {
-            ERROR_RANGE(getExprRangeStart(*varExpr), varExpr->endLocation,
-                        "cannot iterate cases of enum '" << enumDecl->getName() << "' because case '" << enumCase.getName() << "' has associated values");
+            ERROR_RANGE(location, endLocation,
+                        "cannot iterate cases of enum '" << getNamespacedName(*enumDecl) << "' because case '" << enumCase.getName()
+                                                         << "' has associated values");
         }
     }
     AstVector<Expr*> elements;
     for (auto& enumCase : enumDecl->cases) {
         // Base each case on the written name, which may be an alias; the enum's own
         // name could resolve to something else if shadowed by a local.
-        elements.push_back(makeAST<MemberExpr>(makeAST<VarExpr>(varExpr->identifier, varExpr->location), enumCase.getName(), varExpr->location));
+        elements.push_back(makeAST<MemberExpr>(makeAST<VarExpr>(baseName, location), enumCase.getName(), location));
     }
-    auto* array = makeAST<ArrayLiteralExpr>(std::move(elements), varExpr->location);
+    auto* array = makeAST<ArrayLiteralExpr>(std::move(elements), location);
     if (array->elements.empty()) {
         typecheckExpr(*array, false, BasicType::getArray(enumDecl->getType(), 0));
     } else {

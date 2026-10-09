@@ -2,28 +2,28 @@
 
 @test
 void testGetSetEnv() {
-    setenv("CX_TEST_PROCESS_VAR", "hello123");
-    assert(getenv("CX_TEST_PROCESS_VAR")! == "hello123");
+    Process.setenv("CX_TEST_PROCESS_VAR", "hello123");
+    assert(Process.getenv("CX_TEST_PROCESS_VAR")! == "hello123");
 }
 
 @test
 void testGetUnsetEnv() {
-    assert(getenv("CX_DEFINITELY_UNSET_VAR_XYZ") == null);
+    assert(Process.getenv("CX_DEFINITELY_UNSET_VAR_XYZ") == null);
 }
 
 @test
 void testRunStatus() {
-    var r0 = run("exit 0");
+    var r0 = Process.run("exit 0");
     assert(r0.status == 0);
-    var r3 = run("exit 3");
+    var r3 = Process.run("exit 3");
     assert(r3.status == 3);
-    var silent = run("exit 0");
+    var silent = Process.run("exit 0");
     assert(string(silent.output) == "");
 }
 
 @test
 void testRunOutput() {
-    var result = run("echo hello");
+    var result = Process.run("echo hello");
     assert(result.status == 0);
     assert(string(result.output).contains("hello"));
 }

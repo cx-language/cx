@@ -115,6 +115,8 @@ private:
     // consumption plus arena garbage), so rewinding is safe.
     void reparseGenericReturnType(Type& type, Location& location, llvm::StringRef& name, size_t returnTypeIndex, TypeDecl* receiver);
     Type parseSimpleType();
+    // Parses `identifier ('.' identifier)*`, for qualified type names and namespace declarators.
+    std::string parseDottedName(const char* contextInfo = nullptr);
     Type parseAnonymousStructType();
     Type parseFunctionType(Type returnType, bool isExtern = false);
     // `const` is rejected in types; declarators consume a leading `const` themselves.
@@ -135,6 +137,11 @@ private:
     // both inside the parentheses and after them.
     Expr* parseLoopCondition(Decl* parent, bool allowVarDecl);
     bool shouldParseVarStmt();
+    bool shouldParseQualifiedVarStmt();
+    // Matches `<...>` at pos, returning the index after the closing `>` or -1.
+    int matchGenericArgs(int pos);
+    // Skips a balanced `[...]` group at pos, returning the index after `]` or -1.
+    int skipBrackets(int pos);
     void splitRightShiftIfPresent();
     bool isTightLessThan(int lessOffset);
     bool shouldParseGenericArgumentList();
@@ -210,6 +217,11 @@ private:
     TypeTemplate* parseEnumTemplate(AccessLevel accessLevel);
     EnumDecl* parseEnumDecl(AstVector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
     ImportDecl* parseImportDecl();
+    void parseNamespaceDecl();
+    // Stamps a top-level declaration with the file's namespace. Forced-global
+    // declarations (externs naming C symbols, operator overloads found through
+    // global lookup) are exempt.
+    void stampNamespace(Decl* decl, bool forceGlobal);
     void parseIfdefBody(std::vector<Decl*>* activeDecls);
     void parseIfdef(std::vector<Decl*>* activeDecls);
     Decl* parseTopLevelDecl(bool addToSymbolTable);
@@ -230,6 +242,8 @@ private:
 private:
     Lexer lexer;
     Module* currentModule;
+    // File-scoped namespace from `namespace foo;`, empty for the global namespace.
+    std::string currentNamespace;
     std::vector<Token> tokenBuffer;
     size_t currentTokenIndex;
     const CompileOptions& options;

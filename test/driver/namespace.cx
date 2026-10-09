@@ -1,0 +1,44 @@
+// RUN: %cx run %s %S/inputs/namespace-lib.cx %S/inputs/namespace-lib2.cx %S/inputs/namespace-nested.cx | %FileCheck %s
+
+void main() {
+    println(ns.answer()); // CHECK: 42
+    println(ns.greet("bob")); // CHECK: hi bob
+    println(ns.greet("a", "b")); // CHECK: ab
+    println(ns.identity(5)); // CHECK: 5
+    var p = ns.Point(3, 4);
+    println(p.sum()); // CHECK: 7
+    println(p == ns.Point(3, 4)); // CHECK: true
+    println(ns.Box(content = 9).content); // CHECK: 9
+    ns.Box<int> box = ns.Box(content = 1);
+    println(box.content + 1); // CHECK: 2
+    ns.Number[3] nums;
+    nums[0] = 5;
+    println(nums[0]); // CHECK: 5
+    var num = 6;
+    ns.Number* ptr = &num;
+    println(*ptr + 1); // CHECK: 7
+    ns.Color? maybe = ns.Color.Green;
+    println(maybe!); // CHECK: Green
+    println(ns.Color.Red); // CHECK: Red
+    switch ns.Color.Green {
+        case Red: println("red");
+        case Green: println("green"); // CHECK: green
+    }
+    for c in ns.Color {
+        println(c);
+        // CHECK: Red
+        // CHECK: Green
+    }
+    println(ns.limit); // CHECK: 10
+    println(ns.counter); // CHECK: 0
+    ns.counter = 41;
+    ns.counter++;
+    println(ns.counter); // CHECK: 42
+    ns.Number n = 1;
+    println(n + 1); // CHECK: 2
+    println(ns.viaHelper()); // CHECK: 14
+    println(ns.more()); // CHECK: 43
+    println(outer.inner.deep()); // CHECK: 3
+    var f = ns.answer;
+    println(f()); // CHECK: 42
+}

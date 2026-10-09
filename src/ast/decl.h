@@ -84,6 +84,8 @@ struct Decl {
     virtual Module* getModule() const = 0;
     virtual Location getLocation() const = 0;
     virtual llvm::StringRef getName() const = 0;
+    // File-scoped namespace from `namespace foo;`, empty for the global namespace.
+    virtual llvm::StringRef getNamespaceName() const { return {}; }
     bool isMain() const { return getName() == "main"; }
     bool isLambda() const { return isFunctionDecl() && getName().starts_with("__lambda"); }
     virtual bool isGlobal() const;
@@ -199,6 +201,7 @@ struct FunctionDecl : Decl {
     bool hasPack() const { return !proto.params.empty() && proto.params.back().isPack; }
     const ParamDecl* getPackParam() const { return hasPack() ? &proto.params.back() : nullptr; }
     llvm::StringRef getName() const override { return proto.name; }
+    llvm::StringRef getNamespaceName() const override;
     std::string getQualifiedName() const;
     Type getReturnType() const { return proto.returnType; }
     llvm::ArrayRef<ParamDecl> getParams() const { return proto.params; }
@@ -213,6 +216,8 @@ struct FunctionDecl : Decl {
 
     FunctionProto proto;
     AstVector<GenericArg> genericArgs;
+    // Set for free functions only; methods resolve through their parent type.
+    llvm::StringRef namespaceName;
     std::optional<AstVector<Stmt*>> body;
     Location location;
     Module& module;
@@ -320,6 +325,7 @@ struct TypeDecl : Decl {
     : Decl(DeclKind::TypeDecl, accessLevel), tag(tag), name(internString(name)), genericArgs(std::move(genericArgs)), interfaces(std::move(interfaces)),
       location(location), module(module), instantiatedFrom(instantiatedFrom) {}
     llvm::StringRef getName() const override { return name; }
+    llvm::StringRef getNamespaceName() const override { return namespaceName; }
     std::string getQualifiedName() const;
     bool hasInterface(const TypeDecl& interface) const;
     bool implementsInterface(llvm::StringRef name) const;
@@ -352,6 +358,7 @@ struct TypeDecl : Decl {
 
     TypeTag tag;
     llvm::StringRef name;
+    llvm::StringRef namespaceName;
     AstVector<GenericArg> genericArgs;
     AstVector<Type> interfaces;
     AstVector<FieldDecl> fields;
@@ -392,11 +399,13 @@ struct TypeAliasDecl : Decl {
     TypeAliasDecl(llvm::StringRef name, Type aliasedType, AccessLevel accessLevel, Module& module, Location location)
     : Decl(DeclKind::TypeAliasDecl, accessLevel), name(internString(name)), aliasedType(aliasedType), location(location), module(module) {}
     llvm::StringRef getName() const override { return name; }
+    llvm::StringRef getNamespaceName() const override { return namespaceName; }
     Module* getModule() const override { return &module; }
     Location getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->kind == DeclKind::TypeAliasDecl; }
 
     llvm::StringRef name;
+    llvm::StringRef namespaceName;
     Type aliasedType;
     Location location;
     Module& module;
@@ -446,11 +455,14 @@ struct VarDecl : VariableDecl, Movable {
     VarDecl(Type type, llvm::StringRef name, Expr* initializer, Decl* parent, AccessLevel accessLevel, Module& module, Location location)
     : VariableDecl(DeclKind::VarDecl, accessLevel, parent, type), name(internString(name)), initializer(initializer), location(location), module(module) {}
     llvm::StringRef getName() const override { return name; }
+    llvm::StringRef getNamespaceName() const override { return namespaceName; }
     Location getLocation() const override { return location; }
     Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->kind == DeclKind::VarDecl; }
 
     llvm::StringRef name;
+    // Set for global variables only; locals resolve through their scope.
+    llvm::StringRef namespaceName;
     Expr* initializer;
     Location location;
     Module& module;
@@ -487,6 +499,13 @@ struct ImportDecl : Decl {
 };
 
 std::vector<Note> getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls);
+
+// The declaration name scoped under its namespace (`ns.Name`), or the plain name when global.
+inline std::string getNamespacedName(const Decl& decl) {
+    llvm::StringRef ns = decl.getNamespaceName();
+    if (ns.empty()) return decl.getName().str();
+    return ns.str() + "." + decl.getName().str();
+}
 
 // Binds a type spelling to its declaration. Type nodes are interned by spelling
 // across the whole compilation, so registering a different declaration under an

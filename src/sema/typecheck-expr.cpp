@@ -519,7 +519,7 @@ static std::optional<ArgumentValidation> computeArgParamMapping(llvm::ArrayRef<N
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly, Type expectedType) {
     if (findDecls(expr.identifier).empty()) {
         if (auto* enumCase = getExpectedEnumCase(expr.identifier, expectedType)) {
-            MemberExpr qualified(makeAST<VarExpr>(enumCase->getEnumDecl()->getName(), expr.location), expr.identifier, expr.location);
+            MemberExpr qualified(makeAST<VarExpr>(getNamespacedName(*enumCase->getEnumDecl()), expr.location), expr.identifier, expr.location);
             if (auto* resolvedCase = getEnumCase(qualified, expectedType)) {
                 checkHasAccess(*resolvedCase->getEnumDecl(), expr.location, AccessLevel::None);
                 expr.decl = resolvedCase;
@@ -1584,8 +1584,9 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
                     "cannot rebind borrow of type '" << lhs->assignableType << "' (use '*' to write through it explicitly)");
     }
     // Static consts name frozen storage through a type, not a value; reject
-    // before the lvalue check, which assumes a value base.
-    if (auto* member = llvm::dyn_cast<MemberExpr>(lhs); member && llvm::isa_and_nonnull<VarDecl>(member->decl)) {
+    // before the lvalue check, which assumes a value base. Mutable namespaced
+    // globals assign like plain globals.
+    if (auto* member = llvm::dyn_cast<MemberExpr>(lhs); member && llvm::isa_and_nonnull<VarDecl>(member->decl) && llvm::cast<VarDecl>(member->decl)->isConst) {
         ERROR_RANGE(getExprRangeStart(*lhs), lhs->endLocation, "cannot assign to constant '" << member->member << "' of type '" << lhs->type << "'");
     }
     auto* swizzleMember = llvm::dyn_cast<MemberExpr>(lhs);
@@ -1678,7 +1679,8 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr) {
         }
     }
     if (auto* baseVarExpr = getAssignmentBaseVarExpr(*lhs)) {
-        if (baseVarExpr->decl->isVarDecl()) {
+        // A namespace base names no declaration.
+        if (baseVarExpr->decl && baseVarExpr->decl->isVarDecl()) {
             definitelyAssignedDecls.insert(baseVarExpr->decl);
         }
         // Member and index bases are read to form the address even though the
@@ -3421,7 +3423,7 @@ bool Typechecker::trySynthesizePrintMethod(TypeDecl& decl, bool silent) {
         }
         body.push_back(makeAST<SwitchStmt>(makeAST<VarExpr>("this", location), std::move(cases), AstVector<Stmt*>()));
     } else {
-        appendString(body, std::string(decl.getName()) + "(");
+        appendString(body, getNamespacedName(decl) + "(");
         bool first = true;
         for (FieldDecl& field : decl.fields) {
             if (!first) appendString(body, ", ");
@@ -4216,7 +4218,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 // Order by genericParams: StringMap iteration order is arbitrary, and a
                 // misordered lookup would miss the existing instantiation below.
                 auto genericArgTypes = map(typeTemplate->genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
-                auto typeDecls = findDecls(getQualifiedTypeName(typeTemplate->typeDecl->getName(), genericArgTypes));
+                auto typeDecls = findDecls(getQualifiedTypeName(getNamespacedName(*typeTemplate->typeDecl), genericArgTypes));
 
                 if (typeDecls.empty()) {
                     typeDecl = typeTemplate->instantiate(genericArgs);
@@ -4550,6 +4552,18 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         return Type::getVoid();
     }
 
+    // A call through a namespace (`ns.func(...)`, `ns.Type(...)`) resolves
+    // like a call to the qualified name, reusing overload handling below.
+    if (auto* memberCallee = llvm::dyn_cast<MemberExpr>(expr.callee)) {
+        std::string qualifiedName;
+        std::vector<Decl*> namespaceDecls;
+        if (tryResolveNamespaceMember(*memberCallee, qualifiedName, namespaceDecls)) {
+            auto* varCallee = makeAST<VarExpr>(qualifiedName, memberCallee->base->location);
+            varCallee->endLocation = memberCallee->endLocation;
+            expr.callee = varCallee;
+        }
+    }
+
     Decl* decl;
 
     if (auto* enumCase = getEnumCase(*expr.callee, expectedType, &expr)) {
@@ -4813,8 +4827,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {
                 if (auto* enumCase = getExpectedEnumCase(varExpr->identifier, expectedType)) {
                     // An unqualified `Ok(...)` mirrors the qualified `Result.Ok(...)`, so desugar to it.
-                    expr.callee =
-                        makeAST<MemberExpr>(makeAST<VarExpr>(enumCase->getEnumDecl()->getName(), varExpr->location), varExpr->identifier, varExpr->location);
+                    expr.callee = makeAST<MemberExpr>(makeAST<VarExpr>(getNamespacedName(*enumCase->getEnumDecl()), varExpr->location), varExpr->identifier,
+                                                      varExpr->location);
                     expr.callee->endLocation = varExpr->endLocation;
                     return typecheckCallExpr(expr, expectedType);
                 }
@@ -5344,6 +5358,17 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType, bool 
         return staticConst->type;
     }
 
+    // A member of a namespace (`ns.x`) behaves like the qualified name used directly.
+    std::string qualifiedName;
+    std::vector<Decl*> namespaceDecls;
+    if (tryResolveNamespaceMember(expr, qualifiedName, namespaceDecls)) {
+        VarExpr scratch(qualifiedName, expr.base->location);
+        scratch.endLocation = expr.endLocation;
+        Type result = typecheckVarExpr(scratch, useIsWriteOnly, expectedType);
+        expr.decl = scratch.decl;
+        return result;
+    }
+
     Type baseType = typecheckExpr(*expr.base, useIsWriteOnly);
     if (useIsWriteOnly) {
         if (auto* baseVar = llvm::dyn_cast<VarExpr>(expr.base)) {
@@ -5594,7 +5619,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
     }
 
     if (auto* varExpr = getAssignmentBaseVarExpr(*expr.getBase())) {
-        if (varExpr->decl->isVarDecl()) {
+        // A namespace base names no declaration.
+        if (varExpr->decl && varExpr->decl->isVarDecl()) {
             definitelyAssignedDecls.insert(varExpr->decl);
         }
         // The base is read to form the address even though the element is only
@@ -6036,11 +6062,66 @@ static Decl* pickNamedType(llvm::ArrayRef<Decl*> decls, llvm::function_ref<bool(
 static const MemberExpr* typeMemberBase(Typechecker& checker, const Expr& expr, std::vector<Decl*>& decls) {
     auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
     if (!memberExpr) return nullptr;
-    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
-    if (!varExpr) return nullptr;
-    decls = checker.findDecls(varExpr->identifier);
-    resolveAliasDecls(checker, decls);
-    return memberExpr;
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base)) {
+        decls = checker.findDecls(varExpr->identifier);
+        resolveAliasDecls(checker, decls);
+        return memberExpr;
+    }
+    // Qualified base (`ns.Type.member`): the base names a type through a namespace.
+    if (auto* baseMember = llvm::dyn_cast<MemberExpr>(memberExpr->base)) {
+        std::string qualifiedName;
+        if (!checker.tryResolveNamespaceMember(*baseMember, qualifiedName, decls)) return nullptr;
+        resolveAliasDecls(checker, decls);
+        return memberExpr;
+    }
+    return nullptr;
+}
+
+bool Typechecker::isKnownNamespace(llvm::StringRef name) const {
+    if (currentModule && currentModule->namespaces.contains(name)) return true;
+    if (Module::declaresNamespace(name)) return true;
+    if (Module* std = Module::getStdlibModule()) {
+        if (std->namespaces.contains(name)) return true;
+    }
+    return false;
+}
+
+bool Typechecker::tryResolveNamespaceMember(const MemberExpr& expr, std::string& qualifiedName, std::vector<Decl*>& decls) {
+    // Collect the qualifier chain (`a.b.member`); anything else is plain member access.
+    llvm::SmallVector<llvm::StringRef, 4> segments;
+    segments.push_back(expr.member);
+    const Expr* base = expr.base;
+    while (auto* memberBase = llvm::dyn_cast<MemberExpr>(base)) {
+        segments.push_back(memberBase->member);
+        base = memberBase->base;
+    }
+    auto* varBase = llvm::dyn_cast<VarExpr>(base);
+    if (!varBase) return false;
+    segments.push_back(varBase->identifier);
+    // A type or function with the root name takes precedence over the namespace,
+    // but values don't: a parameter named `path` must not hide `path.join`.
+    auto rootDecls = findDecls(varBase->identifier);
+    for (Decl* decl : rootDecls) {
+        if (!decl->isVariableDecl() && !decl->isEnumCaseDecl()) return false;
+    }
+    std::string qualifier;
+    for (size_t i = segments.size(); i-- > 1;) {
+        if (!qualifier.empty()) qualifier += ".";
+        qualifier += segments[i];
+    }
+    // Only a known namespace can own the qualified name (methods use dotted
+    // keys too, but they are filtered out below); check before the lookup.
+    if (!isKnownNamespace(qualifier)) return false;
+    qualifiedName = qualifier + "." + segments[0].str();
+    decls = findDecls(qualifiedName);
+    // Methods are not namespace members: `ns.S.m` resolves through the type like `S.m` does.
+    llvm::erase_if(decls, [](Decl* decl) { return decl->isMethodDecl(); });
+    if (!decls.empty()) return true;
+    decls.clear();
+    if (rootDecls.empty()) {
+        ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "namespace '" << qualifier << "' has no member '" << segments[0] << "'");
+    }
+    return false;
 }
 
 static bool isIgnoredName(Decl* decl) {
@@ -6079,7 +6160,8 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr
             for (auto* staticConst : enumDecl->staticConsts) {
                 if (staticConst->getName() == memberExpr->member) return nullptr;
             }
-            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
+            ERROR_RANGE(getExprRangeStart(expr), expr.endLocation,
+                        "enum '" << getNamespacedName(*enumDecl) << "' has no case named '" << memberExpr->member << "'");
         }
     } else if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(enumDeclOrTemplate)) {
         if (llvm::isa<EnumDecl>(typeTemplate->typeDecl)) {
@@ -6115,7 +6197,8 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     auto* templateDecl = llvm::cast<EnumDecl>(typeTemplate.typeDecl);
     auto* templateCase = templateDecl->getCaseByName(caseName);
     if (!templateCase) {
-        ERROR_RANGE(getExprRangeStart(memberExpr), memberExpr.endLocation, "enum '" << templateDecl->getName() << "' has no case named '" << caseName << "'");
+        ERROR_RANGE(getExprRangeStart(memberExpr), memberExpr.endLocation,
+                    "enum '" << getNamespacedName(*templateDecl) << "' has no case named '" << caseName << "'");
     }
 
     std::vector<GenericArg> inferredGenericArgs;
@@ -6153,7 +6236,7 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     }
 
     auto orderedArgs = map(typeTemplate.genericParams, [&](const GenericParamDecl& genericParam) { return genericArgs.find(genericParam.getName())->second; });
-    auto qualifiedName = getQualifiedTypeName(templateDecl->getName(), orderedArgs);
+    auto qualifiedName = getQualifiedTypeName(getNamespacedName(*templateDecl), orderedArgs);
     // Same-named instantiations resolve to the first one, mirroring generic struct constructor calls.
     auto existingDecls = findDecls(qualifiedName);
     EnumDecl* enumDecl = nullptr;
@@ -6166,7 +6249,7 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
     if (!enumDecl) {
         if (!existingDecls.empty()) {
             ERROR_RANGE(getExprRangeStart(memberExpr), memberExpr.endLocation,
-                        "ambiguous reference to '" << getDisplayTypeName(templateDecl->getName(), orderedArgs) << "'");
+                        "ambiguous reference to '" << getDisplayTypeName(getNamespacedName(*templateDecl), orderedArgs) << "'");
         }
         enumDecl = llvm::cast<EnumDecl>(typeTemplate.instantiate(genericArgs));
         currentModule->addToSymbolTable(*enumDecl);
