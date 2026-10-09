@@ -4454,6 +4454,13 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
                 }
             } else {
                 setMoved(receiver, true, track);
+                // Deinit through a borrow still destroys the referent, so the
+                // freeze checker must see it as a move.
+                if (baseVar && baseVar->decl && base->type && base->type.isReferenceType()) {
+                    ViewMemberRoot root;
+                    root.base = baseVar->decl;
+                    recordRootMutation(std::move(root), receiver->location, /*isMove=*/true);
+                }
             }
         };
 

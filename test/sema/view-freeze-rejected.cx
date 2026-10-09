@@ -363,6 +363,43 @@ void scalarDerefWritePasses() {
     println(f);
 }
 
+void deinitThroughBorrowRejected() {
+    var list = List([1, 2, 3]);
+    List<int>& a = list;
+    // CHECK: [[@LINE+1]]:5: error: cannot move 'list' while view 'a' borrowed from it is still in use
+    a.deinit();
+    println(a);
+}
+
+void deinitDiamondReportsOnce(bool c) {
+    var list = List([1, 2, 3]);
+    List<int>& b1 = list;
+    List<int>& b2 = list;
+    List<int>& a = if c then b1 else b2;
+    // CHECK: [[@LINE+1]]:5: error: cannot move 'list' while view 'a' borrowed from it is still in use
+    a.deinit();
+    println(a);
+}
+
+void deinitWithoutUsePasses() {
+    var list = List([1, 2, 3]);
+    List<int>& a = list;
+    a.deinit();
+    println("done");
+}
+
+void deinitSink(List<int>& b) {
+    b.deinit();
+}
+
+void deinitParamCrossFunctionRejected() {
+    var list = List([1, 2, 3]);
+    int[] s = list;
+    // CHECK: [[@LINE+1]]:16: error: cannot pass 'list' to 'deinitSink' while view 's' borrowed from it is still in use (it may write through the argument)
+    deinitSink(list);
+    println(s);
+}
+
 void mutateInDeadBranch(List<int>& list, bool something) {
     var cell = list.last();
     if something {
