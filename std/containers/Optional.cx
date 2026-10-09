@@ -42,18 +42,6 @@ bool operator== <T: Comparable>(T& a, T?& b) {
     return *a == (*b)!;
 }
 
-/// Returns true if the optional pointer is non-null and points to a value equal to b.
-bool operator== <T: Comparable>(T*?& a, T& b) {
-    if (*a == null) return false;
-    return *(*a) == *b;
-}
-
-/// Returns true if the optional pointer is non-null and points to a value equal to a.
-bool operator== <T: Comparable>(T& a, T*?& b) {
-    if (*b == null) return false;
-    return *a == *(*b);
-}
-
 /// Returns true if the optional borrow is non-null and borrows a value equal to b.
 bool operator== <T: Comparable>(T&? a, T& b) {
     // The null check narrows `a` to the payload, so no unwrap is needed.

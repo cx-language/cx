@@ -4,22 +4,7 @@
 void testOptionalComparison() {
     int v = 5;
     int w = 6;
-    int*? p = &v;
-    int*? n = null;
-    assert(p == v);
-    assert(!(p == w));
-    assert(!(n == v));
-    assert(!(p != v));
-    assert(p != w);
-    assert(n != v);
-    // Value on the left resolves to the symmetric overloads, not ambiguously.
-    assert(v == p);
-    assert(!(w == p));
-    assert(!(v == n));
-    assert(!(v != p));
-    assert(w != p);
-    assert(v != n);
-    // Value optionals compare in both orders too.
+    // Value optionals compare in both orders.
     int? o = 5;
     int? m = null;
     assert(o == v);
