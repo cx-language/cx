@@ -408,6 +408,7 @@ add_test(NAME bench-corpus-sloc COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_
 add_test(NAME lit-config COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/test_lit_cfg.py")
 add_test(NAME py-utf8 COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/test_py_utf8.py")
 add_test(NAME prose COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_prose.py")
+add_test(NAME docs-order COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_docs_order.py")
 add_test(NAME jit-pins COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/website/check_jit_pins.py")
 # Language server end-to-end tests (query subprocess + stdio server session).
 add_test(NAME lsp COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")

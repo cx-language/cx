@@ -2,7 +2,7 @@
 
 Operators can be overloaded for user-defined types by declaring a function
 named `operator` followed by the operator. Binary operators are overloaded
-with non-member functions taking two parameters. Operator operands can be
+with free functions taking two parameters. Operator operands can be
 borrowed implicitly: `T&` parameters accept values as usual, and lvalues can
 also fill `T*` parameters without an explicit `&`. Ordinary function calls
 still require `&` for a `T*` parameter. Value parameters copy their operands.
@@ -45,7 +45,7 @@ the results together, so a custom `operator==` is only needed for different
 behavior. The default covers `!=` too (members compared with `!=`, `||`ed).
 Comparing structs of different types is still an error.
 
-The subscript operator is overloaded with a member function,
+The subscript operator is overloaded with a method,
 so it can access the instance through `this`.
 A typical use is indexed access to a type's components,
 like the axes of a vector:

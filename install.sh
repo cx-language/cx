@@ -20,20 +20,20 @@ detect_platform() {
         Linux)
             case "$arch" in
                 x86_64) platform="linux-x64" ;;
-                *) fail "no prebuilt binary for Linux/$arch (only x64); build from source: https://cx-language.github.io/cx/hello-world" ;;
+                *) fail "no prebuilt binary for Linux/$arch (only x64); build from source: https://cx-language.github.io/cx/building-from-source" ;;
             esac
             ;;
         Darwin)
             case "$arch" in
                 arm64) platform="macos-arm64" ;;
-                *) fail "no prebuilt binary for Intel Macs; build from source: https://cx-language.github.io/cx/hello-world" ;;
+                *) fail "no prebuilt binary for Intel Macs; build from source: https://cx-language.github.io/cx/building-from-source" ;;
             esac
             ;;
         MINGW* | MSYS* | CYGWIN*)
             fail "Windows: download cx-windows-x64.zip from https://github.com/$REPO/releases/latest and unpack it"
             ;;
         *)
-            fail "unsupported platform $os/$arch; build from source: https://cx-language.github.io/cx/hello-world"
+            fail "unsupported platform $os/$arch; build from source: https://cx-language.github.io/cx/building-from-source"
             ;;
     esac
 }

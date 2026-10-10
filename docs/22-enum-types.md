@@ -72,8 +72,8 @@ void main() {
 }
 ```
 
-Enums can define member functions, which are called on enum values.
-Inside a member function, `this` is the enum value the function was called on:
+Enums can define methods, which are called on enum values.
+Inside a method, `this` is the enum value the function was called on:
 
 ```cs
 enum Outcome<T> {

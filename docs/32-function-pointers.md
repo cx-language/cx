@@ -43,7 +43,7 @@ void main() {
 ```
 
 A cx function can be passed where a C function pointer is expected,
-see [Using C libraries](low-level-programming). Pass the function directly:
+see [Using C libraries](c-interop#using-c-libraries). Pass the function directly:
 a function pointer held in a variable can't be converted, and the callback
 sees the default context rather than the caller's.
 

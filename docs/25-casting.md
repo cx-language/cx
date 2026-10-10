@@ -67,11 +67,57 @@ Conversions that are always safe need no syntax at all:
 integer literals convert to the expected numeric type automatically,
 and values bind to `T&` borrow parameters automatically.
 Forming a `T*` pointer needs an explicit `&`, and reading one needs an explicit `*`
-(see [Pointers](pointers)).
+(see [References](references)).
 
-Structs can also declare their own implicit conversions with `implicit`
-constructors and member functions (see [Structs](structs)).
-Those apply everywhere a value flows into an expected type,
-such as arguments, return values, and initializers.
+## Implicit conversions
+
+A single-parameter constructor marked `implicit` converts its
+argument type. In the example below, a bare `5` works wherever a
+`Counter` is expected:
+
+```cs
+struct Counter {
+    int count;
+
+    implicit Counter(int count) {
+        this.count = count;
+    }
+}
+
+void greet(Counter counter) {
+    println(counter.count);
+}
+
+void main() {
+    greet(5); // prints 5
+}
+```
+
+Without `implicit`, constructors never convert:
+pass `Counter(10)` explicitly instead of a bare `10`.
+
+The other direction works with an `implicit` method that takes no
+parameters and returns the target type:
+
+```cs
+struct Label {
+    string text;
+
+    implicit string view() {
+        return text;
+    }
+}
+
+void main() {
+    var label = Label("hi");
+    string s = label;
+    println(s); // prints "hi"
+}
+```
+
+Implicit conversions apply when passing arguments, returning values, and
+initializing or assigning variables. Only one user-declared conversion applies
+per step, and overloads that match without converting win. If conversions
+exist in both directions at once, the use is ambiguous and fails to compile.
 Projects tune the builtin conversions with warning options such as
 `-Wconversion` (see [Build system](./build-system)).

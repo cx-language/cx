@@ -129,7 +129,7 @@ pos += vel * dt;</code></pre>
                     semantic highlighting. Works with VS Code and other LSP-compatible editors.</p>
                 <p><a href="https://marketplace.visualstudio.com/items?itemName=cx-language.cx-lang" target="_blank">VS
                     Code Marketplace →</a></p>
-                <p><a href="./lsp">LSP editor setup →</a></p>
+                <p><a href="./editor-setup">LSP editor setup →</a></p>
             </div>
         </div>
         <div class="card">
@@ -189,7 +189,7 @@ void mathWorks() {
 
 <section class="part" id="installing">
     <h2>Installing</h2>
-    <p class="sub">Prebuilt binaries for Linux (x64), macOS (Apple Silicon), and Windows (x64). To build from source, visit <a href="https://github.com/cx-language/cx" target="_blank">GitHub</a>.</p>
+    <p class="sub">Prebuilt binaries for Linux (x64), macOS (Apple Silicon), and Windows (x64). To build from source, see <a href="./building-from-source">Building from source</a>.</p>
     ##OSTABS##
     <div class="os-pane" data-os="unix">
         <div class="steps">
@@ -209,7 +209,7 @@ void mathWorks() {
                 <pre class="snippet"><code>$ export PATH="$HOME/.cx:$PATH"
 $ cx run hello.cx
 Hello world</code></pre>
-                <p>New shells get the <code>PATH</code> automatically; this shell needs one <code>export</code> first. Then <code>cx run</code> JIT-compiles and executes in one step. Point your editor at the bundled <code>cx-lsp</code> - see <a href="./lsp">Editor setup</a>.</p>
+                <p>New shells get the <code>PATH</code> automatically; this shell needs one <code>export</code> first. Then <code>cx run</code> JIT-compiles and executes in one step. Point your editor at the bundled <code>cx-lsp</code> - see <a href="./editor-setup">Editor setup</a>.</p>
             </div>
         </div>
     </div>
@@ -231,7 +231,7 @@ Hello world</code></pre>
                 <h3>Run it</h3>
                 <pre class="snippet"><code>&gt; .\cx.exe run hello.cx
 Hello world</code></pre>
-                <p><code>cx run</code> builds and executes in one step. Point your editor at the bundled <code>cx-lsp.exe</code> - see <a href="./lsp">Editor setup</a>.</p>
+                <p><code>cx run</code> builds and executes in one step. Point your editor at the bundled <code>cx-lsp.exe</code> - see <a href="./editor-setup">Editor setup</a>.</p>
             </div>
         </div>
     </div>

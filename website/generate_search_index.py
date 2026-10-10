@@ -99,7 +99,9 @@ def page_id(path, base_dir):
 def collect_pages(docs_dir, generated_dir):
     """(path, base_dir) pairs in index order: guide first, then reference."""
     by_name = lambda path: path.as_posix()
-    pages = [(path, docs_dir) for path in sorted(docs_dir.glob("*.md"), key=by_name)]
+    # Compiler internals live in the repo only.
+    pages = [(path, docs_dir) for path in sorted(docs_dir.glob("*.md"), key=by_name)
+             if path.name != "internals.md"]
     pages += [(path, generated_dir) for path in sorted(generated_dir.rglob("*.md"), key=by_name)]
     return pages
 

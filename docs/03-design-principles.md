@@ -15,9 +15,8 @@ compile down to the code you would have written by hand, and you only pay for th
 you use.
 
 Planned features open up more optimization opportunities than C++ has: integer overflow
-that is undefined behavior in release builds (see [Builtin types](./builtin-types#planned-features)),
-pointers declared non-aliasing (see [Pointers](./pointers#planned-features)), and struct
-fields the compiler may reorder for a better layout (see [Structs](./structs#planned-features)).
+that is undefined behavior in release builds (see [Builtin types](./builtin-types#planned-features))
+and pointers declared non-aliasing (see [References and pointers](./references#planned-features)).
 
 ## Fast iteration
 
@@ -62,7 +61,7 @@ checks don't (see [Build system](./build-system#planned-features)).
 References and views (`T&`, `T[]`, `string`, iterators) are checked at compile time
 without lifetime annotations: a borrow of a local or temporary cannot escape its
 function, and an owner cannot be reassigned, moved, or mutated while a view of it
-is alive (see [Pointers](./pointers#borrowed-parameters)). Raw pointers (`T*`) are
+is alive (see [References](./references#borrowed-parameters)). Raw pointers (`T*`) are
 the explicit unsafe hatch and are not checked. cx still does not guarantee memory
 or thread safety the way Rust does; see [Non-goals](#non-goals).
 
@@ -86,7 +85,7 @@ from the start.
 
 C headers can be imported directly, with no bindings to write, so existing C libraries and
 operating system APIs are usable from day one, and cx can be adopted gradually next to
-existing code (see [Using C libraries](./low-level-programming#using-c-libraries)).
+existing code (see [Using C libraries](./c-interop#using-c-libraries)).
 Interoperating with C++ code to a certain degree, to avoid writing a C wrapper for
 everything, is a longer-term goal, but it should not restrict the design of the language.
 
@@ -101,8 +100,8 @@ reorganize their files without breaking users (see [Modules and imports](./modul
 
 `cx build` and `cx run` work without any configuration, dependencies are fetched straight
 from Git repositories, `cx test` runs unit tests, and the `cx-lsp` language server
-provides editor support (see [Build system](./build-system) and [Language
-server](./lsp)).
+provides editor support (see [Build system](./build-system) and [Editor
+setup](./editor-setup)).
 
 ## Proven ideas over new dogma
 

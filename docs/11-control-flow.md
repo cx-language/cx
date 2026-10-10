@@ -127,7 +127,7 @@ void main() {
 
 ## switch
 
-Unlike in most C-based languages, the case bodies don't fall through to the next by default,
+Case bodies don't fall through to the next by default,
 so you don't have to manually `break` after each case. Variables can be declared directly in
 a case body without wrapping it in a block.
 
@@ -207,23 +207,8 @@ void main() {
 
 ## defer
 
-`defer` defers the execution of a statement to the exits of the current scope.
-This is useful for example when we need to perform some cleanup before returning.
-This avoids the mistake of forgetting to add necessary cleanup calls when we add a new return statement.
-`defer` is not allowed in constructors.
-
-```cs
-int main() {
-    var p = allocateValue<int>(0); // allocate some resource
-    defer deallocate(p); // runs before each return below
-
-    if *p != 0 {
-        return 2; // deallocate(p) runs before this return too
-    }
-
-    return 0; // ... and before this return
-}
-```
+`defer` runs a statement when the current scope exits, for cleanup before returning.
+See [Defer and destructors](destructors) for details.
 
 ## Planned features
 

@@ -315,6 +315,10 @@ pids=""
 running=0
 failed=0
 for file in ../docs/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html bench.html; do
+    # Compiler internals live in the repo only.
+    case $file in
+        ../docs/internals.md) continue ;;
+    esac
     build_page "$file" &
     pids="$pids $!"
     running=$((running + 1))

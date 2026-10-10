@@ -40,7 +40,7 @@ This small program already shows several things cx is built around: plain struct
 errors returned as values and handled with `switch`, named arguments, type inference with
 `var`, and lazy iterator chains with lambdas. Code examples on the website can be edited
 and run directly in the browser, or you can install the compiler as described in
-[Getting started](./hello-world).
+[Getting started](./getting-started).
 
 ## Who cx is for
 
@@ -98,7 +98,7 @@ Import C/C++ headers directly (`import "MyHeader.h"`) and call their functions l
 ordinary cx functions; individual C functions can also be declared with `extern`. C++
 interop with `extern "C++"` only supports basic C-like language constructs for now; a more
 full-featured C++ interop is a longer-term goal. See [Using C
-libraries](./low-level-programming#using-c-libraries).
+libraries](./c-interop#using-c-libraries).
 
 ### Which build mode should I use?
 
@@ -123,7 +123,7 @@ cx shares its name with several unrelated languages:
 
 ## Where to go next
 
-- [Getting started](./hello-world): install the compiler and write your first program.
+- [Getting started](./getting-started): install the compiler and write your first program.
 - [Language overview](./language-overview): a quick tour of the language, with links to the details.
 - [Design principles](./design-principles): the goals behind the language design, and its non-goals.
 - [Comparison with related languages](./comparison): how cx relates to C, C++, Rust, Zig, Odin, and Jai.

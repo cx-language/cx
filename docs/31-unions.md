@@ -2,7 +2,7 @@
 
 A `union` declares overlapping members: every member starts at offset zero,
 so writing one member is visible through the others. The size is the largest
-member's size, like in C. Unions are for type punning and for matching C
+member's size. Unions are for type punning and for matching C
 unions imported from headers.
 
 ```cs

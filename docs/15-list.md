@@ -1,12 +1,11 @@
 # List
 
 `List` is a resizable array that grows automatically when elements are inserted.
-It works like `std::vector` in C++ or `List` in C#.
 
 Like builtin arrays, `List` elements can be accessed using the index operator `[]`,
 and iterated over with a `for` loop.
 
-Unlike in C++, the index operator does bounds checks in debug builds.
+The index operator does bounds checks in debug builds.
 
 ```cs
 void main() {
@@ -31,36 +30,7 @@ void main() {
 }
 ```
 
-## Slice
-
-The normal way to pass an array or `List` into a function is by slice,
-written `T[]` where `T` is the element type.
-Under the hood, a slice is a pointer to the array and a size.
-It is known in other languages by the name slice, span, or array view.
-
-```cs
-// Function to calculate the sum of an array's elements.
-int calculateSum(int[] array) {
-    var sum = 0;
-
-    for element in array {
-        sum += element;
-    }
-
-    return sum;
-}
-
-void main() {
-    println(calculateSum([1, 2, 3]));
-    // A List converts to a slice view implicitly.
-    var list = List([4, 5, 6]);
-    println(calculateSum(list));
-}
-```
-
-A list can also be built from an array: `List` moves the elements out,
-so an owning array passed by name is consumed. Copyable arrays are copied
-and stay usable.
+See [Slice](arrays#slice) for passing a `List` to a function.
 
 ## Map, filter
 
@@ -91,7 +61,7 @@ void main() {
 
 `SmallList<T, N>` is a `List`-like container that stores up to `N` elements
 inline, without heap allocation, and spills to the heap when it grows past that.
-It works like `llvm::SmallVector` in LLVM. Use it when a list usually stays
+Use it when a list usually stays
 small and you want to avoid the allocator in the common case.
 
 ```cs

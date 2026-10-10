@@ -1,4 +1,4 @@
-# Access specifiers
+# Private
 
 Declarations are public by default: any file in the same module, or any file
 that imports the module, can use them.

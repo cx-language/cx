@@ -247,9 +247,9 @@ in. The differences:
 - Odin interoperates with C through `foreign` blocks that redeclare each
   signature. cx imports C headers directly, parsed with the Clang API.
 - Both have an implicit context. Odin's `context` carries an allocator, temporary
-  allocator, and logger; cx's ambient context currently holds only the allocator, swapped
-  with `withAllocator` (see [The ambient
-  context](./low-level-programming#the-ambient-context)), and a fuller context like
+  allocator, and logger; cx's context currently holds only the allocator, swapped
+  with `withAllocator` (see [The context](./context)),
+  and a fuller context like
   Odin's is planned.
 - Both languages organize code by directory, but cx goes further: the whole
   project is one module, so files from the same project are never imported.
@@ -283,8 +283,8 @@ production. cx is younger and still evolving.
   directory belong to the project by convention.
 
 - Jai threads an implicit context parameter (allocators and such) through
-  calls. cx's ambient context currently holds only the allocator (see [The
-  ambient context](./low-level-programming#the-ambient-context)); a fuller context like
+  calls. cx's context currently holds only the allocator (see [The
+  context](./context)); a fuller context like
   Jai's is planned.
 
 - Jai can run arbitrary code at compile time. cx has a narrower compile-time

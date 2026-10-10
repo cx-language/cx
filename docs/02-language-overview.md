@@ -51,7 +51,7 @@ See [Control flow](./control-flow).
 
 ## Structs
 
-`struct` is the only composite value type; there is no separate `class`. Member functions
+`struct` is the only composite value type; there is no separate `class`. Methods
 receive `this` as a non-null borrow, and member access always uses `.`, even through
 pointers. Constructors take positional or named arguments:
 
@@ -92,7 +92,7 @@ void main() {
 ```
 
 See [Structs](./structs), [Anonymous structs](./anonymous-structs), and
-[Pointers](./pointers).
+[References](./references).
 
 ## Arrays, lists, and strings
 
@@ -272,12 +272,12 @@ void main() {
 }
 ```
 
-See [Modules and imports](./modules), [Build system](./build-system), and [Low-level
-programming](./low-level-programming).
+See [Modules and imports](./modules), [Build system](./build-system), and [Advanced
+topics](./advanced-topics).
 
 ## More topics
 
 The remaining guide pages cover [Builtin types](./builtin-types), [Type
-aliases](./type-aliases), [Unions](./unions), [Access specifiers](./access-specifiers), [Function
+aliases](./type-aliases), [Unions](./unions), [Private](./private), [Function
 pointers](./function-pointers), [Operator overloading](./operator-overloading),
-[Casting](./casting), and the [Language server](./lsp).
+[Casting](./casting), and [Editor setup](./editor-setup).
