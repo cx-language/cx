@@ -1,0 +1,235 @@
+name: Release
+
+# Prebuilt binaries behind the front-page download links. Pushing a v* tag
+# publishes archives to GitHub Releases; pull requests touching this workflow
+# or the shared LLVM setup still build, package, and smoke-test the archives
+# (uploaded as artifacts) without publishing anything.
+#
+# Linux and Windows link LLVM statically, so their archives are standalone.
+# macOS archives bundle the Homebrew LLVM dylibs next to the binaries
+# (Homebrew ships shared-only libraries), with install names rewritten to
+# @executable_path/@loader_path. The otool assert fails the release if any
+# Homebrew reference survives.
+on:
+  push:
+    tags: ["v[0-9]*"]
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - .github/actions/setup-llvm/**
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Older runner than CI on purpose: binaries must run on older
+          # distros than the build machine (glibc is forward-compatible only).
+          - os: ubuntu-22.04
+            platform: linux-x64
+          - os: macos-latest
+            platform: macos-arm64
+          - os: windows-latest
+            platform: windows-x64
+    env:
+      STAGE_DIR: stage/cx-${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up LLVM 23 and link dependencies
+        uses: ./.github/actions/setup-llvm
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{runner.workspace}}/build
+
+      - name: Configure CMake
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          extra_args=()
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            # Static libstdc++/libgcc: the archive must run on older distros
+            # than the build runner. Static LLVM/Clang: apt.llvm.org builds
+            # the LLVM dylib, which would otherwise link shared.
+            extra_args+=("-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc")
+            extra_args+=("-DCX_STATIC_LLVM=ON")
+          fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            # Static CRT so users need no Visual C++ redistributable. The
+            # dumpbin assert below proves no CRT DLL dependency; if /MT ever
+            # stops applying, the release fails there instead of shipping a
+            # binary that refuses to start.
+            extra_args+=("-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded")
+          fi
+          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=ON $EXTRA_CMAKE_ARGS ${DIA_CMAKE_DIR:+-DMSVC_DIA_SDK_DIR="$DIA_CMAKE_DIR"} "${extra_args[@]}"
+
+      - name: Build cx and cx-lsp
+        working-directory: ${{runner.workspace}}/build
+        shell: bash
+        run: cmake --build . --config Release --target cx cx-lsp
+
+      # The compiler finds its standard library next to the executable
+      # (see getCxRootDir), so the archive is just the two binaries plus
+      # a copy of std/.
+      - name: Stage archive contents
+        shell: bash
+        run: |
+          mkdir -p "$STAGE_DIR"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp "${{runner.workspace}}/build/Release/cx.exe" "${{runner.workspace}}/build/Release/cx-lsp.exe" "$STAGE_DIR/"
+            # lld-link powers native builds on machines with no C compiler on
+            # PATH (the driver prefers it next to cx.exe over the build-time
+            # LLVM tools dir, which doesn't exist on user machines).
+            cp "${LLVMDIR}\\bin\\lld-link.exe" "$STAGE_DIR/"
+          else
+            cp "${{runner.workspace}}/build/cx" "${{runner.workspace}}/build/cx-lsp" "$STAGE_DIR/"
+            strip "$STAGE_DIR/cx" "$STAGE_DIR/cx-lsp"
+          fi
+          cp -r "$GITHUB_WORKSPACE/std" "$STAGE_DIR/std"
+          cp "$GITHUB_WORKSPACE/LICENSE.txt" "$STAGE_DIR/"
+
+      - name: Bundle macOS libraries
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          lib="$STAGE_DIR/lib"
+          mkdir -p "$lib"
+          # Copy every Homebrew library referenced by the binaries or by
+          # the bundled libraries themselves. Iterates to a fixpoint to
+          # catch transitive deps (z3, zstd, ...).
+          prev="unseeded"
+          while [ "$(ls "$lib" | tr '\n' ' ')" != "$prev" ]; do
+            prev="$(ls "$lib" | tr '\n' ' ')"
+            for f in "$STAGE_DIR"/cx "$STAGE_DIR"/cx-lsp "$lib"/*.dylib; do
+              [ -f "$f" ] || continue
+              otool -L "$f" | tail -n +2 | awk '{print $1}' | while read -r dep; do
+                case "$dep" in
+                  # Copied once: cx and cx-lsp share dependencies, and -n
+                  # would exit 1 on the second copy. A real cp failure must
+                  # still fail the release, so guard with a test instead.
+                  /opt/homebrew/* | /usr/local/*)
+                    [ -e "$lib/${dep##*/}" ] || cp "$dep" "$lib/"
+                    ;;
+                esac
+              done
+            done
+          done
+          rewire() {
+            otool -L "$1" | tail -n +2 | awk '{print $1}' | while read -r dep; do
+              case "$dep" in
+                /opt/homebrew/* | /usr/local/* | @rpath/*)
+                  install_name_tool -change "$dep" "$2/$(basename "$dep")" "$1"
+                  ;;
+              esac
+            done
+          }
+          for f in "$STAGE_DIR"/cx "$STAGE_DIR"/cx-lsp; do
+            rewire "$f" "@executable_path/lib"
+            # Drop Homebrew rpaths: an absolute fallback could mask a
+            # missed fixup, passing smoke on this machine only.
+            otool -l "$f" | awk '$1 == "path" {print $2}' | while read -r rpath; do
+              case "$rpath" in
+                /opt/homebrew/* | /usr/local/*) install_name_tool -delete_rpath "$rpath" "$f" || true ;;
+              esac
+            done
+          done
+          for d in "$lib"/*.dylib; do
+            rewire "$d" "@loader_path"
+          done
+          codesign --force -s - "$STAGE_DIR"/cx "$STAGE_DIR"/cx-lsp "$lib"/*.dylib
+
+      # Hard fail before anything publishes: an archive that needs LLVM,
+      # libstdc++, Homebrew, or the MSVC redist installed is not a
+      # prebuilt binary.
+      - name: Assert standalone linking
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            # Dash, not slash: git-bash would rewrite /dependents to a
+            # Windows path (C:\Program Files\Git\dependents).
+            deps=$(dumpbin -dependents "$STAGE_DIR/cx.exe" "$STAGE_DIR/cx-lsp.exe" "$STAGE_DIR/lld-link.exe")
+            echo "$deps"
+            if echo "$deps" | grep -Ei 'vcruntime|msvcp|msvcr'; then
+              echo "ERROR: binaries need the Visual C++ redistributable (/MT did not apply)"
+              exit 1
+            fi
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            # The asset name promises arm64; fail loudly on runner drift.
+            [ "$(uname -m)" = "arm64" ] || { echo "ERROR: expected arm64 runner for macos-arm64 asset"; exit 1; }
+            otool -L "$STAGE_DIR"/cx "$STAGE_DIR"/cx-lsp "$STAGE_DIR"/lib/*.dylib
+            # Skip each file's own install-ID line (the line after each
+            # "file:" header): IDs are inert once nothing references them.
+            if otool -L "$STAGE_DIR"/cx "$STAGE_DIR"/cx-lsp "$STAGE_DIR"/lib/*.dylib | awk '/:$/{skip=1; next} skip==1{skip=0; next} {print}' | grep -E '/opt/homebrew|/usr/local|@rpath'; then
+              echo "ERROR: macOS binaries still reference Homebrew or @rpath"
+              exit 1
+            fi
+          else
+            ldd "$STAGE_DIR/cx" "$STAGE_DIR/cx-lsp"
+            if ldd "$STAGE_DIR/cx" "$STAGE_DIR/cx-lsp" | grep -Ei 'llvm|clang|libstdc\+\+|libgcc'; then
+              echo "ERROR: binaries link LLVM, libstdc++, or libgcc dynamically"
+              exit 1
+            fi
+          fi
+
+      - name: Smoke-test the packaged binaries
+        shell: bash
+        run: |
+          # Run from a different directory than the binaries: this proves the
+          # packaged compiler finds its stdlib by executable path, not cwd.
+          printf 'void main() {\n    println("smoke ok");\n}\n' > "$RUNNER_TEMP/hello.cx"
+          cd "$RUNNER_TEMP"
+          pkg="$GITHUB_WORKSPACE/$STAGE_DIR"
+          "$pkg/cx" run hello.cx
+          # Also exercise the native compile+link path (uses the system linker).
+          "$pkg/cx" hello.cx -o hello-native
+          ./hello-native
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            # Bare-machine simulation: with no compiler on PATH, native builds
+            # must still link through the bundled lld-link.
+            PATH="/usr/bin:/bin" "$pkg/cx" hello.cx -o hello-embedded
+            ./hello-embedded
+          fi
+          "$pkg/cx-lsp" --help > /dev/null
+
+      - name: Create archive
+        shell: bash
+        run: |
+          name="cx-${{ matrix.platform }}"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            (cd stage && 7z a "../$name.zip" "$name")
+          else
+            tar -czf "$name.tar.gz" -C stage "$name"
+          fi
+
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: binaries-${{ matrix.platform }}
+          path: cx-${{ matrix.platform }}.*
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: binaries-*
+          merge-multiple: true
+          path: dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            Prebuilt cx binaries for Linux (x64), macOS (Apple Silicon), and Windows (x64). Each archive holds `cx`, `cx-lsp`, and the standard library (Windows also bundles the lld linker). No installer, no dependencies: unpack and run. Native compilation needs a C toolchain: `cc` on PATH on Linux/macOS, Visual Studio Build Tools installed on Windows.
+
+            Fastest install on Linux/macOS: `curl https://cx-language.github.io/cx/install.sh | bash`
+
+            macOS notes: the archive bundles the LLVM libraries (~200MB unpacked), and the binaries are ad-hoc signed. The installer strips the download quarantine for you; if you unpack manually and macOS refuses to run them, right-click the binary and choose Open once.

@@ -73,6 +73,11 @@ if(CX_SANITIZE_LEAK)
     add_link_options(-fsanitize=leak)
 endif()
 
+# Prebuilt binaries link LLVM and Clang statically so the archives run
+# without an LLVM install. Without this, distributions that build the LLVM
+# dylib (Debian/Ubuntu, Homebrew) link libLLVM/libclang-cpp shared.
+option(CX_STATIC_LLVM "Link the LLVM/Clang static archives instead of the shared dylib" OFF)
+
 # Instrumented build for the ASan gate (test/asan/check_asan.py), which runs
 # the compiler and repeated LSP analyses under AddressSanitizer. Needs a Clang
 # with -fsanitize=address (LLVM Clang or Apple Clang).
@@ -131,7 +136,7 @@ endif()
 
 # --- zstd (real, required via LLVMSupport) ---
 find_package(zstd QUIET)
-if(NOT TARGET zstd::libzstd_static)
+if(NOT TARGET zstd::libzstd_static AND NOT TARGET zstd::libzstd_shared)
     message(STATUS "zstd not found, fetching zstd from source")
     FetchContent_Declare(zstd
         GIT_REPOSITORY https://github.com/facebook/zstd.git
@@ -156,9 +161,22 @@ if(NOT TARGET zstd::libzstd_static)
     if(NOT TARGET zstd::libzstd_static)
         add_library(zstd::libzstd_static ALIAS libzstd_static)
     endif()
+    if(NOT TARGET zstd::libzstd_shared)
+        add_library(zstd::libzstd_shared ALIAS libzstd_static)
+    endif()
     # As above: keep our unity-build default out of the zstd subbuild.
     set_target_properties(libzstd_static PROPERTIES UNITY_BUILD OFF)
     set(CMAKE_DISABLE_FIND_PACKAGE_zstd TRUE)
+endif()
+
+# LLVM distributions disagree on the name: Debian/Ubuntu exports reference
+# zstd::libzstd_shared, others zstd::libzstd_static. A system zstd that only
+# provides one spelling aliases the other; both link the same library.
+if(TARGET zstd::libzstd_static AND NOT TARGET zstd::libzstd_shared)
+    add_library(zstd::libzstd_shared ALIAS zstd::libzstd_static)
+endif()
+if(TARGET zstd::libzstd_shared AND NOT TARGET zstd::libzstd_static)
+    add_library(zstd::libzstd_static ALIAS zstd::libzstd_shared)
 endif()
 
 # --- LibXml2 (dummy suffices; LLVMWindowsManifest is not linked) ---
@@ -281,10 +299,15 @@ endif()
 add_executable(cx-lsp src/lsp/main.cpp)
 target_link_libraries(cx-lsp libcx)
 
-if(LLVM_LINK_LLVM_DYLIB)
+# plugins is only referenced by the Clang archives (PassPlugin::Load in
+# clangFrontend): non-dylib builds pull it through the Clang link interfaces,
+# so it must be named here for the dylib-edge rewrite below to reproduce that
+# closure on dylib-building distributions.
+llvm_map_components_to_libnames(CX_LLVM_COMPONENT_LIBS core native linker orcjit passes support plugins)
+if(LLVM_LINK_LLVM_DYLIB AND NOT CX_STATIC_LLVM)
     set(LLVM_LIBS LLVM)
 else()
-    llvm_map_components_to_libnames(LLVM_LIBS core native linker orcjit passes support)
+    set(LLVM_LIBS ${CX_LLVM_COMPONENT_LIBS})
 endif()
 # The LibXml2/DIASDK dummy targets above only satisfy LLVMExports.cmake; they
 # carry no library. Fail fast if a linked component ever needs the real one.
@@ -295,7 +318,7 @@ if(CX_DIASDK_DUMMY AND "LLVMDebugInfoPDB" IN_LIST LLVM_LIBS)
     message(FATAL_ERROR "LLVMDebugInfoPDB requires the real DIA SDK, but the dummy target was used. Install the DIA SDK (Visual Studio) or point MSVC_DIA_SDK_DIR at it.")
 endif()
 
-if(LLVM_LINK_LLVM_DYLIB AND TARGET clang-cpp)
+if(LLVM_LINK_LLVM_DYLIB AND TARGET clang-cpp AND NOT CX_STATIC_LLVM)
     # Shared LLVM build: use only the shared libclang-cpp for the Clang C++
     # API. It contains everything the static archives below have, so linking
     # both only slows the link and bloats the binary. (Homebrew's static
@@ -304,6 +327,54 @@ if(LLVM_LINK_LLVM_DYLIB AND TARGET clang-cpp)
     list(APPEND LLVM_LIBS clang-cpp)
 else()
     list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema clangDriver)
+endif()
+# Dylib-building distributions (Debian/Ubuntu, Homebrew) export every Clang
+# archive's link interface with a trailing `LLVM` edge onto the shared dylib,
+# which would reintroduce the dylib even though LLVM_LIBS above names the
+# static components. Static builds rewrite that edge to the components,
+# keeping the other edges (transitive Clang archives) intact. The component
+# set already covers every LLVM symbol the Clang archives need: non-dylib
+# builds (Windows) link this exact combination.
+if(CX_STATIC_LLVM AND LLVM_LINK_LLVM_DYLIB)
+    # Walk the Clang link closure so transitive Clang archives (which carry
+    # the same `LLVM` edge) are covered on any LLVM version.
+    set(CX_CLANG_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema clangDriver)
+    set(CX_CLANG_SEEN "")
+    set(CX_CLANG_QUEUE ${CX_CLANG_LIBS})
+    while(CX_CLANG_QUEUE)
+        list(POP_FRONT CX_CLANG_QUEUE CX_LIB)
+        if(CX_LIB IN_LIST CX_CLANG_SEEN OR NOT TARGET ${CX_LIB})
+            continue()
+        endif()
+        list(APPEND CX_CLANG_SEEN ${CX_LIB})
+        get_target_property(CX_IFACE ${CX_LIB} INTERFACE_LINK_LIBRARIES)
+        if(CX_IFACE)
+            foreach(dep IN LISTS CX_IFACE)
+                if(dep MATCHES "^clang")
+                    list(APPEND CX_CLANG_QUEUE ${dep})
+                elseif(dep MATCHES "^\\$<LINK_ONLY:(clang[A-Za-z0-9_]*)>$")
+                    list(APPEND CX_CLANG_QUEUE ${CMAKE_MATCH_1})
+                endif()
+            endforeach()
+        endif()
+    endwhile()
+    set(CX_REWRITTEN 0)
+    foreach(clang_lib IN LISTS CX_CLANG_SEEN)
+        get_target_property(clang_iface ${clang_lib} INTERFACE_LINK_LIBRARIES)
+        # The edge spells `LLVM` today; a LINK_ONLY spelling would silently
+        # reintroduce the dylib, so match that too.
+        if("LLVM" IN_LIST clang_iface OR "$<LINK_ONLY:LLVM>" IN_LIST clang_iface)
+            list(REMOVE_ITEM clang_iface LLVM "$<LINK_ONLY:LLVM>")
+            list(APPEND clang_iface ${CX_LLVM_COMPONENT_LIBS})
+            list(REMOVE_DUPLICATES clang_iface)
+            set_target_properties(${clang_lib} PROPERTIES INTERFACE_LINK_LIBRARIES "${clang_iface}")
+            math(EXPR CX_REWRITTEN "${CX_REWRITTEN} + 1")
+        endif()
+    endforeach()
+    if(CX_REWRITTEN EQUAL 0)
+        message(FATAL_ERROR "CX_STATIC_LLVM found no LLVM dylib edge to rewrite; refusing to link shared silently")
+    endif()
+    message(STATUS "CX_STATIC_LLVM: rewrote LLVM dylib edge on ${CX_REWRITTEN} Clang targets")
 endif()
 target_link_libraries(libcx ${LLVM_LIBS})
 
