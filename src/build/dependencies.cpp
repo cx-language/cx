@@ -146,6 +146,7 @@ void cx::resolveDependencyClosure(BuildConfig& config, const CompileOptions& bas
         }
         for (auto& path : depConfig.headerSearchPaths) {
             record.options.importSearchPaths.push_back(absolutizePackagePath(root, path));
+            record.options.cHeaderSearchPaths.push_back(absolutizePackagePath(root, path));
         }
         applyWarningSettings(record.options, depConfig.warnings, explicitWarnings);
         record.pkgConfigDependencies = depConfig.pkgConfigDependencies;

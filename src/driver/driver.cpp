@@ -129,6 +129,11 @@ cl::SubCommand lspSubcommand("lsp", "Start the cx language server (LSP over stdi
 // Arguments after '--' on the command line, passed to the executed program by 'run'.
 static std::vector<std::string> programArgs;
 
+// -I and package C header paths for hasInclude(), mirroring the C-relevant
+// subset of importSearchPaths. Initialized from the -I flags after option
+// parsing, before cx-only directories are appended to importSearchPaths.
+static std::vector<std::string> cHeaderSearchPaths;
+
 // Quotes one program argument for the shell that runs 'cx run' programs (POSIX sh, cmd.exe on Windows).
 static std::string shellEscape(llvm::StringRef arg) {
     if (!arg.empty() && llvm::all_of(arg, [](char ch) { return std::isalnum(static_cast<unsigned char>(ch)) || std::strchr("_@%+=:,./-", ch); })) {
@@ -178,6 +183,8 @@ static void addHeaderSearchPathsFromEnvVar(const char* name, std::vector<std::st
     }
 }
 
+static constexpr const char* cHeaderSearchEnvVars[] = {"CPATH", "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "INCLUDE"};
+
 // Standard search paths shared by every package: the caller adds its own
 // source directories and package settings on top.
 static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
@@ -192,12 +199,23 @@ static void appendSystemImportSearchPaths(std::vector<std::string>& paths) {
     paths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
     paths.push_back("/usr/include");
     paths.push_back("/usr/local/include");
-    addHeaderSearchPathsFromEnvVar("CPATH", paths);
-    addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH", paths);
-    addHeaderSearchPathsFromEnvVar("CPLUS_INCLUDE_PATH", paths);
-    addHeaderSearchPathsFromEnvVar("INCLUDE", paths);
+    for (auto* name : cHeaderSearchEnvVars) {
+        addHeaderSearchPathsFromEnvVar(name, paths);
+    }
     // Compiler-reported header paths are queried lazily on first C import
     // (see getCCompilerSearchPaths): most builds never import C headers.
+}
+
+// Toolchain C header paths for hasInclude(), appended to the -I and package
+// paths accumulated in cHeaderSearchPaths. Unlike the list above, cx-only
+// directories and the /usr/include fallbacks are excluded: anything usable
+// with the linked toolchain is either reported by `cc -E -v` or explicitly
+// specified, and the fallbacks can name another libc (see issue #72).
+static void appendSystemCHeaderSearchPaths(std::vector<std::string>& paths) {
+    paths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+    for (auto* name : cHeaderSearchEnvVars) {
+        addHeaderSearchPathsFromEnvVar(name, paths);
+    }
 }
 
 static PkgConfigSplit queryPkgConfigFlagsOrAbort(llvm::ArrayRef<std::string> packages);
@@ -284,6 +302,7 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     }
 
     appendSystemImportSearchPaths(importSearchPaths);
+    appendSystemCHeaderSearchPaths(cHeaderSearchPaths);
 }
 
 static llvm::TargetMachine* createTargetMachine(llvm::Module& module, llvm::Reloc::Model relocModel, BuildMode mode) {
@@ -484,6 +503,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     CompileOptions options = {buildMode,   noUnusedWarnings, checkAll,          warnUndefinedMacros,  warnUnusedResult, warnConversion,
                               noLeakCheck, dwarfDebugInfo,   importSearchPaths, frameworkSearchPaths, defines,          cflags};
+    options.cHeaderSearchPaths = cHeaderSearchPaths;
     auto remainingPrintOpts = std::popcount(printOpts.getBits());
     bool printSectionDividers = remainingPrintOpts > 1;
 
@@ -1029,7 +1049,7 @@ static PkgConfigSplit queryPkgConfigFlagsOrAbort(llvm::ArrayRef<std::string> pac
     ABORT("couldn't query pkg-config for '" << joined << "'");
 }
 
-template<typename Range> static void appendFlags(cl::list<std::string>& dest, const Range& src) {
+template<typename Dest, typename Range> static void appendFlags(Dest& dest, const Range& src) {
     for (auto& value : src)
         dest.push_back(value);
 }
@@ -1038,6 +1058,7 @@ static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
     auto split = queryPkgConfigFlagsOrAbort(packages);
     appendFlags(defines, split.defines);
     appendFlags(importSearchPaths, split.headerSearchPaths);
+    appendFlags(cHeaderSearchPaths, split.headerSearchPaths);
     appendFlags(librarySearchPaths, split.librarySearchPaths);
     appendFlags(libraries, split.libraries);
     appendFlags(frameworkSearchPaths, split.frameworkSearchPaths);
@@ -1054,6 +1075,7 @@ static void addConfigBuildFlags(const BuildConfig& config) {
     importSearchPaths.push_back((llvm::StringRef(config.rootDirectory) + "/vendor").str());
     for (auto& path : config.headerSearchPaths) {
         importSearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
+        cHeaderSearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
     }
     for (auto& path : config.librarySearchPaths) {
         librarySearchPaths.push_back(absolutizePackagePath(config.rootDirectory, path));
@@ -1110,10 +1132,12 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
     baseOptions.noLeakCheck = noLeakCheck;
     baseOptions.dwarfDebugInfo = dwarfDebugInfo;
     baseOptions.importSearchPaths = importSearchPaths;
+    baseOptions.cHeaderSearchPaths = cHeaderSearchPaths;
     baseOptions.frameworkSearchPaths = frameworkSearchPaths;
     baseOptions.defines = defines;
     baseOptions.cflags = cflags;
     appendSystemImportSearchPaths(baseOptions.importSearchPaths);
+    appendSystemCHeaderSearchPaths(baseOptions.cHeaderSearchPaths);
 
     // Warnings set on the command line stay set in dependencies: an explicit
     // flag always wins over a dependency's own `warnings` setting.
@@ -1134,6 +1158,7 @@ static int buildDirectory(llvm::StringRef directory, const char* argv0, bool run
         }
         for (auto& path : split.headerSearchPaths) {
             record.options.importSearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
+            record.options.cHeaderSearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
         }
         for (auto& path : split.frameworkSearchPaths) {
             record.options.frameworkSearchPaths.push_back(absolutizePackagePath(record.rootDirectory, path));
@@ -1237,6 +1262,9 @@ int cx::driverMain(int argc, const char** argv) {
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
     cl::AddExtraVersionPrinter([](llvm::raw_ostream& out) { out << "cx commit: " << CX_COMMIT_HASH << "\n"; });
     cl::ParseCommandLineOptions(argc, argv, "cx compiler\n");
+    // Snapshot the -I flags before project settings and cx-only directories
+    // join importSearchPaths below.
+    cHeaderSearchPaths.assign(importSearchPaths.begin(), importSearchPaths.end());
     if (releaseMode && releaseSafeMode) ABORT("can't combine --release with --release-safe");
     if (releaseMode) {
         buildMode = BuildMode::ReleaseFast;

@@ -1,7 +1,13 @@
 // RUN: cd %S && %cx run | %FileCheck -match-full-lines -strict-whitespace %s
 
+#if hasInclude("answer.h")
 import "answer.h";
 
 void main() {
     println(ANSWER); // CHECK:42
 }
+#else
+void main() {
+    println("answer.h not found");
+}
+#endif

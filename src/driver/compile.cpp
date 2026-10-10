@@ -35,6 +35,8 @@ CompileToCResult cx::compileToC(const char* fileName, const char* source, const 
     CompileOptions compileOptions;
     compileOptions.noUnusedWarnings = options.noUnusedWarnings;
     compileOptions.importSearchPaths = options.importSearchPaths;
+    // The API exposes a single dual-purpose search list, like -I.
+    compileOptions.cHeaderSearchPaths = options.importSearchPaths;
     compileOptions.defines.push_back("Debug");
     compileOptions.defines.push_back("LeakCheck");
 

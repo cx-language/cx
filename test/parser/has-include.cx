@@ -1,4 +1,5 @@
 // RUN: %cx -print-llvm %s | %FileCheck %s -allow-empty
+// RUN: %cx -print-llvm -I%S/inputs %s | %FileCheck %s -allow-empty -check-prefix=WITH-USER-INCLUDE
 
 #if !hasInclude("stdio.h")
 // CHECK-NOT: stdio
@@ -8,4 +9,20 @@ var a = "stdio";
 #if hasInclude("should-not-exist.h")
 // CHECK-NOT: should-not-exist
 var a = "should-not-exist";
+#endif
+
+// A header in a cx source directory is not a C library header:
+// hasInclude must only find headers belonging to the libc (or other
+// libraries) we're linking against (issue #72).
+#if hasInclude("cx-test-source-dir-shadow.h")
+// CHECK-NOT: source-dir-shadow
+// WITH-USER-INCLUDE-NOT: source-dir-shadow
+var c = "source-dir-shadow";
+#endif
+
+// Headers in user -I directories still count.
+#if hasInclude("cx-test-user-include.h")
+// CHECK-NOT: user-include
+// WITH-USER-INCLUDE: user-include
+var d = "user-include";
 #endif

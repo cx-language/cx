@@ -36,6 +36,11 @@ struct CompileOptions {
     std::vector<std::string> frameworkSearchPaths = {};
     std::vector<std::string> defines = {};
     std::vector<std::string> cflags = {};
+    // C header search paths for hasInclude(): -I flags, package header paths,
+    // and toolchain paths, but no cx-only directories (source dirs, vendor
+    // dirs, the distribution root) or /usr/include fallbacks, which can name
+    // another libc than the one being linked against (see issue #72).
+    std::vector<std::string> cHeaderSearchPaths = {};
     // LSP only: skip broken decls/stmts and keep parsing after errors (the compiler still stops at the first).
     // Last so positional initializers keep working.
     bool recoverParseErrors = false;

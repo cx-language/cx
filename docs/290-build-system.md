@@ -74,6 +74,10 @@ import "unwind.h";
 #endif
 ```
 
+`hasInclude` searches the C header paths: `-I` directories, package header
+paths, and the C compiler's system paths. cx source directories are not
+searched, so project-local files never shadow system headers.
+
 Defines come from `-D` flags, the project's `defines` setting, and `pkg-config`
 dependencies; `Windows` and `macOS` are predefined on those platforms, and
 `Debug` is predefined in debug builds (absent with `--release` or

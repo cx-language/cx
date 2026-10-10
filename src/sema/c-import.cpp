@@ -1656,6 +1656,9 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
     };
+    // The importer intentionally searches the full import paths (including
+    // project directories), while hasInclude() only tests toolchain and
+    // library headers, so a project-local header imports but fails the check.
     for (llvm::StringRef includePath : llvm::concat<const std::string>(typechecker.options.importSearchPaths, getCCompilerSearchPaths()))
         addSystemPath(includePath);
     if (cxxMode)

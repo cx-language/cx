@@ -2575,7 +2575,9 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
             auto headerPath = (path + "/" + header.getString().drop_back().drop_front()).str();
             return llvm::sys::fs::exists(headerPath) && !llvm::sys::fs::is_directory(headerPath);
         };
-        for (llvm::StringRef path : llvm::concat<const std::string>(options.importSearchPaths, options.frameworkSearchPaths)) {
+        // Only C header paths count, not cx-only import directories: a header
+        // must belong to the libc (or other libraries) being linked against.
+        for (llvm::StringRef path : llvm::concat<const std::string>(options.cHeaderSearchPaths, options.frameworkSearchPaths)) {
             if (headerFoundIn(path)) {
                 condition = true;
                 break;

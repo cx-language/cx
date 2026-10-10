@@ -1873,6 +1873,7 @@ void addPkgConfigFlags(CompileOptions& options, llvm::ArrayRef<std::string> pack
     }
     for (auto& path : split->headerSearchPaths) {
         options.importSearchPaths.push_back(absolutizePackagePath(rootDirectory, path));
+        options.cHeaderSearchPaths.push_back(absolutizePackagePath(rootDirectory, path));
     }
     for (auto& path : split->frameworkSearchPaths) {
         options.frameworkSearchPaths.push_back(absolutizePackagePath(rootDirectory, path));
@@ -1888,6 +1889,17 @@ namespace {
 
 // Query-specific option building and module discovery. Only runFrontendOnce
 // and the session validation below use these.
+
+void appendEnvSearchPaths(std::vector<std::string>& paths) {
+    for (const char* name : {"CPATH", "C_INCLUDE_PATH", "INCLUDE"}) {
+        if (auto pathsEnv = llvm::sys::Process::GetEnv(name)) {
+            llvm::SmallVector<llvm::StringRef, 16> split;
+            llvm::StringRef(*pathsEnv).split(split, llvm::sys::EnvPathSeparator, -1, false);
+            for (llvm::StringRef path : split)
+                paths.push_back(path.str());
+        }
+    }
+}
 
 std::vector<std::string> buildSharedImportSearchPaths(const LspQuery& query) {
     // Shared search paths: workspace folders, then explicit extras, then the
@@ -1911,14 +1923,19 @@ std::vector<std::string> buildSharedImportSearchPaths(const LspQuery& query) {
     // driver, queries don't probe the external C compiler for its header
     // paths - C-header imports relying on those need explicit
     // initializationOptions.importSearchPaths.
-    for (const char* name : {"CPATH", "C_INCLUDE_PATH", "INCLUDE"}) {
-        if (auto pathsEnv = llvm::sys::Process::GetEnv(name)) {
-            llvm::SmallVector<llvm::StringRef, 16> split;
-            llvm::StringRef(*pathsEnv).split(split, llvm::sys::EnvPathSeparator, -1, false);
-            for (llvm::StringRef path : split)
-                paths.push_back(path.str());
-        }
-    }
+    appendEnvSearchPaths(paths);
+    return paths;
+}
+
+std::vector<std::string> buildSharedCHeaderSearchPaths(const LspQuery& query) {
+    // C header paths for hasInclude(), matching the driver's cHeaderSearchPaths:
+    // explicit extras, toolchain builtins, and environment paths. Workspace
+    // folders and the distribution root are cx-only directories.
+    std::vector<std::string> paths = query.importSearchPaths;
+#ifdef CLANG_BUILTIN_INCLUDE_PATH
+    paths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+#endif
+    appendEnvSearchPaths(paths);
     return paths;
 }
 
@@ -2016,6 +2033,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         for (auto& path : platformOptions.frameworkSearchPaths)
             baseOptions.frameworkSearchPaths.push_back(path);
         baseOptions.importSearchPaths = buildSharedImportSearchPaths(query);
+        baseOptions.cHeaderSearchPaths = buildSharedCHeaderSearchPaths(query);
         std::string parentDir = llvm::sys::path::parent_path(filePath).str();
 
         CompileOptions options = baseOptions;
@@ -2040,6 +2058,7 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
             options.importSearchPaths.push_back(buildDir + "/vendor");
             for (auto& path : projectConfig.headerSearchPaths) {
                 options.importSearchPaths.push_back(absolutizePackagePath(buildDir, path));
+                options.cHeaderSearchPaths.push_back(absolutizePackagePath(buildDir, path));
             }
             resolveDependencyClosure(projectConfig, baseOptions, /*fetchMissing=*/false);
             addPkgConfigFlags(options, projectConfig.pkgConfigDependencies, buildDir);
