@@ -78,23 +78,3 @@ void main() {
 ```
 
 See [Assertions](assertions) for checking conditions that must hold.
-
-## Unimplemented code
-
-Use `todo` to mark code that isn't written yet.
-It aborts with "Not implemented", or with the given reason,
-so unfinished paths fail loudly instead of silently doing the wrong thing.
-Since `todo` never returns, the compiler accepts it anywhere a value is expected.
-
-```cs
-int parsePort(string service) {
-    if service == "http" {
-        return 80;
-    }
-    todo("only http is supported for now");
-}
-
-void main() {
-    println(parsePort("http")); // prints 80
-}
-```

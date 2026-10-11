@@ -1,13 +1,13 @@
 // RUN: check_exit_status 0 %cx test -Werror %s
 
 int unimplemented() {
-    todo("later");
+    abort("later");
 }
 
 @test
-void testTodo() {
+void testAbort() {
     if false {
-        todo("unreachable");
+        abort("unreachable");
         unimplemented();
     }
     println("ok");

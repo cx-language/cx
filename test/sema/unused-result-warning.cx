@@ -36,7 +36,7 @@ void main() {
     _ = compute();
     // CHECK: [[@LINE+1]]:11: warning: unused result of type 'int'
     defer compute();
-    todo();
+    abort("unreachable");
     println(x);
     const arr = [1, 2];
     // CHECK: [[@LINE+1]]:5: warning: unused result of type 'int'
