@@ -20,8 +20,7 @@ void main() {
 A [destructor](./destructors) opts a type out of copying. Values of such types move
 instead: the source cannot be used afterwards. Holding a non-copyable
 value has the same effect, so ownership spreads outward: a struct
-holding a `List` cannot be copied either, because copying it would
-copy the list.
+holding a `List` cannot be copied either.
 
 Types without a destructor that must still not be copied - unique
 handles or tokens, for example - can declare an empty destructor to
@@ -72,10 +71,18 @@ void main() {
 }
 ```
 
+<details>
+<summary>Moving out without take()</summary>
+
 Moving a field out without `take()` is rejected: `var members =
 team.members;` fails to compile, suggesting `.take()`, a borrow, or a
 copy instead. The same holds for moving elements out of collections and
 payloads out of optionals.
+
+</details>
+
+<details>
+<summary>Conditional-move destruction</summary>
 
 Moving a value on only one branch of an `if` or `switch` statement destroys
 it on the other paths, so it dies exactly once; the value is moved after
@@ -87,9 +94,16 @@ suggest `.take()` where the type offers it. The same holds for moves in
 the value clears the moved state, overwriting without destroying the old
 one, which is already gone on every path.
 
+</details>
+
+<details>
+<summary>Loop move restrictions</summary>
+
 Moving a value declared outside a loop inside the loop is rejected:
 the loop may run more than once, moving it again. Values declared inside
 the body and moves into `return` are still allowed, as is reassigning a
 pre-loop accumulator itself; moving a different pre-loop value into it
 (`result = x`) is still rejected. The check is lexical: reassigning a
 value before moving it later in the same iteration is still rejected.
+
+</details>

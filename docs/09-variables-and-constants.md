@@ -2,8 +2,6 @@
 
 cx has variables, declared using `var` or an explicit type, and constants, declared using `const` (possibly followed by an explicit type).
 
-When using `var` or `const` without an explicit type, the type of the variable or constant will be inferred from the initializer.
-
 ```cs
 void main() {
     int a = 1; // type is explicitly specified as 'int'
@@ -23,6 +21,9 @@ arguments, but not other function calls), and the constant cannot be
 reassigned or mutated afterwards. Reading or copying a constant's value
 always works, but no alias to it can be formed: taking its address and
 binding it to a borrow, pointer, or view are all rejected.
+
+<details>
+<summary>Further const restrictions</summary>
 
 The same rule applies to method calls. Calling a method that may mutate its
 receiver (the compiler infers this from the method body, transitively) on a
@@ -47,10 +48,17 @@ rejected outright, since reassignment cannot mirror constness. The same
 goes for returning one, and for constructing a value that stores it;
 constructors that copy keep working.
 
+</details>
+
+<details>
+<summary>No const-qualified types</summary>
+
 `const` only appears at the start of a constant declaration; it never
 appears in types. There is no `const T*`: pointers, borrows, and views
 are always mutable, and `const`-qualified C types import as their mutable
 counterparts.
+
+</details>
 
 A `const` member with an initializer is a constant scoped under the type
 name, accessed as `Type.constant`. Enums support them the same way.
@@ -73,14 +81,18 @@ void main() {
 }
 ```
 
+<details>
+<summary>Slice global initialization</summary>
+
 A global of explicit slice type cannot be initialized with an array
 literal; omit the type to infer a fixed-size array instead. Null and
 empty slice globals work as usual.
 
+</details>
+
 Global variables are initialized before the program starts,
 so their initializers must be constant expressions too.
-A global always needs an initializer; without one it is an error, since
-no storage would be emitted for it.
+A global always needs an initializer; without one it is an error.
 
 ```cs
 struct Color {

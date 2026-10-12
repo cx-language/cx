@@ -32,7 +32,7 @@ void main() {
 }
 ```
 
-A lambda body can also be a block with statements, like an ordinary function body.
+A lambda body can also be a block with statements.
 In that case the `=>` before the brace is optional:
 
 ```cs

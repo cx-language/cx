@@ -152,9 +152,7 @@ looping over them is a compile error.
 Enums print generically: `print` renders the case name, followed by
 the associated values in parentheses when the case carries any, so no
 boilerplate is needed for logging and debugging.
-The compiler generates the equivalent of a hand-written `print` method
-the first time an enum value is printed, and the enum also gains
-`toString` through the `Printable` interface:
+The enum also gains `toString` through the `Printable` interface.
 
 ```cs
 enum Color {

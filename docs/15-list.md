@@ -2,9 +2,6 @@
 
 `List` is a resizable array that grows automatically when elements are inserted.
 
-Like builtin arrays, `List` elements can be accessed using the index operator `[]`,
-and iterated over with a `for` loop.
-
 The index operator does bounds checks in debug builds.
 
 ```cs
@@ -36,8 +33,7 @@ See [Slice](arrays#slice) for passing a `List` to a function.
 
 We can use the functional `map` and `filter` operations on lists, with
 function pointers or lambda expressions.
-They are lazy: they return iterators that compute elements on demand,
-so chained operations only traverse the list once.
+They are lazy: they return iterators that compute elements on demand.
 Collect the results into a list with `toList()`.
 To just print the results, pass the iterator to `println` directly.
 
@@ -73,9 +69,15 @@ void main() {
 }
 ```
 
-The API mirrors `List`: `push`, `pop`, `removeAt`, indexing, iteration,
-and the `map`/`filter`/`find` helpers all work the same. Elements stay
-contiguous in both modes - inline elements sit in a fixed array, spilled
-ones in a heap buffer just like `List` - so `data()` hands out a pointer
-to the first element. One difference: unlike `List`, a `SmallList`
-cannot be passed as a slice (`T[]`).
+The API mirrors `List` (`push`, `pop`, indexing, iteration,
+`map`/`filter`/`find`, etc.).
+
+<details>
+<summary>SmallList layout and slice restriction</summary>
+
+Elements stay contiguous in both modes - inline elements sit in a fixed
+array, spilled ones in a heap buffer just like `List` - so `data()` hands
+out a pointer to the first element. One difference: unlike `List`, a
+`SmallList` cannot be passed as a slice (`T[]`).
+
+</details>

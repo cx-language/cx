@@ -1,7 +1,7 @@
 # Vector math
 
 Fixed-size arrays support element-wise arithmetic: `float[3]`
-can be used directly as a 3D vector, with no wrapper struct needed.
+can be used directly as a 3D vector.
 
 ## Element-wise arithmetic
 
@@ -40,10 +40,17 @@ void main() {
 
 Sizes must match; mismatched sizes are a compile error. Only arrays of
 known (constant) size support element-wise ops; generic sizes (`T[N]` with
-symbolic `N`) are rejected with a clear error. Element-wise ops compile
-directly to SIMD vector instructions on the LLVM backend, in every build
-mode; larger arrays use a loop over vector chunks with a scalar tail. The
-C backend emits a scalar loop for the C compiler to vectorize.
+symbolic `N`) are rejected with a clear error.
+
+<details>
+<summary>Vector codegen</summary>
+
+Element-wise ops compile directly to SIMD vector instructions on the LLVM
+backend, in every build mode; larger arrays use a loop over vector chunks
+with a scalar tail. The C backend emits a scalar loop for the C compiler
+to vectorize.
+
+</details>
 
 ## Vector operations
 
@@ -81,10 +88,14 @@ characters return a new array. Out-of-bounds swizzles are compile errors.
 
 Swizzles are writable: assigning to a single character writes the element,
 and assigning an array to multiple characters writes each element in order.
-Multi-character writes must not repeat a component (`v.xy = [1.0, 2.0]`
-works, `v.xx = ...` is a compile error), and only direct assignment writes
-back (indexing or re-swizzling a multi-character swizzle is a compile error).
-Compound assignment (`v.x += 1.0`) and increment work as well.
+
+<details>
+<summary>Swizzle write restrictions</summary>
+
+Only direct assignment writes back (indexing or re-swizzling a
+multi-character swizzle is a compile error).
+
+</details>
 
 ```cs
 void main() {

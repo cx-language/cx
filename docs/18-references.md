@@ -2,22 +2,27 @@
 
 A reference, written `T&`, refers to a value owned elsewhere without
 copying it. References are memory-safe: the compiler rejects code
-where one could dangle, with no lifetime annotations. Most code
-meets references as borrowed function parameters and borrowed elements.
+where one could dangle, with no lifetime annotations.
 For unchecked addresses with pointer arithmetic, see
 [Raw pointers](#raw-pointers) at the end of this page.
 
 ## Borrowed parameters
 
 Functions that use a value for the duration of the call without replacing it take it by borrow, written `T&`.
-(The `T&` type is also called a reference; compiler diagnostics say "reference type".)
 Callers pass values as usual; the compiler borrows them automatically.
+
+<details>
+<summary>Borrowing temporaries and constants</summary>
+
 Temporaries and literals can be borrowed too; the borrow refers
 to a temporary that lives until the end of the call. Constants cannot be
 borrowed: they are compile-time values with no address, so bind them to a
 local first if a borrow is needed. Computed values derived from constants
 (e.g. `c + 1`) are temporaries and borrow normally, as do const operands
 of operator overloads.
+
+</details>
+
 Passing a stored `T*` where a `T&` is expected is an error; dereference it
 explicitly (`*p`) to borrow the pointee.
 Inside the function, member access and operators use the borrowed value directly; `*` moves a value out explicitly.
@@ -53,13 +58,21 @@ string, or iterator derived from a local variable, a by-value parameter, or a
 temporary; only borrows of parameters, `this`, and globals may escape. While a view
 is alive (from its declaration until no use of it follows on some path), its owner
 is frozen: reassigning, moving, destroying, or mutating it is an error, as is
-mutating a collection while iterating it. A mutation on a path where the view is
+mutating a collection while iterating it.
+
+<details>
+<summary>Borrow-freeze exceptions</summary>
+
+A mutation on a path where the view is
 never used afterwards is fine. Within a method, freezing is per-field: assigning one field while a
 view of another is alive is fine. Writing an element in place (`list[i] = v`) stays
 legal. A borrow of the owner itself (`List<int>& a = list`) only conflicts with
-moves and destruction: interior mutation leaves the borrowed slot in place. Raw
-pointers are exempt from all of this: they are the explicit unsafe hatch for when
-the checker is wrong or in the way.
+moves and destruction: interior mutation leaves the borrowed slot in place.
+
+</details>
+
+Raw pointers are exempt from all of this: they are the explicit unsafe hatch
+for when the checker is wrong or in the way.
 
 ```cs
 void main() {
@@ -71,8 +84,6 @@ void main() {
 ```
 
 A borrow can be nullable, written `T&?`, for parameters that may or may not receive a value.
-It accepts everything a `T&` accepts, plus `null`.
-Inside the function, test the parameter before dereferencing it.
 Nullable borrows also work as local variable types, both inferred
 (`var count = counts[key];` deduces `int&?`) and explicit (`int&? r = ...`).
 
@@ -124,7 +135,6 @@ They behave as follows:
 - There is no implicit conversion from a pointer to a value: dereference it with `*p`
   where a value is expected. Member access and indexing remain direct through a pointer.
 - Forming one from a value needs an explicit `&`.
-  Borrow parameters (`T&`) borrow values implicitly; they do not form a stored `T*`.
 
 To form a pointer, the `&` operator is used. Its operand must be an lvalue or a borrow,
 so the address of a returned reference can be taken directly (e.g. `&list.first()`).
@@ -158,7 +168,7 @@ C and C++ declarations map onto this.
 ### Array pointers
 
 Array pointers, written `T[*]`, are pointers that point to an array of unknown length, or one step past the end of an array.
-They are the only pointer type that supports pointer arithmetic, since pointer arithmetic only makes sense for arrays.
+They are the only pointer type that supports pointer arithmetic.
 
 ```cs
 void main() {

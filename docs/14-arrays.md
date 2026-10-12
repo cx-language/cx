@@ -3,17 +3,26 @@
 A static array stores a fixed number of elements of the same type.
 The size is written next to the element type: `int[3]` is an array of three integers.
 The size can be any constant integer expression, such as `uint8[64 * 64 * 4]`.
+
+<details>
+<summary>Constant sizes and scope</summary>
+
 Top-level named constants work too, including member access on them, so
 `const res = [800, 600];` allows `uint8[res.x * res.y * 3]`. Sizes resolve
 in their own scope: inside a function, local constants shadow globals,
 and generic signatures see the callee's globals and generic parameters.
 
-The size may also be `sizeof(T)`, which folds once the operand type is known.
-Generic code uses this to reserve scratch space for a value of unknown type,
-as in `uint8[sizeof(E)]`. Such arrays cannot hold owning elements or be
+</details>
+
+<details>
+<summary>sizeof-scratch restrictions</summary>
+
+Arrays sized with `sizeof(T)` cannot hold owning elements or be
 initialized from literals, since their size is only known to the backends.
 The buffer is aligned as `uint8`. Scratch that must hold an `E` with `E`'s
 alignment is a local `@manuallyDestroy E` (see [Structs](structs)).
+
+</details>
 
 ```cs
 void main() {
@@ -50,8 +59,17 @@ void main() {
 ```
 
 Array literals must contain exactly as many elements as the declared array
-size. Calling `data()` on a constant array is rejected: the pointer would
-alias frozen storage. Read constant elements by index instead.
+size.
+
+<details>
+<summary>Constant array restrictions</summary>
+
+Constant arrays cannot be mutated: indexed assignment is rejected, as is
+anything that would alias the frozen storage (`data()`, optional decay to
+a pointer, and borrow-returning calls like `first()`). Read constant
+elements by index instead.
+
+</details>
 
 Arrays are values: assigning an array copies its elements.
 To pass an array to a function without copying, take it by a slice view (`T[]`),
@@ -99,9 +117,14 @@ void main() {
 }
 ```
 
+<details>
+<summary>List from array ownership</summary>
+
 A list can also be built from an array: `List` moves the elements out,
 so an owning array passed by name is consumed. Copyable arrays are copied
 and stay usable.
+
+</details>
 
 See [Vector math](vector-math) for element-wise arithmetic, vector
 operations, and swizzles. See [List](list) for a resizable array, and

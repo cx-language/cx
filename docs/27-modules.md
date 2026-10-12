@@ -75,12 +75,8 @@ Currently vendored: `glfw` (GLFW 3.x, including glfw3native.h),
 API of its C headers; whatever cx cannot express (such as
 `va_list` callbacks) is listed in an omissions note at the top of
 the `vendor/<package>/<package>.cx` file, if anything is omitted.
-A `vendor/<package>/` directory in your own project shadows the shipped
-module of the same name, so you can
-override or extend a binding; the shadowing package's link settings
-apply under `cx build` like any other vendored dependency. Vendored
-modules need the native library at link time, so they are unavailable
-in the web playground.
+Vendored modules need the native library at link time, so they are
+unavailable in the web playground.
 
 See [Using C libraries](c-interop#using-c-libraries).
 

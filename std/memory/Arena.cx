@@ -28,7 +28,7 @@ struct Arena {
         return takeFrom(this, Arena());
     }
 
-    /// Allocates uninitialized storage for one value, or returns null on overflow or allocation failure.
+    /// Allocates uninitialized storage for one value, or returns null on allocation failure.
     T*? allocate<T>() {
         var storage = reserve(sizeof(T));
         if storage == null {
@@ -37,7 +37,7 @@ struct Arena {
         return cast<T*>(storage);
     }
 
-    /// Moves the given value into arena-owned storage, or returns null on overflow or allocation failure.
+    /// Moves the given value into arena-owned storage, or returns null on allocation failure.
     T*? allocateValue<T>(T value) {
         var allocation = this.allocate<T>();
         if allocation == null {

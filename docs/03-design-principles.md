@@ -45,8 +45,7 @@ disclosure. For simple things, "there should be one, and preferably only one, ob
 to do it": there is one composite value type (`struct`) instead of separate struct and
 class concepts, one member access operator (`.`, never `->`), and in most code you get by
 with just references. Fewer overlapping concepts means less to learn and less that can
-surprise you, and a straightforward grammar makes tooling such as syntax highlighting and
-formatting easier to write and keep correct.
+surprise you.
 
 ## Safety by default
 

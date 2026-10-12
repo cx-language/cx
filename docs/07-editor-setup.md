@@ -52,8 +52,6 @@ command = "cx-lsp"
 ## Zed / Emacs (eglot) / others
 
 Point your client at `cx-lsp` for the `cx` language; no extra flags needed.
-The server speaks full-sync `textDocumentSync`, so any conforming client
-works.
 
 ## Initialization options
 
@@ -87,10 +85,16 @@ Hover and completion entries include the declaration's `///` doc comment
 (consecutive `///` lines directly above it) as plain text, with single
 newlines folded into spaces and blank `///` lines separating paragraphs.
 
+<details>
+<summary>Semantic token types</summary>
+
 Token types: `comment`, `string`, `number`, `keyword`, `macro` (`#if`/`#else`/`#endif`),
 `type`, `struct`, `enum`, `interface`, `typeParameter`, `parameter`, `variable`,
 `property` (fields), `enumMember`, `function`, `method`. Definitions carry the
 `definition` modifier, and immutable variables and parameters carry `readonly`.
+
+</details>
+
 Keywords, strings, numbers, comments and macros highlight
 even when the file doesn't compile.
 

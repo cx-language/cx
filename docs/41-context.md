@@ -40,16 +40,30 @@ The override applies to `body` and everything it calls, without leaking back
 to the caller: every cx function takes its caller's context as a hidden
 parameter. Assigning `context().allocator` directly also works, but mutates
 the shared context instead of pushing an override, so the change stays visible
-to the caller until assigned back. The context doesn't cross language
+to the caller until assigned back.
+
+<details>
+<summary>C callbacks and language boundaries</summary>
+
+The context doesn't cross language
 boundaries: C callbacks and exported `extern` functions start from the
 default context. Callbacks must be passed directly as a function or
 non-capturing lambda; a function pointer held in a variable can't be
 converted to a C callback.
+
+</details>
+
 Allocators must return 16-aligned pointers and tolerate freeing null.
+
+<details>
+<summary>Reentrancy rule and Arena exception</summary>
+
 A custom allocator must not call back into context-allocating standard library
 functions, or allocation recurses forever; use `defaultAllocator()` for
 passthrough as above. One exception: `Arena` chunks always use malloc, so an
 arena installed as the context allocator never allocates from itself.
+
+</details>
 
 ## Planned features
 

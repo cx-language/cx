@@ -1,4 +1,5 @@
-// Exercises website/editor.js showcase wiring with a minimal fake DOM.
+// Exercises website/editor.js showcase wiring and details refresh with a
+// minimal fake DOM.
 // Run with: node wasm/test-editor.mjs
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
@@ -119,10 +120,13 @@ function check(condition, message) {
 
 // Fake CodeMirror.
 let editorValue = "";
+let refreshCount = 0;
 const widgets = [];
 const editorListeners = {};
 const fakeEditor = {
-    refresh() {},
+    refresh() {
+        refreshCount++;
+    },
     getValue() {
         return editorValue;
     },
@@ -178,6 +182,7 @@ codeWrap.className = "sourceCode";
 const block = makeElement("pre");
 block.className = "sourceCode";
 block.innerText = "old code";
+block.textContent = "old code";
 codeWrap.appendChild(block);
 showcase.appendChild(codeWrap);
 
@@ -185,6 +190,7 @@ const snippetWrap = makeElement("div");
 const snippetPre = makeElement("pre");
 snippetPre.className = "snippet cx";
 snippetPre.innerText = "int? x = null;";
+snippetPre.textContent = "int? x = null;";
 snippetWrap.appendChild(snippetPre);
 
 const ranWith = [];
@@ -435,6 +441,35 @@ runButton.click();
 await flushTimers();
 scriptedResult = null;
 check(checkedWith.length === 0, "run between change and fire skips the check");
+
+// Editors inside a collapsed <details> cannot measure layout at init,
+// so opening the block must refresh them.
+const detailsEl = makeElement("details");
+detailsEl.open = false;
+const detailsWrap = makeElement("div");
+const nestedBlock = makeElement("pre");
+// innerText is empty inside a collapsed <details>; the editor must read textContent.
+nestedBlock.innerText = "";
+nestedBlock.textContent = "nested code";
+detailsWrap.appendChild(nestedBlock);
+detailsEl.appendChild(detailsWrap);
+sandbox.document.querySelectorAll = (sel) => (sel === "pre.snippet.cx" ? [] : [nestedBlock]);
+sandbox.document.listeners["DOMContentLoaded"]();
+await new Promise((resolve) => setTimeout(resolve, 10));
+
+check(editorValue === "nested code", "details editor reads full code");
+check(
+    (detailsEl.listeners.toggle || []).length === 1,
+    "editor in details subscribes to toggle"
+);
+const refreshBefore = refreshCount;
+detailsEl.open = true;
+detailsEl.fireEvent("toggle");
+const refreshAfterOpen = refreshCount;
+check(refreshAfterOpen === refreshBefore + 1, "opening details refreshes the editor");
+detailsEl.open = false;
+detailsEl.fireEvent("toggle");
+check(refreshCount === refreshAfterOpen, "closing details refreshes nothing");
 
 if (failures > 0) {
     console.error(failures + " test(s) failed");

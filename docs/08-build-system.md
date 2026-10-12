@@ -74,9 +74,14 @@ import "unwind.h";
 #endif
 ```
 
+<details>
+<summary>hasInclude search scope</summary>
+
 `hasInclude` searches the C header paths: `-I` directories, package header
 paths, and the C compiler's system paths. cx source directories are not
 searched, so project-local files never shadow system headers.
+
+</details>
 
 Defines come from `-D` flags, the project's `defines` setting, and `pkg-config`
 dependencies; `Windows` and `macOS` are predefined on those platforms, and
@@ -131,23 +136,35 @@ Debug builds also enable the leak detector: allocations made through
 the count and bytes and exits with status 1 if any are still live when
 `main` returns. Release builds skip tracking entirely. Pass
 `--no-leak-check` to disable the check in debug builds. Only cx allocations
-are tracked. Calling `exit()` directly skips the check, as does embedding
-cx code without a cx `main`; `main` argument storage is exempt. Under
-`cx test` all tests run first and a single report fires at the end if
-anything leaked.
+are tracked.
+
+<details>
+<summary>Leak checker details</summary>
+
+Calling `exit()` directly skips the check, as does embedding cx code
+without a cx `main`; `main` argument storage is exempt. Under `cx test`
+all tests run first and a single report fires at the end if anything leaked.
+
+</details>
 
 Debug builds (the default) embed debug info: aborts print a stack trace
 naming the cx functions involved, and the binary loads in a debugger
 (`lldb`, `gdb`, or Visual Studio on Windows). Release builds omit debug
 info but keep symbol names, so stack traces still name cx functions where
-the platform allows it. On macOS the debug info for `cx build` output is
-collected into a `.dSYM` bundle next to the binary. On Windows the debug
-info is CodeView in a `.pdb` file next to the binary; pass
-`--dwarf-debug-info` for DWARF instead.
-`cx run` and `cx test` usually execute through an in-process JIT for speed, so
-their abort traces show addresses (plus compiler frames) rather than function
-names. Pass `--no-jit` to link and execute a binary with named traces instead;
-`cx build` output always names functions.
+the platform allows it. `cx run` and `cx test` usually execute through an
+in-process JIT for speed, so their abort traces show addresses (plus compiler
+frames) rather than function names. Pass `--no-jit` to link and execute a
+binary with named traces instead; `cx build` output always names functions.
+
+<details>
+<summary>Debug info file formats</summary>
+
+On macOS the debug info for `cx build` output is collected into a
+`.dSYM` bundle next to the binary. On Windows the debug info is CodeView
+in a `.pdb` file next to the binary; pass `--dwarf-debug-info` for DWARF
+instead.
+
+</details>
 
 Traces and debugger output show mangled symbol names (such as
 `_CX1N4main5innerE4void0_`). `cx demangle` decodes them back to
@@ -176,8 +193,7 @@ The package is then imported by its package name:
 import shapes;
 ```
 
-There is no package registry: dependencies are just Git repositories nominated by URL,
-with no central index or publishing step.
+There is no package registry: dependencies are just Git repositories nominated by URL.
 
 ### Transitive dependencies
 
@@ -188,10 +204,15 @@ are fetched and imported the same way, recursively. Paths in a dependency's
 settings resolve against that dependency's directory. Only `name`,
 `outputDirectory`, and `multitarget` stay with the main project.
 
+<details>
+<summary>Duplicate versions and flag scope</summary>
+
 A package required at two versions, or both vendored and fetched, is an
 error at the importing `import`: remove or unify the duplicate source.
 Command-line `-D`, `-I`, `-L`, `-l`, and `--cflags` flags apply to every
 package; a dependency's `#if` conditions see those plus its own `defines`.
+
+</details>
 
 Passing files directly (`cx main.cx`) skips dependency build files: sources
 still resolve, but their settings don't apply. Use `cx build` for projects
@@ -219,10 +240,17 @@ import shapes;
 
 `cx build` runs at the project root and only reads the `build.cx` there.
 The `build.cx` at an imported package's root applies to that package as above.
+
+<details>
+<summary>Vendor directory rules</summary>
+
 A `build.cx` anywhere else is an ordinary source file and compiles as usual.
 Everything else under `vendor/` is only reachable via `import`.
 Because vendored code compiles as an imported module rather than as part of
 your project, unused functions in it don't produce warnings.
+
+</details>
+
 Sources kept outside the project can likewise be used with `-I` plus `import`.
 
 Vendored C libraries work the same way: point `headerSearchPaths` at their headers

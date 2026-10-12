@@ -69,6 +69,10 @@ reassigned first.
 
 Explicit destruction is for values the compiler won't destroy,
 such as elements in manually allocated memory.
+
+<details>
+<summary>Deinit through pointers</summary>
+
 Destroying through a local pointer is tracked: when `p` points at a
 stack variable, `(*p).deinit()` consumes it like a direct deinit.
 Through a function parameter or struct member the compiler cannot know
@@ -76,6 +80,9 @@ the target, so it stays unchecked: if the pointer reaches a stack
 variable that later dies at scope exit, the value is destroyed twice.
 Only deinit through such pointers when nothing else owns the target,
 as container internals do with heap memory.
+
+</details>
+
 This is how containers destroy their elements:
 
 ```cs
@@ -94,7 +101,7 @@ void main() {
 The dual of `.deinit()` is `.forget()`: it also consumes the value, but
 runs no destructor at all, neither now nor at scope exit. It is for bytes
 already moved elsewhere by hand, such as elements copied out of a temporary
-array into a container. Forgetting a live value leaks it; like `.deinit()`,
+array into a container. Like `.deinit()`,
 the value cannot be used afterwards.
 
 ## Manual destruction
@@ -103,19 +110,33 @@ Fields are destroyed automatically when the destructor finishes. Marking a
 field `@manuallyDestroy` opts it out: the destructor must then destroy the
 field explicitly with `.deinit()`. This is for storage that is only
 partially initialized, such as the inline buffer of `SmallList`, where
-destroying every slot would destroy uninitialized memory. A struct with a
+destroying every slot would destroy uninitialized memory.
+
+<details>
+<summary>Unchecked manual-field destruction</summary>
+
+A struct with a
 manually-destroyed owning field but no destructor is a compile error. The
 compiler does not check that the destructor actually destroys the field;
 forgetting `.deinit()` leaks it silently.
 
+</details>
+
 A local variable marked `@manuallyDestroy` stays alive when its scope ends,
-including on `return`. Assignment still destroys the previous value, so
+including on `return`.
+
+<details>
+<summary>Scratch-variable traps</summary>
+
+Assignment destroys the previous value, so
 assigning over uninitialized scratch would destroy uninitialized memory.
 This is for storage that must use the value's alignment and must not own
 the bytes, such as swapping two values by copying their representation. A
 `uint8` buffer is aligned as a byte, so it is the wrong scratch for that.
 The compiler does not check that the variable is destroyed; forgetting
 `.deinit()` on a value that should be destroyed leaks it.
+
+</details>
 
 ```cs
 struct Buffer {

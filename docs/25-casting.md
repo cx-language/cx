@@ -30,7 +30,7 @@ void main() {
 ```
 
 `cast` reinterprets between pointers (`T*`), array pointers (`T[*]`), and references (`T&`).
-Any of those may have one optional (`T*?`, `T[*]?`, `T&?`). A second `?` is a struct, not a null pointer, so `T*??` cannot be cast this way.
+Any of those may have an optional (`T*?`, `T[*]?`, `T&?`).
 The pointee type may change:
 
 ```cs
@@ -116,8 +116,16 @@ void main() {
 ```
 
 Implicit conversions apply when passing arguments, returning values, and
-initializing or assigning variables. Only one user-declared conversion applies
+initializing or assigning variables.
+
+<details>
+<summary>Conversion precedence</summary>
+
+Only one user-declared conversion applies
 per step, and overloads that match without converting win. If conversions
 exist in both directions at once, the use is ambiguous and fails to compile.
+
+</details>
+
 Projects tune the builtin conversions with warning options such as
 `-Wconversion` (see [Build system](./build-system)).

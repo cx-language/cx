@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, {
             mode: "cx",
             theme: "cx",
-            value: pre.innerText,
+            value: pre.textContent,
             readOnly: "nocursor",
             viewportMargin: Infinity
         });
@@ -25,11 +25,12 @@ function initializeCodeEditor(block) {
     const editorWrapper = document.createElement("div");
     editorWrapper.className = "editor";
 
+    // textContent, not innerText: innerText is empty inside a collapsed <details>.
     const editor = CodeMirror(editorWrapper, {
         mode: "cx",
         theme: "cx",
         indentUnit: 4,
-        value: block.innerText,
+        value: block.textContent,
         viewportMargin: Infinity
     });
     setTimeout(function() {
@@ -54,6 +55,17 @@ function initializeCodeEditor(block) {
     output.appendChild(stderr);
 
     block.parentNode.replaceChild(editorWrapper, block);
+
+    // Editors initialized inside a collapsed <details> cannot measure
+    // layout, so refresh them once the block opens.
+    const details = editorWrapper.closest("details");
+    if (details) {
+        details.addEventListener("toggle", function() {
+            if (details.open) {
+                editor.refresh();
+            }
+        });
+    }
 
     // The front-page showcase lets the reader switch between runnable
     // examples. Its tab bar is baked into index.html at website build time;

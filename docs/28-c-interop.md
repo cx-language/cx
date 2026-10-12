@@ -10,7 +10,6 @@ of the C header: it compiles faster and carries precise nullability.
 See [Vendored C libraries](modules#vendored-c-libraries).
 
 Other C headers can be imported directly from cx code.
-The compiler uses the Clang API to parse the header and make its declarations available.
 To import a header, write an import declaration with the header file name:
 
 ```cs
@@ -22,12 +21,19 @@ void main() {
 ```
 
 Imported functions are called like ordinary cx functions.
+
+<details>
+<summary>Imported type name collisions</summary>
+
 An imported struct, union, or enum shares its name with any cx type of the
 same spelling, so defining both is a redefinition error; use the imported
 type from all files instead of defining a second one. An empty struct or union
 is exempt as an opaque placeholder for the imported type. A generic cx type
 is a different spelling, so it coexists with a same-named import: argument
 count picks the template when arguments are present.
+
+</details>
+
 Memory allocation functions work the same way:
 
 ```cs
@@ -40,8 +46,7 @@ void main() {
 ```
 
 Numbers, characters, and strings are imported as constants,
-as are simple expressions over numbers and characters
-(float operands compute in double precision):
+as are simple expressions over numbers and characters:
 
 ```cs
 import "stdio.h";
@@ -53,8 +58,7 @@ void main() {
 
 Compound literals of an imported struct are imported as constants when every
 element is constant; the elements may be numbers, characters, earlier scalar
-macros, or nested compound literals. Partial initializers, designators,
-unions, and structs with anonymous members are not imported:
+macros, or nested compound literals:
 
 ```c
 typedef struct Color { unsigned char r, g, b, a; } Color;
@@ -68,6 +72,14 @@ void main() {
     println(RAYWHITE.g); // prints 245
 }
 ```
+
+<details>
+<summary>Macro import limits</summary>
+
+Partial initializers, designators,
+unions, and structs with anonymous members are not imported.
+
+</details>
 
 Function-like macros and casts are not imported.
 
@@ -150,11 +162,18 @@ link main.obj legacy_stdio_definitions.lib ucrt.lib msvcrt.lib /SUBSYSTEM:CONSOL
 
 Signatures crossing the boundary must be C-compatible: plain numbers,
 pointers, and C structs. Generic functions cannot be `extern`.
+
+<details>
+<summary>extern C value-crossing limits</summary>
+
 Structs cross by value following the platform C ABI, including small
 float-containing ones, which cross in registers on x86-64 and AArch64 (on
 other targets those are rejected). Aggregates holding 80-bit floats are
 rejected; pass them behind a pointer or reference instead, and return
 them through an out-parameter.
+
+</details>
+
 An `extern` function must be called directly; referring to one as a value
 is rejected because a call through a function pointer cannot use the
 callee's C calling convention.
@@ -179,6 +198,9 @@ void main() {
 }
 ```
 
+<details>
+<summary>C++ header import boundaries</summary>
+
 Only declarations written in the imported header itself are imported.
 Headers it includes are parsed for context, so their types work in
 signatures, but their declarations are not imported; import each header
@@ -186,13 +208,24 @@ you use directly. Unsupported declarations (namespaces, templates,
 globals, and non-POD types) are skipped with a warning naming how many
 were skipped.
 
+</details>
+
 Signatures crossing the boundary must be C++-compatible: plain numbers,
-pointers, references, function pointers, and plain structs. Structs
+pointers, references, function pointers, and plain structs.
+
+<details>
+<summary>C++ value-crossing limits</summary>
+
+Structs
 cross by value only when they are small (up to 16 bytes), normally
 aligned, and hold no floats; anything else must cross behind a pointer
 or reference. The same rules apply to extra arguments passed through
 `...`. Structs are never returned by value; return through an
-out-parameter instead. A cx function can be passed where a C++ function
+out-parameter instead.
+
+</details>
+
+A cx function can be passed where a C++ function
 pointer is expected. `extern "C"` functions in C++ headers keep
 their plain names and work as usual. Classes with methods and
 exceptions are not supported.
@@ -217,13 +250,20 @@ extern "C++" c_int cpp_find(const c_int* values, c_int count);
 ```
 
 `const T*` and `const T&` parameters mangle with const while staying
-mutable in cx; callers pass pointers and borrows as usual. The qualifier
+mutable in cx; callers pass pointers and borrows as usual.
+
+<details>
+<summary>Const qualifier restrictions</summary>
+
+The qualifier
 is mangle-only: it is rejected on by-value parameters, on definitions,
 and on multi-level pointees, and declaring both the mutable and the
 const overload collides as a redefinition.
 When both overloads come from an imported header instead, the import
 succeeds and calls resolve to whichever overload is declared first, mangled
 with its original constness.
+
+</details>
 
 ## Calling cx from C++
 
@@ -256,5 +296,3 @@ can be `extern "C++"`; generic functions cannot be `extern`. C++
 interop uses the Itanium ABI and is not supported on MSVC targets.
 See the [`cxx-interop` example](https://github.com/cx-language/cx/tree/main/examples/cxx-interop)
 for a complete project calling in both directions.
-
-See [Arena](arena) for bump allocation with arenas.

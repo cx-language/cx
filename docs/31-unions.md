@@ -1,9 +1,8 @@
 # Unions
 
 A `union` declares overlapping members: every member starts at offset zero,
-so writing one member is visible through the others. The size is the largest
-member's size. Unions are for type punning and for matching C
-unions imported from headers.
+so writing one member is visible through the others. Unions are for type
+punning and for matching C unions imported from headers.
 
 ```cs
 union IntOrFloat {
@@ -24,13 +23,22 @@ void main() {
 Unions have no constructors: declare a value and assign its members. Unions
 can have methods and can be generic, but they cannot implement interfaces
 and members cannot have default values. Unions copy by value unless they
-declare a destructor, in which case their values move like structs. A
-`union` in cx has the same layout as the equivalent C `union`, so values can
-cross `extern "C"` boundaries the same way as imported C unions. There is no
+declare a destructor, in which case their values move like structs.
+
+<details>
+<summary>Union layout and printing</summary>
+
+A `union` in cx has the same layout as the equivalent C `union`, so values
+can cross `extern "C"` boundaries the same way as imported C unions. There is no
 `print` overload for unions: the compiler cannot know which member is
-active, so print a member instead.
+active.
+
+</details>
 
 ## Destruction
+
+<details>
+<summary>Union destruction rules</summary>
 
 Members overlap, so at most one member holds a live value at a time. An
 owning member is therefore rejected unless it is marked `@manuallyDestroy`,
@@ -65,3 +73,5 @@ void main() {
     m.items = List([4]); // 'items' must be active when 'm' is destroyed
 }
 ```
+
+</details>

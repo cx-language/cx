@@ -5,7 +5,6 @@ Other types can implement an interface, and the compiler checks that all the
 required methods are provided by the implementing type.
 
 Interfaces can provide default implementations of methods.
-The implementing types will automatically inherit them.
 
 ```cs
 interface Fooable {

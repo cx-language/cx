@@ -83,8 +83,7 @@ cmake --build . --config Release
 
 LLVM's Windows binaries require zlib and zstd at configure time. CMake uses
 system/vcpkg copies when findable (add their install prefix to
-`CMAKE_PREFIX_PATH`), and otherwise builds them from source automatically,
-so no manual dependency install is needed.
+`CMAKE_PREFIX_PATH`), and otherwise builds them from source automatically.
 
 The `cx` and `cx-lsp` binaries end up in `build\Release`
 (`build\Debug` when built without `--config Release`).
@@ -93,6 +92,9 @@ For the fastest clean build of just the compiler, configure with
 `cmake --build . --target cx`.
 
 ## Offline builds
+
+<details>
+<summary>Building without network access</summary>
 
 Configuring downloads zlib and zstd on machines without system copies
 (e.g. Windows). To build without network access, check out the pinned
@@ -105,6 +107,8 @@ cmake .. -DFETCHCONTENT_SOURCE_DIR_ZLIB=/path/to/zlib -DFETCHCONTENT_SOURCE_DIR_
 If your LLVM distribution does not ship FileCheck, configuring downloads
 its source; pass `-DFILECHECK_SOURCE=/path/to/FileCheck.cpp` to build from
 a local copy of the same LLVM version instead.
+
+</details>
 
 ## Where to go next
 

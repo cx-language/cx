@@ -25,9 +25,15 @@ void main() {
 ```
 
 Bind a second loop variable to also get the zero-based iteration index.
+
+<details>
+<summary>Loop index semantics</summary>
+
 The index is an `int` that counts iterations from 0 even for ranges that do
 not start at 0, and each iteration gets a fresh copy, so assigning to it does
-not affect iteration:
+not affect iteration.
+
+</details>
 
 ```cs
 void main() {
@@ -71,9 +77,14 @@ void main() {
 }
 ```
 
+<details>
+<summary>break and continue in switch</summary>
+
 Since `switch` cases don't fall through, `break` is only needed in a `switch` to skip
 the rest of the matched case body. A `continue` inside a `switch` applies to the
 enclosing loop.
+
+</details>
 
 ## if
 
@@ -146,11 +157,16 @@ void main() {
 }
 ```
 
+<details>
+<summary>Exhaustive-switch safety check</summary>
+
 When switching over an enum without a `default`, the compiler inserts a safety check that aborts
 with an error if the value is somehow not one of the enum's cases. Valid but unhandled cases still
 fall through to the code after the switch. The check is emitted in every build mode except
 release mode (`--release`), where the compiler instead assumes the value is always
 a valid case.
+
+</details>
 
 A `switch` can also be used as an expression, in which case each arm is a single expression
 and the whole `switch` evaluates to the matched arm's value.

@@ -53,19 +53,32 @@ To customize construction, declare a constructor: a method
 with the same name as the struct. It must initialize every field without
 a default value; fields with defaults are initialized automatically unless
 the constructor plainly assigns them before reading them. Defaults evaluate
-in field order before the body runs. Like parameter defaults, they resolve
-where they are declared: names in a default never capture locals at the
-construction site. Use `this.` to refer to fields shadowed
+in field order before the body runs.
+
+<details>
+<summary>Field default scope</summary>
+
+Like parameter defaults, they resolve where they are declared: names in a
+default never capture locals at the construction site.
+
+</details>
+
+Use `this.` to refer to fields shadowed
 by parameters.
 A constructor can delegate to another with a top-level `init(...)` call;
-the target performs initialization, so the delegating body needs no
+
+<details>
+<summary>Constructor delegation edge cases</summary>
+
+The target performs initialization, so the delegating body needs no
 assignments of its own. Calling `init(...)` on another instance instead
-reinitializes that instance in place. A bare `Type(...)` statement instead
-builds a temporary that is immediately discarded, which warns; assign it or
-bind it with `_ =` if that was intended.
-Overwriting a delegation-built field after the `init(...)` call destroys the
-old value first. Storing to a field before the `init(...)` call is an error
-when the delegation provably overwrites it: such stores can never be observed.
+reinitializes that instance in place. Overwriting a delegation-built field
+after the `init(...)` call destroys the old value first. Storing to a field
+before the `init(...)` call is an error when the delegation provably
+overwrites it: such stores can never be observed.
+
+</details>
+
 Constructors are never implicit: a single-parameter constructor does not convert
 its argument type, so pass `Wrapper(5)` explicitly instead of a bare `5`:
 
@@ -93,9 +106,7 @@ See [Move semantics](./move-semantics) for how values are copied and moved.
 
 Structs print generically: `print` renders the struct name followed by
 each field, so no boilerplate is needed for logging and debugging.
-The compiler generates the equivalent of a hand-written `print` method
-the first time a struct value is printed, and the struct also gains
-`toString` through the `Printable` interface:
+The struct also gains `toString` through the `Printable` interface.
 
 ```cs
 struct Point {
@@ -110,7 +121,13 @@ void main() {
 
 Nested structs, generic structs instantiated with printable arguments,
 and containers of structs all work. Nullable fields print as `null`
-when null. A struct with its own `print` method or a member named
-`print` keeps it; the compiler never overrides user-declared members.
-Note that a hand-written `print` alone does not make `print(value)` work:
+when null.
+
+<details>
+<summary>Custom print methods</summary>
+
+A custom print method overrides the compiler-generated one.
+A hand-written `print` alone does not make `print(value)` work:
 like before, the struct must still declare `: Printable` for that.
+
+</details>

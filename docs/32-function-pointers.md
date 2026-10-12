@@ -3,10 +3,6 @@
 A function pointer type is written as the return type followed by the parameter types in parentheses.
 For example, `int(int)` is a pointer to a function taking an `int` and returning an `int`.
 
-Function pointers are typically used for callbacks:
-a function takes a function pointer parameter, and the caller passes a function
-(or a [lambda](closures)) to be called back.
-
 ```cs
 int apply(int(int) f, int x) {
     return f(x);
@@ -43,9 +39,16 @@ void main() {
 ```
 
 A cx function can be passed where a C function pointer is expected,
-see [Using C libraries](c-interop#using-c-libraries). Pass the function directly:
+see [Using C libraries](c-interop#using-c-libraries).
+
+<details>
+<summary>C callback limits</summary>
+
+Pass the function directly:
 a function pointer held in a variable can't be converted, and the callback
 sees the default context rather than the caller's.
+
+</details>
 
 A C callback type can be named with an `extern` function type,
 which uses the C calling convention (no hidden context parameter):

@@ -15,7 +15,7 @@ void main() {
 ```
 
 `assert` takes an optional second argument, a string literal used as the
-failure message. It is printed along with the location of the assertion.
+failure message.
 
 ```cs
 void main() {
@@ -43,7 +43,5 @@ void main() {
 }
 ```
 
-Asserts run in debug and release-safe builds. `--release` skips them without
-evaluating the condition, except in `@test` functions, which keep their asserts
-in all modes so `cx test --release` still checks them.
+Asserts run in debug and release-safe builds.
 Code that must abort in release builds should call `abort` explicitly.

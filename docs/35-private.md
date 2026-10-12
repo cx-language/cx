@@ -27,8 +27,13 @@ Using a `private` declaration from another module produces a warning, not an err
 `private` marks an implementation detail, but nothing stops you from using it
 if you really need to.
 
-Note that `private` is the only access specifier: there is no `public` keyword.
+<details>
+<summary>Private and public</summary>
+
+`private` is the only access specifier.
 (The `public` marker on function parameters is unrelated:
 it enables [named arguments](functions), not access control.)
 Interface members cannot be private either,
 since implementing types in other files must provide them.
+
+</details>

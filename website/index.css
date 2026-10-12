@@ -181,6 +181,21 @@ hr {
     margin: 2.5em 0;
 }
 
+main details {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 3px solid transparent;
+}
+
+main details[open] {
+    border-left-color: var(--background-color-3);
+}
+
+main summary {
+    cursor: pointer;
+    color: var(--text-color-subtle);
+}
+
 pre, code, .sourceCode {
     font-family: var(--mono);
 }

@@ -61,8 +61,8 @@ languages](./comparison) covers how it differs from each of those languages.
 
 cx is approaching its 0.1 release. The language is already usable and being used for
 writing real software, but some planned features are not implemented yet, some existing
-features may still change, and there are still some bugs (all of which have been easily
-worked around). It is a good fit for projects that don't require a 100% stable foundation,
+features may still change, and there are still some bugs.
+It is a good fit for projects that don't require a 100% stable foundation,
 or backwards compatibility, or a mature ecosystem. If you use it, questions are warmly
 welcome and feedback is greatly appreciated on
 [GitHub](https://github.com/cx-language/cx/issues){target="_blank"} and the

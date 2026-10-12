@@ -1,11 +1,10 @@
 # Nullable types
 
-Nullable types, also known as optional types, are used represent values that may or may not exist.
+Nullable types, also known as optional types, are used to represent values that may or may not exist.
 Values of nullable type allow `null` to be assigned to them.
 To specify that a type is nullable, you append `?` to it.
 
 The compiler enforces null-safety by default, i.e. checks that we don't forget to handle the case when the value is null.
-This means you need to check nullable values for null before accessing them.
 
 ```cs
 void main() {
@@ -32,6 +31,9 @@ void takeInt(int n) {}
 ```
 
 ## Passing narrowed values to pointer parameters
+
+<details>
+<summary>Narrowing through pointer calls</summary>
 
 After a null check, the variable is narrowed to its wrapped type.
 The narrowed address passes to `T*` parameters (or binds to `T&`),
@@ -63,13 +65,21 @@ void main() {
 }
 ```
 
+</details>
+
 ## Comparing against plain values
 
 Comparing a nullable value against a plain value with `==` or `!=` never requires unwrapping first.
+
+<details>
+<summary>Nullable comparison semantics</summary>
+
 A null value compares unequal to every plain value.
 The wrapped type only needs its own `==` operator; it does not need to be `Comparable`.
 Two nullable values with the same wrapped type compare the same way:
 null equals null, and two non-null values compare their wrapped values.
+
+</details>
 
 ```cs
 struct Point { int x; int y; }

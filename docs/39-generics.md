@@ -23,9 +23,8 @@ void main() {
 }
 ```
 
-Generic structs work the same way.
-The type arguments are specified when instantiating the struct,
-or inferred when possible.
+Generic structs work the same way: type arguments are specified when
+instantiating the struct, or inferred when possible.
 
 ```cs
 void main() {
@@ -35,8 +34,8 @@ void main() {
 }
 ```
 
-Generic enums work the same way.
-The type parameters can be used in the associated values of any case.
+Generic enums work the same way: type parameters can be used
+in the associated values of any case.
 
 ```cs
 enum Opt<T> {
@@ -145,16 +144,25 @@ void main() {
 }
 ```
 
+<details>
+<summary>Integer argument rules</summary>
+
 Only non-negative integer literals (and references to other integer
 parameters) are accepted as integer arguments. Integer parameters can be used
 as compile-time values, including as an array size.
 
+</details>
+
 ## Generic constructors
 
+<details>
+<summary>Constructor type parameters</summary>
+
 Constructors can declare their own type and integer parameters, inferred
-from the call arguments like any other generic call. On non-generic types
-they can also be given explicitly (`Fixed<int>()`); on generic types explicit
-arguments bind the type's parameters instead:
+from the call arguments like any other generic call.
+
+On non-generic types they can also be given explicitly (`Fixed<int>()`);
+on generic types explicit arguments bind the type's parameters instead.
 
 ```cs
 struct Counter {
@@ -178,10 +186,14 @@ void main() {
 }
 ```
 
+</details>
+
 ## Generic interfaces
 
+<details>
+<summary>Interfaces with type parameters</summary>
+
 Interfaces can also take type parameters.
-This pays off when the interface needs to talk about a type:
 `Iterator<T>`'s `value()` returns `T`, so one interface serves every element type
 while keeping everything statically typed.
 A generic algorithm constrained on `Iterator<int>` accepts any implementation,
@@ -222,6 +234,6 @@ void main() {
 }
 ```
 
-Without the type parameter, each element type would need its own interface,
-and `value()` couldn't declare what it returns.
 See [Iterators](iterators) for more on the `Iterator` interface.
+
+</details>

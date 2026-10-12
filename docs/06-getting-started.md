@@ -73,7 +73,7 @@ int main(string[] args) {
 ```
 
 `args` holds the arguments as strings. The first argument is the
-program name (or path), so `args` is never empty when arguments are passed normally.
+program name (or path).
 The parameter may also be omitted entirely, and `main` may return `void` or `int` for the exit status.
 
 ## Syntax
