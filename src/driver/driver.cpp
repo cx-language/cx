@@ -1004,18 +1004,17 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::SmallString<128> runPath = runDirectory;
         llvm::sys::path::append(runPath, runFileName);
         renameFile(tempOutputFilePath, runPath);
-        std::string command = shellEscape(runPath.str());
-        for (const auto& arg : programArgs) {
-            command += " " + shellEscape(arg);
-        }
-        command += " 2>&1";
-        std::string output;
+        // Inherit stdio so program output streams live (and the child sees a
+        // terminal instead of a pipe); capturing would hold everything back
+        // until exit.
+        std::vector<llvm::StringRef> runArgs = {runPath.str()};
+        for (const auto& arg : programArgs)
+            runArgs.push_back(arg);
         int executableExitStatus;
         {
             PhaseTimer timer("run-exec");
-            executableExitStatus = exec(command.c_str(), output);
+            executableExitStatus = llvm::sys::ExecuteAndWait(runPath, runArgs);
         }
-        llvm::outs() << output;
         llvm::sys::fs::remove(tempIntermediateFilePath);
         llvm::sys::fs::remove(runPath);
 
