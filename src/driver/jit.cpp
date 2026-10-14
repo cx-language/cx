@@ -1,11 +1,19 @@
 #include "jit.h"
+#include "driver.h"
+#include <optional>
 #pragma warning(push, 0)
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ExecutionEngine/Orc/AbsoluteSymbols.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/DynamicLibrary.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/TargetParser/Triple.h>
 #pragma warning(pop)
 #include "../ast/mangle.h"
 #include "../support/utility.h"
@@ -209,6 +217,111 @@ bool cx::jitEligible(const llvm::Module& linkedModule) {
     return allExternsResolvable(linkedModule);
 }
 
+static bool loadPermanently(llvm::StringRef path) {
+    std::string error;
+    return !llvm::sys::DynamicLibrary::LoadLibraryPermanently(path.str().c_str(), &error);
+}
+
+static bool isSharedLibraryPath(llvm::StringRef path) {
+    auto extension = llvm::sys::path::extension(path);
+#ifdef _WIN32
+    return extension.equals_insensitive(".dll");
+#else
+#ifdef __APPLE__
+    if (extension == ".dylib") return true;
+#endif
+    return extension == ".so";
+#endif
+}
+
+// A bare -l name mapped to the file the linker would pick: each -L directory
+// in order, shared image preferred over static archive within it. A static-only
+// hit stops the search and declines: the link would use the archive, which
+// cannot be dlopened, and a same-named shared library elsewhere would be a
+// different library.
+static std::optional<std::string> findSharedLibrary(llvm::StringRef name, llvm::ArrayRef<std::string> searchPaths, bool& foundStaticOnly) {
+    foundStaticOnly = false;
+    llvm::SmallString<256> path;
+    auto probe = [&](llvm::StringRef directory, llvm::StringRef fileName) -> bool {
+        path = directory;
+        llvm::sys::path::append(path, fileName);
+        return llvm::sys::fs::exists(path);
+    };
+    for (const auto& directory : searchPaths) {
+#ifdef _WIN32
+        if (probe(directory, (name + ".dll").str()) || probe(directory, ("lib" + name + ".dll").str())) return path.str().str();
+        if (probe(directory, (name + ".lib").str()) || probe(directory, ("lib" + name + ".lib").str())) {
+            foundStaticOnly = true;
+            return std::nullopt;
+        }
+#else
+#ifdef __APPLE__
+        if (probe(directory, ("lib" + name + ".dylib").str())) return path.str().str();
+#endif
+        if (probe(directory, ("lib" + name + ".so").str())) return path.str().str();
+        if (probe(directory, ("lib" + name + ".a").str())) {
+            foundStaticOnly = true;
+            return std::nullopt;
+        }
+#endif
+    }
+    return std::nullopt;
+}
+
+static std::string defaultSharedLibraryName(llvm::StringRef name) {
+#ifdef _WIN32
+    return name.str() + ".dll";
+#else
+#ifdef __APPLE__
+    return "lib" + name.str() + ".dylib";
+#else
+    return "lib" + name.str() + ".so";
+#endif
+#endif
+}
+
+bool cx::loadLinkLibrariesForJit(llvm::ArrayRef<std::string> librarySearchPaths, llvm::ArrayRef<std::string> libraries,
+                                 llvm::ArrayRef<std::string> frameworkSearchPaths, llvm::ArrayRef<std::string> frameworks) {
+    for (const auto& library : libraries) {
+        if (isLibraryFilePath(library)) {
+            // A -l value naming a file links it directly; only shared images can load.
+            if (!isSharedLibraryPath(library) || !loadPermanently(library)) return false;
+            continue;
+        }
+        bool foundStaticOnly = false;
+        if (auto path = findSharedLibrary(library, librarySearchPaths, foundStaticOnly)) {
+            if (!loadPermanently(*path)) return false;
+        } else if (!foundStaticOnly && loadPermanently(defaultSharedLibraryName(library))) {
+            // Found via the loader's own default search (covers /usr/lib and friends).
+        } else {
+            return false;
+        }
+    }
+
+#ifdef __APPLE__
+    for (const auto& framework : frameworks) {
+        bool loaded = false;
+        llvm::SmallString<256> path;
+        auto tryDirectory = [&](llvm::StringRef directory) {
+            path = directory;
+            llvm::sys::path::append(path, framework + ".framework", framework);
+            if (llvm::sys::fs::exists(path) && loadPermanently(path)) loaded = true;
+        };
+        for (const auto& directory : frameworkSearchPaths) {
+            tryDirectory(directory);
+            if (loaded) break;
+        }
+        if (!loaded) tryDirectory("/Library/Frameworks");
+        if (!loaded) tryDirectory("/System/Library/Frameworks");
+        if (!loaded) return false;
+    }
+#else
+    (void)frameworkSearchPaths;
+    if (!frameworks.empty()) return false;
+#endif
+    return true;
+}
+
 #ifdef _WIN32
 // C headers so the pins take addresses of the plain C-linkage functions.
 #include <cstddef>
@@ -266,13 +379,15 @@ static void pinLibcSymbols(llvm::orc::LLJIT& jit, llvm::ExitOnError& exitOnError
 #endif
 
 int cx::jitRun(std::unique_ptr<llvm::Module> linkedModule, std::unique_ptr<llvm::LLVMContext> ctx, const std::string& argv0,
-               const std::vector<std::string>& programArgs) {
+               const std::vector<std::string>& programArgs, llvm::CodeGenOptLevel optLevel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
 
     llvm::ExitOnError exitOnError;
     exitOnError.setBanner("error: couldn't JIT-run the program: ");
-    auto jit = exitOnError(llvm::orc::LLJITBuilder().create());
+    auto targetMachineBuilder = llvm::orc::JITTargetMachineBuilder(llvm::Triple(llvm::sys::getProcessTriple()));
+    targetMachineBuilder.setCodeGenOptLevel(optLevel);
+    auto jit = exitOnError(llvm::orc::LLJITBuilder().setJITTargetMachineBuilder(std::move(targetMachineBuilder)).create());
     auto processSymbols = exitOnError(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(jit->getDataLayout().getGlobalPrefix()));
     jit->getMainJITDylib().addGenerator(std::move(processSymbols));
 #ifdef _WIN32
@@ -282,8 +397,12 @@ int cx::jitRun(std::unique_ptr<llvm::Module> linkedModule, std::unique_ptr<llvm:
     auto* mainFunction = linkedModule->getFunction("main");
     ASSERT(mainFunction && "jitEligible guarantees a defined main");
     bool mainTakesArgs = mainFunction->arg_size() == 2;
-    exitOnError(jit->addIRModule(llvm::orc::ThreadSafeModule(std::move(linkedModule), std::move(ctx))));
-    auto mainSymbol = exitOnError(jit->lookup("main"));
+    std::optional<llvm::orc::ExecutorAddr> mainSymbol;
+    {
+        PhaseTimer timer("jit-compile");
+        exitOnError(jit->addIRModule(llvm::orc::ThreadSafeModule(std::move(linkedModule), std::move(ctx))));
+        mainSymbol.emplace(exitOnError(jit->lookup("main")));
+    }
 
     std::vector<char*> argv;
     argv.reserve(programArgs.size() + 2);
@@ -294,10 +413,11 @@ int cx::jitRun(std::unique_ptr<llvm::Module> linkedModule, std::unique_ptr<llvm:
     int argc = static_cast<int>(argv.size());
     argv.push_back(nullptr); // argv[argc] == NULL per the C standard.
 
+    PhaseTimer timer("jit-exec");
     if (mainTakesArgs) {
-        auto* main = mainSymbol.toPtr<int(int, char**)>();
+        auto* main = mainSymbol->toPtr<int(int, char**)>();
         return main(argc, argv.data());
     }
-    auto* main = mainSymbol.toPtr<int()>();
+    auto* main = mainSymbol->toPtr<int()>();
     return main();
 }

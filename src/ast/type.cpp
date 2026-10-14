@@ -176,7 +176,17 @@ constexpr llvm::StringRef builtinScalarNames[] = {
 };
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
-    return llvm::is_contained(builtinScalarNames, typeName);
+    // Hot (every call expression, every IR type): match by length instead of
+    // scanning builtinScalarNames. Keep the two lists in sync.
+    return llvm::StringSwitch<bool>(typeName)
+        .Cases({"int8", "int16", "int32", "int64"}, true)
+        .Cases({"uint8", "uint16", "uint32", "uint64"}, true)
+        .Cases({"c_size_t", "c_schar", "c_uchar", "c_short", "c_ushort"}, true)
+        .Cases({"c_int", "c_uint", "c_long", "c_ulong", "c_longlong", "c_ulonglong"}, true)
+        .Cases({"c_float", "c_double"}, true)
+        .Cases({"float32", "float64", "float80"}, true)
+        .Cases({"bool", "char"}, true)
+        .Default(false);
 }
 
 std::string Type::didYouMeanBuiltin(llvm::StringRef typeName) {
@@ -303,6 +313,30 @@ static bool spellingsEqual(Type a, Type b) {
     llvm_unreachable("all cases handled");
 }
 
+// Whether == of the type against its own base returns false: an unresolved
+// placeholder or anonymous (empty-named) type sits in a compared position.
+// Children are already interned, so their cached flags compose without a walk.
+static bool computeNeverSelfEqual(Type type) {
+    if (type.getKind() == TypeKind::UnresolvedType) return true;
+    if (type.isBasicType() && type.getName().empty()) return true;
+    auto childNeverSelfEqual = [](Type child) { return child.typeBase->neverSelfEqual; };
+    switch (type.getKind()) {
+    case TypeKind::BasicType:
+        return llvm::any_of(type.getGenericArgs(), [&](GenericArg arg) { return arg.isType() && childNeverSelfEqual(arg.getType()); });
+    case TypeKind::ArrayPointerType:
+        return childNeverSelfEqual(type.getElementType());
+    case TypeKind::AnonymousStructType:
+        return llvm::any_of(type.getAnonymousStructElements(), [&](const AnonymousStructElement& element) { return childNeverSelfEqual(element.type); });
+    case TypeKind::FunctionType:
+        return llvm::any_of(type.getParamTypes(), childNeverSelfEqual) || childNeverSelfEqual(type.getReturnType());
+    case TypeKind::PointerType:
+        return childNeverSelfEqual(type.getPointee());
+    case TypeKind::UnresolvedType:
+        return true;
+    }
+    llvm_unreachable("all cases handled");
+}
+
 template<typename T> static Type getType(T&& typeBase, Location location, Location endLocation = Location()) {
     Type newType(&typeBase, location, endLocation);
 
@@ -325,6 +359,7 @@ template<typename T> static Type getType(T&& typeBase, Location location, Locati
     typeBases.push_back(makeAST<T>(std::forward<T>(typeBase)));
     typeBases.back()->firstTwin = firstTwin;
     typeBases.back()->identityIndex = typeBases.size() - 1;
+    typeBases.back()->neverSelfEqual = computeNeverSelfEqual(Type(typeBases.back(), location, endLocation));
     // Share already-registered declarations so getDecl() usually hits without
     // scanning; its lazy search covers twins created before registration.
     if (firstTwin) {
@@ -714,6 +749,9 @@ Type Type::getWrappedType() const {
 }
 
 bool cx::operator==(Type lhs, Type rhs) {
+    // Interned types with distinct spellings are distinct bases, so identical
+    // bases imply equality, except for placeholders and anonymous types.
+    if (lhs.typeBase == rhs.typeBase) return !lhs.typeBase->neverSelfEqual;
     if (lhs.getKind() != rhs.getKind()) return false;
     switch (lhs.getKind()) {
     case TypeKind::BasicType:

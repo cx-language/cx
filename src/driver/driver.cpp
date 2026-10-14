@@ -382,7 +382,7 @@ static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::TargetMachin
     file.flush();
 }
 
-static bool isLibraryFilePath(llvm::StringRef value) {
+bool cx::isLibraryFilePath(llvm::StringRef value) {
     if (!llvm::sys::fs::exists(value)) return false;
     if (value.contains('/') || value.contains('\\')) return true;
     auto extension = llvm::sys::path::extension(value);
@@ -772,12 +772,19 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         // JIT runs the program in-process, skipping object emission, the C compiler link,
         // and (on macOS) first-execution signature validation of a fresh binary.
-        // Search paths without libraries are inert (macOS always adds framework search paths), so only -l/-framework/--no-jit decline JIT.
-        if ((isRunSelected() || testSubcommand) && !compileOnly && !emitAssembly && !noJit && libraries.empty() && frameworks.empty()
-            && jitEligible(*linkedModule)) {
+        // Search paths without libraries are inert (macOS always adds framework search paths).
+        // With CX_JIT_SHARED_LIBS set, -l/-framework dependencies load into the process
+        // first (small runs gain several-fold); anything unloadable (static archives,
+        // missing files) still declines JIT. Off by default: JITed frames have no
+        // symbol names in stack traces, unlike the link-and-exec path.
+        bool jitLibsReady =
+            (libraries.empty() && frameworks.empty())
+            || (std::getenv("CX_JIT_SHARED_LIBS") != nullptr && loadLinkLibrariesForJit(librarySearchPaths, libraries, frameworkSearchPaths, frameworks));
+        if ((isRunSelected() || testSubcommand) && !compileOnly && !emitAssembly && !noJit && jitLibsReady && jitEligible(*linkedModule)) {
             PhaseTimer timer("jit-run");
             std::string argv0 = buildParams.filePaths.empty() ? "main" : std::string(buildParams.filePaths.front());
-            return jitRun(std::move(linkedModule), llvmGenerator.takeContext(), argv0, programArgs);
+            auto optLevel = options.mode == BuildMode::Debug ? llvm::CodeGenOptLevel::None : llvm::CodeGenOptLevel::Aggressive;
+            return jitRun(std::move(linkedModule), llvmGenerator.takeContext(), argv0, programArgs, optLevel);
         }
 
         outputFileExtension = emitAssembly ? "s" : isWindows ? "obj" : "o";
@@ -1003,7 +1010,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
         command += " 2>&1";
         std::string output;
-        int executableExitStatus = exec(command.c_str(), output);
+        int executableExitStatus;
+        {
+            PhaseTimer timer("run-exec");
+            executableExitStatus = exec(command.c_str(), output);
+        }
         llvm::outs() << output;
         llvm::sys::fs::remove(tempIntermediateFilePath);
         llvm::sys::fs::remove(runPath);

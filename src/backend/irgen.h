@@ -355,7 +355,11 @@ struct IRGenerator {
     IRModule* module = nullptr;
     std::vector<IRModule*> generatedModules;
     std::vector<FunctionInstantiation> functionInstantiations;
-    // Extern names already reported as conflicting; getFunction runs per use.
+    // getFunction memo: declarations have fixed signatures, so a repeated lookup
+    // for the same declaration reuses its function instead of re-mangling and
+    // re-scanning. Conflicting externs stay uncached and re-run per use.
+    llvm::DenseMap<const FunctionDecl*, Function*> functionsByDecl;
+    // Extern names already reported as conflicting; conflicting getFunction calls run per use.
     llvm::StringSet<> reportedExternConflicts;
     const Decl* currentDecl;
     /// The basic blocks to branch to on a 'break'/'continue' statement.

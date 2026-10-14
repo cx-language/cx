@@ -9,6 +9,8 @@
 using namespace cx;
 
 Function* IRGenerator::getFunction(const FunctionDecl& decl) {
+    if (auto it = functionsByDecl.find(&decl); it != functionsByDecl.end()) return it->second;
+
     auto mangledName = mangleFunctionDecl(decl);
 
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
@@ -70,7 +72,10 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     bool conflict = false;
     for (auto* function : module->functions) {
         if (function->mangledName != mangledName) continue;
-        if (signatureMatches(function)) return function;
+        if (signatureMatches(function)) {
+            functionsByDecl[&decl] = function;
+            return function;
+        }
         reportConflict(function->location);
         conflict = true;
         break;
@@ -83,7 +88,10 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         for (auto& instantiation : functionInstantiations) {
             auto* existing = instantiation.function;
             if (existing->mangledName != mangledName) continue;
-            if (signatureMatches(existing)) return existing;
+            if (signatureMatches(existing)) {
+                functionsByDecl[&decl] = existing;
+                return existing;
+            }
             reportConflict(instantiation.decl->getLocation());
             conflict = true;
             break;
@@ -106,6 +114,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     if (!conflict) {
         module->functions.push_back(function);
         functionInstantiations.push_back({&decl, function});
+        functionsByDecl[&decl] = function;
     }
     return function;
 }

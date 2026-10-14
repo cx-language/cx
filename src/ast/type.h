@@ -46,6 +46,10 @@ struct TypeBase {
     // Earliest-created base with equal structure ignoring spelling (null when none).
     // Spelling twins share one identity; see Type::canonicalTwin().
     TypeBase* firstTwin = nullptr;
+    // True when == against this same base returns false: the subtree holds an
+    // unresolved placeholder or an anonymous (empty-named) type, which never
+    // compare equal. Lets operator== shortcut identical bases.
+    bool neverSelfEqual = false;
     // Creation-order index, unique per base. Only mangling uses it, to tell
     // apart anonymous C types, which have no name to mangle.
     size_t identityIndex = 0;

@@ -67,5 +67,8 @@ std::vector<std::string> msvcLinkArgs(llvm::ArrayRef<std::string> librarySearchP
 // binary after the project, which would otherwise be unrunnable there.
 // Explicit -o names pass through untouched (see output-file-path.cx).
 std::string withExecutableExtension(std::string name, bool isWindows);
+// True when a -l value names a library file instead of a bare library name:
+// an existing path, or an existing file with a library/object extension.
+bool isLibraryFilePath(llvm::StringRef value);
 
 } // namespace cx
