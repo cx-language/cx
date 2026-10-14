@@ -904,8 +904,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         // too: -L only affects the link, so without rpath the loader fails
         // to start it (exit 127, which ExecuteAndWait reports as -1).
         rpathStorage.reserve(librarySearchPaths.size());
+        llvm::StringSet<> seen;
         for (const auto& dir : librarySearchPaths) {
-            ccArgs.push_back(rpathStorage.emplace_back("-Wl,-rpath," + dir).c_str());
+            // Dedupe: repeated -L dirs would warn of duplicate -rpath.
+            if (seen.insert(dir).second) ccArgs.push_back(rpathStorage.emplace_back("-Wl,-rpath," + dir).c_str());
         }
     }
     addFlaggedArgs("-F", frameworkSearchPaths);

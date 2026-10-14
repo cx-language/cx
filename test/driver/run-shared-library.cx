@@ -7,6 +7,7 @@
 // RUN: env CX_JIT_SHARED_LIBS=1 CX_PROFILE=1 %cx run %s -L %T -lrunstatic 2>&1 | %FileCheck %s --check-prefix=FALLBACK
 // RUN: env CX_JIT_SHARED_LIBS=1 CX_PROFILE=1 %cx run %s -l %T/librunstatic.a 2>&1 | %FileCheck %s --check-prefix=FALLBACK
 // RUN: env CX_PROFILE=1 %cx run %s -L %T -lrunshared 2>&1 | %FileCheck %s --check-prefix=FALLBACK
+// RUN: env CX_PROFILE=1 %cx run %s -L %T -L %T -lrunshared 2>&1 | %FileCheck %s --check-prefix=DUPRPATH
 // RUN: %not env CX_JIT_SHARED_LIBS=1 %cx run %s -L %T -lrunshared_missing 2>&1 | %FileCheckNoGuard %s --check-prefix=MISSING
 // With CX_JIT_SHARED_LIBS, `run` loads shared -l dependencies into the process
 // and JITs. Static archives, direct archive paths, missing libraries, and an
@@ -23,4 +24,6 @@ void main() {
 
 // FALLBACK-DAG: [profile] cc-link
 // FALLBACK-DAG: 42
+// DUPRPATH-NOT: duplicate -rpath
+// DUPRPATH-DAG: 42
 // MISSING: runshared_missing
