@@ -1,0 +1,26 @@
+// UNSUPPORTED: windows
+// RUN: %cc -shared -fPIC %S/inputs/run-shared-library.c -o %T/librunshared.so
+// RUN: %cc -shared -fPIC %S/inputs/run-shared-library.c -o %T/librunshared.dylib
+// RUN: env CX_JIT_SHARED_LIBS=1 CX_PROFILE=1 %cx run %s -L %T -lrunshared 2>&1 | %FileCheck %s
+// RUN: env CX_JIT_SHARED_LIBS=1 CX_PROFILE=1 %cx run %s -l %T/librunshared.so 2>&1 | %FileCheck %s
+// RUN: %cc -c %S/inputs/run-shared-library.c -o %t.o && ar rcs %T/librunstatic.a %t.o
+// RUN: env CX_JIT_SHARED_LIBS=1 CX_PROFILE=1 %cx run %s -L %T -lrunstatic 2>&1 | %FileCheck %s --check-prefix=FALLBACK
+// RUN: env CX_JIT_SHARED_LIBS=1 CX_PROFILE=1 %cx run %s -l %T/librunstatic.a 2>&1 | %FileCheck %s --check-prefix=FALLBACK
+// RUN: env CX_PROFILE=1 %cx run %s -L %T -lrunshared 2>&1 | %FileCheck %s --check-prefix=FALLBACK
+// RUN: %not env CX_JIT_SHARED_LIBS=1 %cx run %s -L %T -lrunshared_missing 2>&1 | %FileCheckNoGuard %s --check-prefix=MISSING
+// With CX_JIT_SHARED_LIBS, `run` loads shared -l dependencies into the process
+// and JITs. Static archives, direct archive paths, missing libraries, and an
+// unset variable still decline and link. (Each platform resolves its own suffix
+// from the two files built above.)
+
+import "inputs/run-shared-library.h";
+
+// CHECK-DAG: [profile] jit-run
+
+void main() {
+    println(run_shared_answer()); // CHECK-DAG: 42
+}
+
+// FALLBACK-DAG: [profile] cc-link
+// FALLBACK-DAG: 42
+// MISSING: runshared_missing
