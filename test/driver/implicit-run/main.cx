@@ -1,0 +1,19 @@
+// RUN: cd %S && %cx 2>&1 | %FileCheck -match-full-lines --check-prefix=IMPLICIT %s
+// RUN: cd %S && %cx -- hello 2>&1 | %FileCheck -match-full-lines --check-prefix=ARGS %s
+// RUN: %cx help 2>&1 | %FileCheck --check-prefix=HELP %s
+// RUN: mkdir -p %T/cx-implicit-empty && cd %T/cx-implicit-empty && %cx 2>&1 | %FileCheck --check-prefix=HELP %s
+// RUN: mkdir -p %T/cx-implicit-nested/sub && echo 'void main() {}' > %T/cx-implicit-nested/sub/nested.cx && cd %T/cx-implicit-nested && %cx 2>&1 | %FileCheck --check-prefix=HELP %s
+
+int main(string[] args) {
+    println("implicit-run"); // IMPLICIT: implicit-run
+                             // ARGS: implicit-run
+    println(args.size()); // IMPLICIT: 1
+                          // ARGS: 2
+    if args.size() > 1 {
+        println(args[1]); // ARGS: hello
+    }
+    return 0;
+}
+
+// HELP: OVERVIEW: cx compiler
+// HELP: USAGE: cx [subcommand]

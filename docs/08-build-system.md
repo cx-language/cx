@@ -15,6 +15,11 @@ $ cx build
 $ ./myproject
 ```
 
+Running bare `cx` in the project directory is equivalent to `cx run`,
+or prints the help when the directory holds no `.cx` files directly
+(a lone `build.cx` still marks multitarget projects, whose sources live
+in subdirectories). `cx help` prints the help.
+
 Extra build settings go in a `build.cx` file in the project directory,
 written in plain cx syntax. Each setting is a variable declaration:
 

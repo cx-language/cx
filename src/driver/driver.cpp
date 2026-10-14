@@ -134,6 +134,26 @@ static std::vector<std::string> programArgs;
 // parsing, before cx-only directories are appended to importSearchPaths.
 static std::vector<std::string> cHeaderSearchPaths;
 
+// Bare `cx` in a project directory behaves as `cx run`. Set when no
+// subcommand or input files are given and sources exist.
+static bool implicitRun = false;
+static bool isRunSelected() {
+    return run || implicitRun;
+}
+
+// True when the current directory looks like a cx project: any .cx file
+// directly inside it (a lone build.cx marks multitarget projects, whose
+// sources live in subdirectories). Non-recursive, so container directories
+// holding nested projects still print the help.
+static bool isCxProjectDirectory() {
+    std::error_code error;
+    for (llvm::sys::fs::directory_iterator it(".", error), end; it != end; it.increment(error)) {
+        if (error) break;
+        if (llvm::sys::path::extension(it->path()) == ".cx") return true;
+    }
+    return false;
+}
+
 // Quotes one program argument for the shell that runs 'cx run' programs (POSIX sh, cmd.exe on Windows).
 static std::string shellEscape(llvm::StringRef arg) {
     if (!arg.empty() && llvm::all_of(arg, [](char ch) { return std::isalnum(static_cast<unsigned char>(ch)) || std::strchr("_@%+=:,./-", ch); })) {
@@ -577,7 +597,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (errors) return 1;
     if (typecheck) return 0;
 
-    bool treatAsLibrary = mainModule.symbolTable.findInTopLevelScope("main").empty() && !run;
+    bool treatAsLibrary = mainModule.symbolTable.findInTopLevelScope("main").empty() && !isRunSelected();
     if (treatAsLibrary && !buildParams.createSharedLib) {
         compileOnly = true;
     }
@@ -753,7 +773,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         // JIT runs the program in-process, skipping object emission, the C compiler link,
         // and (on macOS) first-execution signature validation of a fresh binary.
         // Search paths without libraries are inert (macOS always adds framework search paths), so only -l/-framework/--no-jit decline JIT.
-        if ((run || testSubcommand) && !compileOnly && !emitAssembly && !noJit && libraries.empty() && frameworks.empty() && jitEligible(*linkedModule)) {
+        if ((isRunSelected() || testSubcommand) && !compileOnly && !emitAssembly && !noJit && libraries.empty() && frameworks.empty()
+            && jitEligible(*linkedModule)) {
             PhaseTimer timer("jit-run");
             std::string argv0 = buildParams.filePaths.empty() ? "main" : std::string(buildParams.filePaths.front());
             return jitRun(std::move(linkedModule), llvmGenerator.takeContext(), argv0, programArgs);
@@ -932,7 +953,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // don't pollute the executed program's stdout. Stderr stays visible, and
     // the captured output is shown if compilation fails.
     llvm::SmallString<128> ccStdoutLog;
-    bool captureCcOutput = (run || testSubcommand) && useExternalCCompiler && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
+    bool captureCcOutput =
+        (isRunSelected() || testSubcommand) && useExternalCCompiler && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
     std::vector<std::optional<llvm::StringRef>> ccRedirects;
     if (captureCcOutput) {
         ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
@@ -956,7 +978,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::sys::fs::remove(ccStdoutLog);
     }
 
-    if (run || testSubcommand) {
+    if (isRunSelected() || testSubcommand) {
         // Execute under the same file name `cx build` would output, inside a unique
         // directory so concurrent runs never collide.
         llvm::SmallString<128> runDirectory;
@@ -1280,7 +1302,13 @@ int cx::driverMain(int argc, const char** argv) {
     } else if (releaseSafeMode) {
         buildMode = BuildMode::ReleaseSafe;
     }
-    if (!programArgs.empty() && !run) {
+    bool noSubcommand = !build && !run && !testSubcommand && !demangleSubcommand && !lspSubcommand;
+    if (noSubcommand && !inputs.empty() && inputs.front() == "help") {
+        cl::PrintHelpMessage(false, true);
+        return 0;
+    }
+    if (noSubcommand && inputs.empty() && isCxProjectDirectory()) implicitRun = true;
+    if (!programArgs.empty() && !isRunSelected()) {
         ABORT("program arguments require the 'run' subcommand");
     }
     if (demangleSubcommand) return runDemangle();
@@ -1299,7 +1327,7 @@ int cx::driverMain(int argc, const char** argv) {
             .outputFileName = "",
             .runTests = bool(testSubcommand),
         });
-    } else if (build || run) {
+    } else if (build || isRunSelected()) {
         // Build the current directory by relative path so diagnostics show
         // relative paths.
         return buildDirectory(".", argv[0]);
