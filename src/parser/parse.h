@@ -147,6 +147,7 @@ private:
     bool shouldParseGenericArgumentList();
     bool shouldParseGenericArgumentListAfterMember();
     bool lambdaAfterParentheses();
+    bool conditionParens();
     Expr* parsePostfixExpr();
     UnaryExpr* parsePrefixExpr();
     Expr* parsePreOrPostfixExpr();

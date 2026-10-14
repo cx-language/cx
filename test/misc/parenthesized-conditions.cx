@@ -23,4 +23,20 @@ void main() {
     int n = 1;
     // CHECK-NEXT:one
     switch ((n)) { case 1: println("one"); break; default: println("other"); break; }
+    // A paren group the condition continues after is part of the expression.
+    // CHECK-NEXT:continued
+    if (n + 1) > 1 { println("continued"); }
+    var arr = [10, 20];
+    // CHECK-NEXT:member
+    if (arr).size() == 2 { println("member"); }
+    // CHECK-NEXT:chained
+    if ((n) + (n)) == 2 { println("chained"); }
+    int m = 0;
+    // CHECK-NEXT:while-continued
+    // CHECK-NEXT:while-continued
+    while (m + 1) < 3 { println("while-continued"); m = m + 1; }
+    int d = 0;
+    // CHECK-NEXT:do-continued
+    // CHECK-NEXT:do-continued
+    do { println("do-continued"); d = d + 1; } while (d + 1) < 3;
 }

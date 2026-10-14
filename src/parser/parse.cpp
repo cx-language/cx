@@ -1059,6 +1059,32 @@ bool Parser::lambdaAfterParentheses() {
     return allowBlockLambda && lookAhead(offset) == Token::LeftBrace;
 }
 
+/// Returns true if the leading '(' opens C-style condition parens rather
+/// than grouping part of the condition: the parens wrap the whole
+/// condition unless the token after the matching ')' continues the
+/// expression, as in `if (x + 1) > 1`. Postfix `!`, `++` and `--` are
+/// left out on purpose: they can also start a braceless body.
+bool Parser::conditionParens() {
+    ASSERT(currentToken() == Token::LeftParen);
+    int offset = 1;
+    for (int parenDepth = 1; parenDepth > 0; ++offset) {
+        switch (lookAhead(offset)) {
+        case Token::LeftParen:
+            ++parenDepth;
+            break;
+        case Token::RightParen:
+            --parenDepth;
+            break;
+        case Token::None:
+            return true;
+        default:
+            break;
+        }
+    }
+    Token::Kind after = lookAhead(offset);
+    return !isBinaryOperator(after) && after != Token::QuestionMark && after != Token::Dot && after != Token::LeftBracket && after != Token::LeftParen;
+}
+
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | anonymous-struct-literal | index-expr | index-assignment-expr
@@ -1412,7 +1438,7 @@ DeferStmt* Parser::parseDeferStmt() {
 Stmt* Parser::parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == Token::If);
     auto location = consumeToken().location;
-    bool parens = currentToken() == Token::LeftParen;
+    bool parens = currentToken() == Token::LeftParen && conditionParens();
     if (parens) consumeToken();
     Expr* condition;
     VarDecl* isBinding = nullptr;
@@ -1473,7 +1499,7 @@ void Parser::rejectIsBinding(Expr* condition, const char* context) {
 }
 
 Expr* Parser::parseLoopCondition(Decl* parent, bool allowVarDecl) {
-    bool parens = currentToken() == Token::LeftParen;
+    bool parens = currentToken() == Token::LeftParen && conditionParens();
     if (parens) consumeToken();
     Expr* condition;
     {
