@@ -263,6 +263,102 @@ struct string: Comparable, Hashable, Printable {
         return negative ? result : -result;
     }
 
+    /// Parses the string as a 32-bit float, or returns null.
+    /// Accepts an optional sign, digits with an optional fraction and
+    /// 'e'/'E' exponent, and case-insensitive "inf"/"infinity"/"nan".
+    /// The whole string must be a number; values that overflow return null
+    /// (values that underflow return zero).
+    float? parseFloat() {
+        var scan = scanFloat();
+        if !scan.valid {
+            return null;
+        }
+        var text = toCString(this);
+        var value = strtof(text.data(), null);
+        // Overflow check: only infinity equals its own half (NaN never
+        // equals anything, zero is excluded, spelled infinity is genuine).
+        if !scan.sawInf && value != 0.0 && value / 2.0 == value {
+            return null;
+        }
+        return value;
+    }
+
+    /// Parses the string as a 64-bit float, or returns null. See parseFloat.
+    float64? parseFloat64() {
+        var scan = scanFloat();
+        if !scan.valid {
+            return null;
+        }
+        var text = toCString(this);
+        var value = float64(strtod(text.data(), null));
+        if !scan.sawInf && value != 0.0 && value / 2.0 == value {
+            return null;
+        }
+        return value;
+    }
+
+    // Validates float syntax over the whole string. At least one mantissa
+    // digit is required; a present exponent needs digits too.
+    private (bool valid, bool sawInf) scanFloat() {
+        if empty() {
+            return (valid = false, sawInf = false);
+        }
+        var i = 0;
+        if this[0] == '+' || this[0] == '-' {
+            i = 1;
+        }
+        if asciiEqualAt(i, "inf") || asciiEqualAt(i, "infinity") {
+            return (valid = true, sawInf = true);
+        }
+        if asciiEqualAt(i, "nan") {
+            return (valid = true, sawInf = false);
+        }
+        var digits = 0;
+        while i < size() && this[i].isDigit() {
+            i++;
+            digits++;
+        }
+        if i < size() && this[i] == '.' {
+            i++;
+            while i < size() && this[i].isDigit() {
+                i++;
+                digits++;
+            }
+        }
+        if digits == 0 {
+            return (valid = false, sawInf = false);
+        }
+        if i < size() && (this[i] == 'e' || this[i] == 'E') {
+            i++;
+            if i < size() && (this[i] == '+' || this[i] == '-') {
+                i++;
+            }
+            var expDigits = 0;
+            while i < size() && this[i].isDigit() {
+                i++;
+                expDigits++;
+            }
+            if expDigits == 0 {
+                return (valid = false, sawInf = false);
+            }
+        }
+        return (valid = i == size(), sawInf = false);
+    }
+
+    // True when lowercase `word` matches the string at `start`,
+    // case-insensitively and to the end of the string.
+    private bool asciiEqualAt(int start, string word) {
+        if size() - start != word.size() {
+            return false;
+        }
+        for c, k in word {
+            if this[start + k].toLower() != c {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // TODO: return iterator instead of eagerly allocating?
     /// Returns the string with special characters escaped.
     StringBuf escape() {

@@ -258,6 +258,16 @@ struct StringBuf: Comparable, Hashable, Printable {
         return string(this).parseInt();
     }
 
+    /// Parses the string as a 32-bit float, or returns null. See string.parseFloat.
+    float? parseFloat() {
+        return string(this).parseFloat();
+    }
+
+    /// Parses the string as a 64-bit float, or returns null. See string.parseFloat.
+    float64? parseFloat64() {
+        return string(this).parseFloat64();
+    }
+
     /// Returns the string with special characters escaped.
     StringBuf escape() {
         return string(this).escape();

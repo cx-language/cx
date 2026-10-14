@@ -187,6 +187,51 @@ void testParseInt() {
 }
 
 @test
+void testParseFloat() {
+    assert("".parseFloat() == null);
+    assert("a".parseFloat() == null);
+    assert("1a".parseFloat() == null);
+    assert("1".parseFloat() == 1.0);
+    assert("1.5".parseFloat() == 1.5);
+    assert("-1.5".parseFloat() == -1.5);
+    assert("+2.25".parseFloat() == 2.25);
+    assert("007.5".parseFloat() == 7.5);
+    assert(".5".parseFloat() == 0.5);
+    assert("1.".parseFloat() == 1.0);
+    assert("1e3".parseFloat() == 1000.0);
+    assert("1E-3".parseFloat() == 0.001);
+    assert("1.5e+2".parseFloat() == 150.0);
+    assert("e5".parseFloat() == null);
+    assert("1e".parseFloat() == null);
+    assert("1e+".parseFloat() == null);
+    assert(".".parseFloat() == null);
+    assert("+".parseFloat() == null);
+    assert(" 1".parseFloat() == null);
+    assert("1 ".parseFloat() == null);
+    assert("0x1p3".parseFloat() == null);
+    assert("1e999".parseFloat() == null);
+    assert("1e99".parseFloat() == null);
+    assert("1e99".parseFloat64() != null);
+    assert("-1e9999".parseFloat64() == null);
+    var nan = "nan".parseFloat();
+    assert(nan != null && nan != nan);
+    var inf = "-INF".parseFloat();
+    assert(inf != null && inf / 2.0 == inf && inf < 0.0);
+    assert("infinity".parseFloat64() != null);
+    var buf = StringBuf("2.5");
+    assert(buf.parseFloat() == 2.5);
+    assert(buf.parseFloat64() == float64(2.5));
+    var pi = 3.1415927;
+    assert("{pi}".parseFloat() == pi);
+    var long = StringBuf("0.");
+    for _ in 0..300 {
+        long.push('0');
+    }
+    long.push('1');
+    assert(long.parseFloat() == 0.0);
+}
+
+@test
 void testEscape() {
     var emptyEscape = "".escape();
     assert(emptyEscape == "");
