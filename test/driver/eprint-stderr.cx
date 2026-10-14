@@ -1,0 +1,39 @@
+// RUN: %cx run %s 2>&1 1>/dev/null | %FileCheck -match-full-lines --check-prefix=ERR %s
+// RUN: %cx run %s 2>/dev/null | %FileCheck -match-full-lines --check-prefix=OUT %s
+
+void main() {
+    // ERR: single
+    eprintln("single");
+    // ERR: num 42
+    eprintln("num ", 42);
+    eprint("partial ");
+    // ERR: partial done
+    eprintln("done");
+    // ERR: c
+    eprintln('c');
+    var list = List([1, 2]);
+    // ERR: [1, 2]
+    eprintln(list);
+    var small = SmallList<int, 4>();
+    small.push(9);
+    // ERR: [9]
+    eprintln(small);
+    var arr = [3, 4];
+    // ERR: [3, 4]
+    eprintln(arr);
+    var buf = StringBuf("cstr");
+    char[*]? p = buf.data();
+    // ERR: cstr
+    eprintln(p);
+    char[*]? n = null;
+    // ERR: null
+    eprintln(n);
+    var x = 7;
+    // ERR: 7
+    eprintln(&x);
+    eprint("ab".repeat(3));
+    // ERR: ababab
+    eprintln("");
+    // OUT: stdout marker
+    println("stdout marker");
+}

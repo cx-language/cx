@@ -126,6 +126,116 @@ void println<T: Printable>(T&... args) {
     print('\n');
 }
 
+/// Prints the given value to stderr without allocating. Values that aren't copyable must be borrowed
+/// explicitly, so printing never moves from them.
+void eprint<T: Printable + Copyable>(T value) {
+    stderr().write(value);
+}
+
+/// Prints the given value to stderr without allocating.
+void eprint<T: Printable>(T& value) {
+    stderr().write(value);
+}
+
+/// Prints the repetition to stderr without allocating a temporary.
+void eprint(RepeatIterator<string> repetitions) {
+    var err = stderr();
+    for chunk in repetitions {
+        err.write(chunk);
+    }
+}
+
+/// Prints the given value to stderr without allocating.
+void eprint<T: Printable>(T* value) {
+    stderr().write(*value);
+}
+
+/// Prints the given value to stderr.
+void eprint<T: Printable>(List<T>& list) {
+    var rendered = StringBuf();
+    list.print(OutputStream(rendered));
+    stderr().write(rendered);
+}
+
+/// Prints the given value to stderr.
+void eprint<T: Printable, int N>(SmallList<T, N>& list) {
+    var rendered = StringBuf();
+    list.print(OutputStream(rendered));
+    stderr().write(rendered);
+}
+
+/// Prints the given value to stderr.
+void eprint<T: Printable>(T[] array) {
+    var rendered = StringBuf();
+    array.print(OutputStream(rendered));
+    stderr().write(rendered);
+}
+
+/// Prints the given value to stderr without allocating.
+void eprint(char[*]? cString) {
+    if cString {
+        stderr().write(string(cast<char*>(cString)));
+    } else {
+        stderr().write("null");
+    }
+}
+
+/// Prints the given values to stderr.
+///
+/// Copyable arguments pass by value so that a char prints as a single character
+/// instead of decaying to a C string in eprint(). Calls with non-Copyable
+/// arguments use the borrow overload below.
+void eprint<T: Printable + Copyable>(T... args) {
+    for arg in args {
+        eprint(arg);
+    }
+}
+
+/// Prints the given values to stderr.
+void eprint<T: Printable>(T&... args) {
+    for arg in args {
+        eprint(arg);
+    }
+}
+
+/// Prints the given value to stderr followed by a newline.
+void eprintln<T>(T& value) {
+    eprint(value);
+    eprint('\n');
+}
+
+/// Prints the given value to stderr followed by a newline.
+void eprintln<T: Copyable>(T value) {
+    eprint(value);
+    eprint('\n');
+}
+
+/// Prints the given value to stderr followed by a newline.
+void eprintln(char[*]? value) {
+    eprint(value);
+    eprint('\n');
+}
+
+/// Prints the given values to stderr followed by a newline.
+///
+/// Copyable arguments pass by value so that a char prints as a single character
+/// instead of decaying to a C string in eprint(). Calls with non-Copyable
+/// arguments use the borrow overload below.
+void eprintln<T: Copyable>(T... args) {
+    for arg in args {
+        eprint(arg);
+    }
+    eprint('\n');
+}
+
+/// Prints the given values to stderr followed by a newline.
+void eprintln<T: Printable>(T&... args) {
+    for arg in args {
+        eprint(arg);
+    }
+    eprint('\n');
+}
+
 /// Reads a line from stdin.
 StringBuf readLine() {
     var line = StringBuf();
