@@ -4,6 +4,8 @@
 // STATIC-NOT: warning:
 // STATIC-NOT: error:
 // RUN: env SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy %cx run -Wno-unused %s | %FileCheck %s
+// RUN: env SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy %cx run -Wno-unused %s 2>&1 | %FileCheck %s --check-prefix=NOWARN
+// NOWARN-NOT: duplicate -rpath
 
 import sdl3;
 
