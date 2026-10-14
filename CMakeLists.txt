@@ -437,7 +437,7 @@ add_custom_target(check
     USES_TERMINAL)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config test_rename test_msvc_link_args test_output_file_name
-                     test_string_interner test_mangle test_lexer test_ast_vector)
+                     test_string_interner test_mangle test_lexer test_ast_vector test_builtin_scalar test_type_equality)
 
 add_executable(test_string_interner test/ast/test-string-interner.cpp)
 target_include_directories(test_string_interner PRIVATE src)
@@ -455,6 +455,14 @@ add_executable(test_lexer test/parser/test-lexer.cpp)
 target_include_directories(test_lexer PRIVATE src)
 target_link_libraries(test_lexer libcx)
 add_test(NAME lexer COMMAND test_lexer)
+add_executable(test_builtin_scalar test/ast/test-builtin-scalar.cpp)
+target_include_directories(test_builtin_scalar PRIVATE src)
+target_link_libraries(test_builtin_scalar libcx)
+add_test(NAME builtin-scalar COMMAND test_builtin_scalar)
+add_executable(test_type_equality test/ast/test-type-equality.cpp)
+target_include_directories(test_type_equality PRIVATE src)
+target_link_libraries(test_type_equality libcx)
+add_test(NAME type-equality COMMAND test_type_equality)
 
 # Tests for the in-memory compilation API (also used by the WebAssembly build).
 add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)
