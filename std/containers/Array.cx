@@ -146,6 +146,11 @@ struct Array<T, int N> {
         return sum;
     }
 
+    /// Returns the squared Euclidean length of this array.
+    T lengthSquared() {
+        return dot(this);
+    }
+
     /// Returns the Euclidean length of this array.
     float64 length() {
         return sqrt(float64(dot(this)));

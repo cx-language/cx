@@ -55,7 +55,8 @@ to vectorize.
 ## Vector operations
 
 Arrays of any size double as vectors: `dot()` returns the dot product,
-`length()` the Euclidean length, and `normalized()` a unit-length copy
+`length()` the Euclidean length, `lengthSquared()` the squared length,
+and `normalized()` a unit-length copy
 (the receiver is left unchanged). `normalized()` is only meaningful for
 floating-point elements. The free function `cross()` returns the cross
 product of two 3-element arrays.
