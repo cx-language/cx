@@ -16,4 +16,4 @@ int main(string[] args) {
 }
 
 // HELP: OVERVIEW: cx compiler
-// HELP: USAGE: cx [subcommand]
+// HELP: USAGE: cx{{(\.exe)?}} [subcommand]

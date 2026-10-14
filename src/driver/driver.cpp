@@ -880,6 +880,8 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // MSVC takes no -L/-l; its translated form is staged here (ccArgs borrows
     // from it, so it must outlive the link) and appended after -link below.
     std::vector<std::string> msvcLinkStorage;
+    // Same for the run-binary rpath flags below.
+    std::vector<std::string> rpathStorage;
     // Same for the bundled-tools -B flag below.
     std::string bundledToolsFlag;
     if (isMSVC) {
@@ -895,6 +897,15 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
                 ccArgs.push_back("-l");
                 ccArgs.push_back(library.c_str());
             }
+        }
+    }
+    if (!isWindows && (isRunSelected() || testSubcommand)) {
+        // The throwaway binary must resolve -L shared libraries at runtime
+        // too: -L only affects the link, so without rpath the loader fails
+        // to start it (exit 127, which ExecuteAndWait reports as -1).
+        rpathStorage.reserve(librarySearchPaths.size());
+        for (const auto& dir : librarySearchPaths) {
+            ccArgs.push_back(rpathStorage.emplace_back("-Wl,-rpath," + dir).c_str());
         }
     }
     addFlaggedArgs("-F", frameworkSearchPaths);

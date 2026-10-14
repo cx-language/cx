@@ -1,5 +1,6 @@
-// RUN: %cx run %s 2>&1 1>/dev/null | %FileCheck -match-full-lines --check-prefix=ERR %s
-// RUN: %cx run %s 2>/dev/null | %FileCheck -match-full-lines --check-prefix=OUT %s
+// RUN: %cx run %s > %t.stdout 2> %t.stderr
+// RUN: %FileCheck -match-full-lines --check-prefix=ERR %s < %t.stderr
+// RUN: %FileCheck -match-full-lines --check-prefix=OUT %s < %t.stdout
 
 void main() {
     // ERR: single
