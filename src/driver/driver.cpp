@@ -1,4 +1,5 @@
 #include "driver.h"
+#include "cx_version.h"
 #include <bit>
 #include <cctype>
 #include <cstdio>

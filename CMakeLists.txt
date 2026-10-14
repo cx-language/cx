@@ -208,17 +208,12 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 add_definitions(-DCX_ROOT_DIR="${PROJECT_SOURCE_DIR}")
 find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        OUTPUT_VARIABLE CX_COMMIT_HASH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
-endif()
-if(NOT CX_COMMIT_HASH)
-    set(CX_COMMIT_HASH "unknown")
-endif()
-add_definitions(-DCX_COMMIT_HASH="${CX_COMMIT_HASH}")
+# cx --version embeds the git hash. Generate it at build time, not configure
+# time, so it tracks branch switches without a cmake rerun; the script only
+# rewrites the header when the hash changes, so just its includers rebuild.
+add_custom_target(cx_version ALL
+    COMMAND ${CMAKE_COMMAND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -DSRC_DIR=${PROJECT_SOURCE_DIR} -DOUT=${CMAKE_CURRENT_BINARY_DIR}/generated/cx_version.h -P ${PROJECT_SOURCE_DIR}/scripts/update_version.cmake
+    COMMENT "Updating cx version header")
 
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
 # about missing C headers when importing C headers from cx code. For more information, see e.g.
@@ -271,6 +266,8 @@ list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/wasm/")
 list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/lsp/main.cpp")
 add_library(libcx ${LIBCX_SOURCES})
 set_target_properties(libcx PROPERTIES PREFIX "")
+add_dependencies(libcx cx_version)
+target_include_directories(libcx PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 if(LLVM_TOOLS_BINARY_DIR)
     # Lets the embedded Clang find its subprograms (lld-link) on Windows
     # machines where LLVM's bin directory is not on PATH.
