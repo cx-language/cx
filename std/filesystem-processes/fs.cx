@@ -96,14 +96,16 @@ bool changeDirectory(string path) {
 }
 #endif
 
-/// An error reading a file.
+/// An error reading or writing a file.
 enum Error : Printable {
     CouldNotOpen,
+    WriteFailed,
 
     /// Writes the error as text.
     void print(OutputStream& stream) {
         switch this {
             case CouldNotOpen: stream.append("couldn't open file");
+            case WriteFailed: stream.append("couldn't write file");
         }
     }
 }
@@ -125,15 +127,18 @@ Result<StringBuf, File.Error> read(string path) {
     return Ok(content);
 }
 
-/// Writes the string to the named file.
-bool write(string path, string content) {
+/// Writes the string to the named file, returning null on success.
+File.Error? write(string path, string content) {
     var pathBuf = toCString(path);
     var file = fopen(pathBuf.data(), "wb");
-    if !file return false;
+    if !file return File.Error.CouldNotOpen;
     defer fclose(file);
 
-    fwrite(content.data(), sizeof(char), c_size_t(content.size()), file);
-    return true;
+    var written = fwrite(content.data(), sizeof(char), c_size_t(content.size()), file);
+    if written != c_size_t(content.size()) {
+        return File.Error.WriteFailed;
+    }
+    return null;
 }
 
 /// Returns the size of the file, or null if it can't be opened.

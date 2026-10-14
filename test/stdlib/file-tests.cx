@@ -3,8 +3,7 @@
 @test
 void testReadWriteFile() {
     var text = "The quick brown fox jumps over the lazy dog\n";
-    bool success = File.write("test.txt", text);
-    assert(success);
+    assert(File.write("test.txt", text) == null);
     var content = File.read("test.txt").unwrap();
     File.remove("test.txt");
     assert(string(content) == text);
@@ -14,4 +13,10 @@ void testReadWriteFile() {
 void testReadNonExistentFile() {
     var content = File.read("dog.txt");
     assert(content == Err);
+}
+
+@test
+void testWriteUnwritablePath() {
+    // Directories can't be opened for writing.
+    assert(File.write(".", "x") == File.Error.CouldNotOpen);
 }

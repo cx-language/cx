@@ -12,8 +12,8 @@ void testCreateListRenameRemove() {
     assert(File.createDirectory("cx_fs_test_dir"));
     assert(!File.createDirectory("cx_fs_test_dir"));
     assert(File.exists("cx_fs_test_dir"));
-    assert(File.write("cx_fs_test_dir/a.txt", "hello"));
-    assert(File.write("cx_fs_test_dir/b.txt", "world!"));
+    assert(File.write("cx_fs_test_dir/a.txt", "hello") == null);
+    assert(File.write("cx_fs_test_dir/b.txt", "world!") == null);
 
     var names = File.listDirectory("cx_fs_test_dir");
     assert(names.size() == 2);
@@ -32,7 +32,7 @@ void testCreateListRenameRemove() {
 
 @test
 void testFileSize() {
-    assert(File.write("cx_fs_test_size.txt", "hello"));
+    assert(File.write("cx_fs_test_size.txt", "hello") == null);
     assert(File.size("cx_fs_test_size.txt")! == 5);
     assert(File.remove("cx_fs_test_size.txt"));
     assert(File.size("CX_DEFINITELY_MISSING_FILE_XYZ") == null);
