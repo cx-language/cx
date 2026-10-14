@@ -151,9 +151,9 @@ struct Array<T, int N> {
         return dot(this);
     }
 
-    /// Returns the Euclidean length of this array.
-    float64 length() {
-        return sqrt(float64(dot(this)));
+    /// Returns the Euclidean length of this array in the element type.
+    T length() {
+        return T(sqrt(float64(dot(this))));
     }
 
     /// Returns this array scaled to unit length.
@@ -161,7 +161,7 @@ struct Array<T, int N> {
     T[N] normalized() {
         // Inferred `var result = this` would alias the receiver; annotate to copy.
         T[N] result = this;
-        return result / T(length());
+        return result / length();
     }
 }
 

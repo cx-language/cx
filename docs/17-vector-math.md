@@ -55,7 +55,7 @@ to vectorize.
 ## Vector operations
 
 Arrays of any size double as vectors: `dot()` returns the dot product,
-`length()` the Euclidean length, `lengthSquared()` the squared length,
+`length()` the Euclidean length in the element type, `lengthSquared()` the squared length,
 and `normalized()` a unit-length copy
 (the receiver is left unchanged). `normalized()` is only meaningful for
 floating-point elements. The free function `cross()` returns the cross
@@ -67,7 +67,7 @@ void main() {
     float[3] b = [4.0, 5.0, 6.0];
 
     println(a.dot(b)); // prints 32
-    println(a.length()); // prints 3.7416573867739413
+    println(a.length()); // prints 3.7416575
 
     float[3] n = a.normalized();
     println(n[0]); // prints 0.26726124

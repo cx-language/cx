@@ -137,7 +137,9 @@ void testLength() {
     float[2] a = [3.0, 4.0];
     assert(a.length() == 5.0);
     int[2] ai = [3, 4];
-    assert(ai.length() == 5.0);
+    assert(ai.length() == 5);
+    int[2] tri = [1, 1];
+    assert(tri.length() == 1); // integer lengths truncate
     float[3] b = [1.0, 2.0, 2.0];
     assert(b.length() == 3.0);
 }
