@@ -6331,12 +6331,16 @@ extern Uint32 SDL_crc32(Uint32 crc, void* data, c_size_t len);
 /// Calculate a 32-bit MurmurHash3 value for a block of data.
 extern Uint32 SDL_murmur3_32(void* data, c_size_t len, Uint32 seed);
 /// Copy non-overlapping memory.
+@discardableResult
 extern void* SDL_memcpy(void* dst, void* src, c_size_t len);
 /// Copy memory ranges that might overlap.
+@discardableResult
 extern void* SDL_memmove(void* dst, void* src, c_size_t len);
 /// Initialize all bytes of buffer of memory to a specific value.
+@discardableResult
 extern void* SDL_memset(void* dst, c_int c, c_size_t len);
 /// Initialize all 32-bit words of buffer of memory to a specific value.
+@discardableResult
 extern void* SDL_memset4(void* dst, Uint32 val, c_size_t dwords);
 /// Compare two buffers of memory.
 extern c_int SDL_memcmp(void* s1, void* s2, c_size_t len);

@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck %s -Wunused-result -Werror
+import sdl3;
+
+void main() {
+    var src = [1, 2, 3, 4];
+    var dst = [0, 0, 0, 0];
+    SDL_memcpy(dst.data(), src.data(), c_size_t(16));
+    SDL_memmove(dst.data(), src.data(), c_size_t(16));
+    SDL_memset(dst.data(), 0, c_size_t(16));
+    SDL_memset4(dst.data(), 0, c_size_t(4));
+}
