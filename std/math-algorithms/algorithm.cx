@@ -104,6 +104,17 @@ void sort<E: Comparable>(E[] array) {
     }
 }
 
+/// Sorts an array using `less` to order elements, so types without an
+/// ordering (or orderings other than the natural one) can be sorted.
+/// Like sort, small arrays use stable insertion sort, larger ones (unstable) quickSort.
+void sortBy<E, Less: bool(E&, E&)>(E[] array, Less less) {
+    if array.size() <= 32 {
+        insertionSortBy(array, less);
+    } else {
+        quickSortBy(array, 0, array.size() - 1, less);
+    }
+}
+
 /// Private members
 
 private int partition<E: Comparable>(E[] arr, int low, int high) {
@@ -142,6 +153,49 @@ private void insertionSort<E: Comparable>(E[] arr) {
     while i < arr.size() {
         var j = i;
         while j > 0 && arr[j-1] > arr[j] {
+            swap(arr[j], arr[j-1]);
+            j--;
+        }
+        i++;
+    }
+}
+
+private int partitionBy<E, Less: bool(E&, E&)>(E[] arr, int low, int high, Less less) {
+    var pivot = &arr[high];
+    var i = low - 1;
+
+    for j in low..high {
+        if less(arr[j], *pivot) {
+            i++;
+            swap(arr[i], arr[j]);
+        }
+    }
+    if less(arr[high], arr[i+1]) {
+        swap(arr[i + 1], arr[high]);
+    }
+    return i + 1;
+}
+
+// Not stable.
+private void quickSortBy<E, Less: bool(E&, E&)>(E[] arr, int low, int high, Less less) {
+    if low < high {
+        var index = partitionBy(arr, low, high, less);
+
+        if low < index {
+            quickSortBy(arr, low, index - 1, less);
+        }
+        if index < high {
+            quickSortBy(arr, index + 1, high, less);
+        }
+    }
+}
+
+// Good for small arrays. Stable: equal elements keep their order.
+private void insertionSortBy<E, Less: bool(E&, E&)>(E[] arr, Less less) {
+    var i = 1;
+    while i < arr.size() {
+        var j = i;
+        while j > 0 && less(arr[j], arr[j-1]) {
             swap(arr[j], arr[j-1]);
             j--;
         }
