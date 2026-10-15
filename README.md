@@ -28,12 +28,12 @@ The [cx extension for VS Code](https://marketplace.visualstudio.com/items?itemNa
 
 Prebuilt Linux, macOS, and Windows binaries are published on the [releases page](https://github.com/cx-language/cx/releases)
 (the fastest install on Linux/macOS is `curl https://cx-language.github.io/cx/install.sh | bash`).
-To compile from source, see [Building from source](docs/045-building-from-source.md).
+To compile from source, see [Building from source](docs/05-building-from-source.md).
 
 ### Editor support
 
 For diagnostics, hover, go to definition, completions, find references, and semantic highlighting
-in any LSP-capable editor, see the [editor setup guide](docs/055-editor-setup.md).
+in any LSP-capable editor, see the [editor setup guide](docs/07-editor-setup.md).
 The `cx-lsp` binary is built alongside `cx`.
 
 ## Contributing
@@ -52,7 +52,7 @@ python3 -m pip install lit psutil
 ```
 
 On Windows, spell it `py -m pip install lit psutil` instead
-(`python -m pip ...` works too). See the [Windows checklist](docs/045-building-from-source.md#windows)
+(`python -m pip ...` works too). See the [Windows checklist](docs/05-building-from-source.md#windows)
 for the rest of the Windows setup.
 
 Some examples have extra prerequisites; see the README in each example directory for details.
