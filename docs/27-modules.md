@@ -60,6 +60,7 @@ so using them needs no C header import (which is slower to compile):
 import glfw;
 import gl;
 import sdl3;
+import sdl3_ttf;
 import raylib;
 ```
 
@@ -70,7 +71,8 @@ when the module is imported. The C library itself must be installed on
 the system; if it cannot be found, the build fails with an error naming it.
 
 Currently vendored: `glfw` (GLFW 3.x, including glfw3native.h),
-`gl` (OpenGL 3.3 core profile), `sdl3` (SDL 3.x), and `raylib`
+`gl` (OpenGL 3.3 core profile), `sdl3` (SDL 3.x), `sdl3_ttf`
+(SDL_ttf 3.x, including SDL_textengine.h), and `raylib`
 (raylib 6.x, including raymath.h). Each module covers the full public
 API of its C headers; whatever cx cannot express (such as
 `va_list` callbacks) is listed in an omissions note at the top of

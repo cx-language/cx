@@ -1,0 +1,85 @@
+// REQUIRES: sdl3
+// REQUIRES: sdl3-ttf
+// UNSUPPORTED: windows
+// RUN: %cx -typecheck --check-all %s -Wno-unused 2>&1 | %FileCheck %s --allow-empty --check-prefix=STATIC
+// STATIC-NOT: warning:
+// STATIC-NOT: error:
+// RUN: %cx run -Wno-unused %s | %FileCheck %s
+// RUN: %cx run -Wno-unused %s 2>&1 | %FileCheck %s --check-prefix=NOWARN
+// NOWARN-NOT: duplicate -rpath
+
+import sdl3_ttf;
+import sdl3;
+
+// Exercises the vendored module against the installed SDL_ttf: const
+// values, struct layout, and linked calls. The typecheck run above
+// validates every declaration; this run validates the values. Everything
+// here runs without a font file.
+
+// Typechecked but never run: needs a font file.
+void probe() {
+    var font = TTF_OpenFont("/probe.ttf", 12.0)!;
+    var surf = TTF_RenderText_Solid(font, "hi", 0, SDL_Color(r = 255, g = 255, b = 255, a = 255))!;
+    SDL_DestroySurface(surf);
+    var engine = TTF_CreateSurfaceTextEngine()!;
+    var text = TTF_CreateText(engine, font, "hi", 0)!;
+    TTF_DrawSurfaceText(text, 0, 0, surf);
+    TTF_DestroyText(text);
+    TTF_DestroySurfaceTextEngine(engine);
+    TTF_CloseFont(font);
+}
+
+int main() {
+    println(SDL_TTF_MAJOR_VERSION); // CHECK: 3
+    println(SDL_TTF_MINOR_VERSION); // CHECK-NEXT: 2
+    println(SDL_TTF_MICRO_VERSION); // CHECK-NEXT: 2
+    println(SDL_TTF_VERSION); // CHECK-NEXT: 3002002
+    println(SDL_TTF_VERSION_ATLEAST(3, 0, 0), " ", SDL_TTF_VERSION_ATLEAST(9, 9, 9)); // CHECK-NEXT: true false
+    println(TTF_Version()); // CHECK-NEXT: {{[0-9]+}}
+    println(TTF_STYLE_BOLD, " ", TTF_STYLE_UNDERLINE); // CHECK-NEXT: 1 4
+    println(TTF_FONT_WEIGHT_NORMAL, " ", TTF_FONT_WEIGHT_BOLD); // CHECK-NEXT: 400 700
+    println(TTF_HINTING_NONE, " ", TTF_HINTING_LIGHT_SUBPIXEL); // CHECK-NEXT: 3 4
+    println(TTF_HORIZONTAL_ALIGN_CENTER); // CHECK-NEXT: 1
+    println(TTF_DIRECTION_LTR, " ", TTF_DIRECTION_BTT); // CHECK-NEXT: 4 7
+    println(TTF_IMAGE_SDF); // CHECK-NEXT: 3
+    println(TTF_DRAW_COMMAND_COPY); // CHECK-NEXT: 2
+    println(TTF_GPU_TEXTENGINE_WINDING_CLOCKWISE); // CHECK-NEXT: 0
+    println(TTF_SUBSTRING_TEXT_START, " ", TTF_SUBSTRING_TEXT_END); // CHECK-NEXT: 256 2048
+    println(TTF_PROP_FONT_CREATE_FILENAME_STRING); // CHECK-NEXT: SDL_ttf.font.create.filename
+    println(TTF_PROP_FONT_OUTLINE_MITER_LIMIT_NUMBER); // CHECK-NEXT: SDL_ttf.font.outline.miter_limit
+    println(TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE); // CHECK-NEXT: SDL_ttf.renderer_text_engine.create.atlas_texture_size
+    println(TTF_PROP_GPU_TEXT_ENGINE_DEVICE); // CHECK-NEXT: SDL_ttf.gpu_text_engine.create.device
+    println(sizeof(TTF_Text), " ", sizeof(TTF_SubString), " ", sizeof(TTF_DrawOperation), " ", sizeof(TTF_TextData), " ", sizeof(TTF_TextEngine), " ", sizeof(TTF_GPUAtlasDrawSequence)); // CHECK-NEXT: 24 36 64 112 32 56
+
+    println(TTF_WasInit()); // CHECK-NEXT: 0
+    if !TTF_Init() {
+        println(SDL_GetError());
+        return 1;
+    }
+    defer TTF_Quit();
+    println(TTF_WasInit()); // CHECK-NEXT: 1
+
+    var major = c_int(0);
+    var minor = c_int(0);
+    TTF_GetFreeTypeVersion(&major, &minor, null);
+    println(major > 0, " ", minor >= 0); // CHECK-NEXT: true true
+    TTF_GetFreeTypeVersion(null, null, null);
+    TTF_GetHarfBuzzVersion(null, null, null);
+
+    // Tag round-trip through the real library.
+    var tag = TTF_StringToTag("Latn");
+    println(tag); // CHECK-NEXT: 1281455214
+    char[5] buf = ['\0', '\0', '\0', '\0', '\0'];
+    TTF_TagToString(tag, &buf[0], c_size_t(5));
+    println(&buf[0]); // CHECK-NEXT: Latn
+    println(TTF_GetGlyphScript(Uint32('A')) == tag); // CHECK-NEXT: true
+
+    // Surface text engines need no font or renderer.
+    var engine = TTF_CreateSurfaceTextEngine()!;
+    defer TTF_DestroySurfaceTextEngine(engine);
+    println("engine-ok"); // CHECK-NEXT: engine-ok
+
+    // Closing null is documented safe.
+    TTF_CloseFont(null);
+    return 0;
+}

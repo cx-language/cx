@@ -1,0 +1,535 @@
+// SDL3_ttf bindings, translated from the system SDL3_ttf headers
+// (generated from version 3.2.2; unused declarations cost nothing thanks to lazy checking).
+// Doc comments derive in part from those headers (zlib license;
+// Copyright (C) 2001-2025 Sam Lantinga <slouken@libsdl.org>).
+// Covers SDL_ttf.h and SDL_textengine.h. Link requirements live in
+// the build.cx next to this file. SDL types (SDL_Color, SDL_Surface,
+// SDL_Renderer, ...) come from the sdl3 module, imported below, so
+// fonts, surfaces, and renderers mix with plain sdl3 calls.
+// Function-like macros are implemented as cx functions; string macros
+// are const char* so they pass to char* params.
+// Omitted on purpose: the SDL_INIT_INTERFACE version-init boilerplate
+// for TTF_TextEngine (zero the struct and set version to
+// sizeof(TTF_TextEngine) manually) and the TTF_TextEngine_SIZE
+// compile-time assert (cx has its own assert).
+// Nullability is semantic: 'T*?'/'T[*]?' iff the SDL_ttf API permits null
+// there (out-params, userdata, optional args), else 'T*'/'T[*]'.
+// Pointers to arrays use the indexable form (buffer+count params,
+// plural/array params and returns). 'void*' stays opaque.
+
+import sdl3;
+
+/// Font style flags for TTF_Font.
+using TTF_FontStyleFlags = Uint32;
+/// Hinting level for font rendering.
+using TTF_HintingFlags = c_int;
+/// Horizontal alignment for wrapped text.
+using TTF_HorizontalAlignment = c_int;
+/// Text shaping direction.
+using TTF_Direction = c_int;
+/// Type of data in a glyph image.
+using TTF_ImageType = c_int;
+/// Font atlas draw command.
+using TTF_DrawCommand = c_int;
+/// Winding order of GPU text geometry.
+using TTF_GPUTextEngineWinding = c_int;
+/// Flags for TTF_SubString.
+using TTF_SubStringFlags = Uint32;
+
+/// Printable format major version.
+const SDL_TTF_MAJOR_VERSION = 3;
+/// Printable format minor version.
+const SDL_TTF_MINOR_VERSION = 2;
+/// Printable format micro version.
+const SDL_TTF_MICRO_VERSION = 2;
+/// This is the version number macro for the current SDL_ttf version.
+const SDL_TTF_VERSION = 3002002;
+/// No special style.
+const TTF_STYLE_NORMAL = 0;
+/// Bold style.
+const TTF_STYLE_BOLD = 1;
+/// Italic style.
+const TTF_STYLE_ITALIC = 2;
+/// Underlined text.
+const TTF_STYLE_UNDERLINE = 4;
+/// Strikethrough text.
+const TTF_STYLE_STRIKETHROUGH = 8;
+/// Thin (100) named font weight value.
+const TTF_FONT_WEIGHT_THIN = 100;
+/// ExtraLight (200) named font weight value.
+const TTF_FONT_WEIGHT_EXTRA_LIGHT = 200;
+/// Light (300) named font weight value.
+const TTF_FONT_WEIGHT_LIGHT = 300;
+/// Normal (400) named font weight value.
+const TTF_FONT_WEIGHT_NORMAL = 400;
+/// Medium (500) named font weight value.
+const TTF_FONT_WEIGHT_MEDIUM = 500;
+/// SemiBold (600) named font weight value.
+const TTF_FONT_WEIGHT_SEMI_BOLD = 600;
+/// Bold (700) named font weight value.
+const TTF_FONT_WEIGHT_BOLD = 700;
+/// ExtraBold (800) named font weight value.
+const TTF_FONT_WEIGHT_EXTRA_BOLD = 800;
+/// Black (900) named font weight value.
+const TTF_FONT_WEIGHT_BLACK = 900;
+/// ExtraBlack (950) named font weight value.
+const TTF_FONT_WEIGHT_EXTRA_BLACK = 950;
+/// Invalid hinting value.
+const TTF_HINTING_INVALID = -1;
+/// Normal hinting applies standard grid-fitting.
+const TTF_HINTING_NORMAL = 0;
+/// Light hinting applies subtle adjustments to improve rendering.
+const TTF_HINTING_LIGHT = 1;
+/// Monochrome hinting adjusts the font for better rendering at lower resolutions.
+const TTF_HINTING_MONO = 2;
+/// No hinting, the font is rendered without any grid-fitting.
+const TTF_HINTING_NONE = 3;
+/// Light hinting with subpixel rendering for more precise font edges.
+const TTF_HINTING_LIGHT_SUBPIXEL = 4;
+/// Invalid wrap alignment.
+const TTF_HORIZONTAL_ALIGN_INVALID = -1;
+/// Left-aligned wrapped text.
+const TTF_HORIZONTAL_ALIGN_LEFT = 0;
+/// Center-aligned wrapped text.
+const TTF_HORIZONTAL_ALIGN_CENTER = 1;
+/// Right-aligned wrapped text.
+const TTF_HORIZONTAL_ALIGN_RIGHT = 2;
+/// Invalid text direction.
+const TTF_DIRECTION_INVALID = 0;
+/// Left to right text.
+const TTF_DIRECTION_LTR = 4;
+/// Right to left text.
+const TTF_DIRECTION_RTL = 5;
+/// Top to bottom text.
+const TTF_DIRECTION_TTB = 6;
+/// Bottom to top text.
+const TTF_DIRECTION_BTT = 7;
+/// Invalid glyph image type.
+const TTF_IMAGE_INVALID = 0;
+/// Glyph color channels are white.
+const TTF_IMAGE_ALPHA = 1;
+/// Glyph color channels have image data.
+const TTF_IMAGE_COLOR = 2;
+/// Glyph alpha channel has signed distance field information.
+const TTF_IMAGE_SDF = 3;
+/// The mask for the flow direction for this substring.
+const TTF_SUBSTRING_DIRECTION_MASK = 255;
+/// This substring contains the beginning of the text.
+const TTF_SUBSTRING_TEXT_START = 256;
+/// This substring contains the beginning of a line.
+const TTF_SUBSTRING_LINE_START = 512;
+/// This substring contains the end of a line.
+const TTF_SUBSTRING_LINE_END = 1024;
+/// This substring contains the end of the text.
+const TTF_SUBSTRING_TEXT_END = 2048;
+/// No-op draw command.
+const TTF_DRAW_COMMAND_NOOP = 0;
+/// Filled rectangle draw command.
+const TTF_DRAW_COMMAND_FILL = 1;
+/// Texture copy draw command.
+const TTF_DRAW_COMMAND_COPY = 2;
+/// Invalid GPU text winding.
+const TTF_GPU_TEXTENGINE_WINDING_INVALID = -1;
+/// Clockwise GPU text winding.
+const TTF_GPU_TEXTENGINE_WINDING_CLOCKWISE = 0;
+/// Counter-clockwise GPU text winding.
+const TTF_GPU_TEXTENGINE_WINDING_COUNTER_CLOCKWISE = 1;
+
+/// The font file to open for TTF_OpenFontWithProperties.
+const char* TTF_PROP_FONT_CREATE_FILENAME_STRING = "SDL_ttf.font.create.filename";
+/// An SDL_IOStream containing the font for TTF_OpenFontWithProperties.
+const char* TTF_PROP_FONT_CREATE_IOSTREAM_POINTER = "SDL_ttf.font.create.iostream";
+/// The offset in the iostream for the beginning of the font.
+const char* TTF_PROP_FONT_CREATE_IOSTREAM_OFFSET_NUMBER = "SDL_ttf.font.create.iostream.offset";
+/// True if closing the font should also close the iostream.
+const char* TTF_PROP_FONT_CREATE_IOSTREAM_AUTOCLOSE_BOOLEAN = "SDL_ttf.font.create.iostream.autoclose";
+/// The point size of the font.
+const char* TTF_PROP_FONT_CREATE_SIZE_FLOAT = "SDL_ttf.font.create.size";
+/// The face index of the font, if it contains multiple faces.
+const char* TTF_PROP_FONT_CREATE_FACE_NUMBER = "SDL_ttf.font.create.face";
+/// The horizontal DPI to use for font rendering.
+const char* TTF_PROP_FONT_CREATE_HORIZONTAL_DPI_NUMBER = "SDL_ttf.font.create.hdpi";
+/// The vertical DPI to use for font rendering.
+const char* TTF_PROP_FONT_CREATE_VERTICAL_DPI_NUMBER = "SDL_ttf.font.create.vdpi";
+/// An existing font to copy data, size, and style from.
+const char* TTF_PROP_FONT_CREATE_EXISTING_FONT = "SDL_ttf.font.create.existing_font";
+/// The FT_Stroker_LineCap value used when setting the font outline.
+const char* TTF_PROP_FONT_OUTLINE_LINE_CAP_NUMBER = "SDL_ttf.font.outline.line_cap";
+/// The FT_Stroker_LineJoin value used when setting the font outline.
+const char* TTF_PROP_FONT_OUTLINE_LINE_JOIN_NUMBER = "SDL_ttf.font.outline.line_join";
+/// The FT_Fixed miter limit used when setting the font outline.
+const char* TTF_PROP_FONT_OUTLINE_MITER_LIMIT_NUMBER = "SDL_ttf.font.outline.miter_limit";
+/// The renderer to use for a renderer text engine.
+const char* TTF_PROP_RENDERER_TEXT_ENGINE_RENDERER = "SDL_ttf.renderer_text_engine.create.renderer";
+/// The size of the texture atlas for a renderer text engine.
+const char* TTF_PROP_RENDERER_TEXT_ENGINE_ATLAS_TEXTURE_SIZE = "SDL_ttf.renderer_text_engine.create.atlas_texture_size";
+/// The SDL_GPUDevice to use for a GPU text engine.
+const char* TTF_PROP_GPU_TEXT_ENGINE_DEVICE = "SDL_ttf.gpu_text_engine.create.device";
+/// The size of the texture atlas for a GPU text engine.
+const char* TTF_PROP_GPU_TEXT_ENGINE_ATLAS_TEXTURE_SIZE = "SDL_ttf.gpu_text_engine.create.atlas_texture_size";
+
+/// The internal structure containing font information. Opaque data!
+struct TTF_Font {}
+/// Private layout data in TTF_Text. Opaque data!
+struct TTF_TextLayout {}
+
+/// A text engine used to create text objects.
+struct TTF_TextEngine {
+    /// The version of this interface.
+    Uint32 version;
+    /// User data pointer passed to callbacks.
+    void*? userdata;
+    /// Create a text representation from draw instructions.
+    bool(void*?, TTF_Text*)? CreateText;
+    /// Destroy a text representation.
+    void(void*?, TTF_Text*)? DestroyText;
+}
+/// A filled rectangle draw operation.
+struct TTF_FillOperation {
+    /// TTF_DRAW_COMMAND_FILL.
+    TTF_DrawCommand cmd;
+    /// The rectangle to fill, in pixels.
+    SDL_Rect rect;
+}
+/// A texture copy draw operation.
+struct TTF_CopyOperation {
+    /// TTF_DRAW_COMMAND_COPY.
+    TTF_DrawCommand cmd;
+    /// The offset in the text corresponding to this glyph.
+    c_int text_offset;
+    /// The font containing the glyph to be drawn.
+    TTF_Font* glyph_font;
+    /// The glyph index of the glyph to be drawn.
+    Uint32 glyph_index;
+    /// The area within the glyph to be drawn.
+    SDL_Rect src;
+    /// The drawing coordinates of the glyph, in pixels.
+    SDL_Rect dst;
+    void*? reserved;
+}
+/// A text engine draw operation.
+union TTF_DrawOperation {
+    TTF_DrawCommand cmd;
+    TTF_FillOperation fill;
+    TTF_CopyOperation copy;
+}
+/// Internal data for TTF_Text.
+struct TTF_TextData {
+    /// The font used by this text, read-only.
+    TTF_Font*? font;
+    /// The color of the text, read-only.
+    SDL_FColor color;
+    /// True if the layout needs to be updated.
+    bool needs_layout_update;
+    /// Cached layout information, read-only.
+    TTF_TextLayout*? layout;
+    /// The x offset of the upper left corner of this text, in pixels, read-only.
+    c_int x;
+    /// The y offset of the upper left corner of this text, in pixels, read-only.
+    c_int y;
+    /// The width of this text, in pixels, read-only.
+    c_int w;
+    /// The height of this text, in pixels, read-only.
+    c_int h;
+    /// The number of drawing operations to render this text, read-only.
+    c_int num_ops;
+    /// The drawing operations used to render this text, read-only.
+    TTF_DrawOperation[*]? ops;
+    /// The number of glyph-cluster substrings in the string, read-only.
+    c_int num_clusters;
+    /// Substrings representing clusters of glyphs in the string, read-only.
+    TTF_SubString[*]? clusters;
+    /// Custom properties associated with this text, read-only.
+    SDL_PropertiesID props;
+    /// True if the engine text needs to be updated.
+    bool needs_engine_update;
+    /// The engine used to render this text, read-only.
+    TTF_TextEngine*? engine;
+    /// The implementation-specific representation of this text.
+    void*? engine_text;
+}
+/// Text created with TTF_CreateText.
+struct TTF_Text {
+    /// A copy of the UTF-8 string that this text object represents.
+    char* text;
+    /// The number of lines in the text, 0 if it's empty.
+    c_int num_lines;
+    /// Application reference count, used when freeing surface.
+    c_int refcount;
+    /// Private data.
+    TTF_TextData* internal;
+}
+/// The representation of a substring within text.
+struct TTF_SubString {
+    /// The flags for this substring.
+    TTF_SubStringFlags flags;
+    /// The byte offset from the beginning of the text.
+    c_int offset;
+    /// The byte length starting at the offset.
+    c_int length;
+    /// The index of the line that contains this substring.
+    c_int line_index;
+    /// The internal cluster index, used for quickly iterating.
+    c_int cluster_index;
+    /// The rectangle, relative to the top left of the text, containing the substring.
+    SDL_Rect rect;
+}
+/// Draw sequence returned by TTF_GetGPUTextDrawData.
+struct TTF_GPUAtlasDrawSequence {
+    /// Texture atlas that stores the glyphs.
+    SDL_GPUTexture* atlas_texture;
+    /// An array of vertex positions.
+    SDL_FPoint[*]? xy;
+    /// An array of normalized texture coordinates for each vertex.
+    SDL_FPoint[*]? uv;
+    /// Number of vertices.
+    c_int num_vertices;
+    /// An array of indices into the vertex arrays.
+    c_int[*]? indices;
+    /// Number of indices.
+    c_int num_indices;
+    /// The image type of this draw sequence.
+    TTF_ImageType image_type;
+    /// The next sequence (NULL in case of the last sequence).
+    TTF_GPUAtlasDrawSequence*? next;
+}
+
+/// Get the version of the dynamically linked SDL_ttf library.
+extern c_int TTF_Version();
+/// Query the version of the FreeType library in use.
+extern void TTF_GetFreeTypeVersion(c_int*? major, c_int*? minor, c_int*? patch);
+/// Query the version of the HarfBuzz library in use.
+extern void TTF_GetHarfBuzzVersion(c_int*? major, c_int*? minor, c_int*? patch);
+/// Initialize SDL_ttf. Pair each successful call with TTF_Quit().
+extern bool TTF_Init();
+/// Create a font from a file, using a specified point size.
+extern TTF_Font*? TTF_OpenFont(char* file, float32 ptsize);
+/// Create a font from an SDL_IOStream, using a specified point size.
+extern TTF_Font*? TTF_OpenFontIO(SDL_IOStream* src, bool closeio, float32 ptsize);
+/// Create a font with the specified properties.
+extern TTF_Font*? TTF_OpenFontWithProperties(SDL_PropertiesID props);
+/// Create a copy of an existing font.
+extern TTF_Font*? TTF_CopyFont(TTF_Font* existing_font);
+/// Get the properties associated with a font.
+extern SDL_PropertiesID TTF_GetFontProperties(TTF_Font* font);
+/// Get the font generation, incremented each time glyphs need rebuilding.
+extern Uint32 TTF_GetFontGeneration(TTF_Font* font);
+/// Add a fallback font for glyphs not in the current font.
+extern bool TTF_AddFallbackFont(TTF_Font* font, TTF_Font* fallback);
+/// Remove a fallback font.
+extern void TTF_RemoveFallbackFont(TTF_Font* font, TTF_Font* fallback);
+/// Remove all fallback fonts.
+extern void TTF_ClearFallbackFonts(TTF_Font* font);
+/// Set a font's size dynamically.
+extern bool TTF_SetFontSize(TTF_Font* font, float32 ptsize);
+/// Set font size dynamically with target resolutions, in dots per inch.
+extern bool TTF_SetFontSizeDPI(TTF_Font* font, float32 ptsize, c_int hdpi, c_int vdpi);
+/// Get the size of a font.
+extern float32 TTF_GetFontSize(TTF_Font* font);
+/// Get font target resolutions, in dots per inch.
+extern bool TTF_GetFontDPI(TTF_Font* font, c_int* hdpi, c_int* vdpi);
+/// Set a font's current style.
+extern void TTF_SetFontStyle(TTF_Font* font, TTF_FontStyleFlags style);
+/// Query a font's current style.
+extern TTF_FontStyleFlags TTF_GetFontStyle(TTF_Font* font);
+/// Set a font's current outline.
+extern bool TTF_SetFontOutline(TTF_Font* font, c_int outline);
+/// Query a font's current outline.
+extern c_int TTF_GetFontOutline(TTF_Font* font);
+/// Set a font's current hinter setting.
+extern void TTF_SetFontHinting(TTF_Font* font, TTF_HintingFlags hinting);
+/// Query the number of faces of a font.
+extern c_int TTF_GetNumFontFaces(TTF_Font* font);
+/// Query a font's current FreeType hinter setting.
+extern TTF_HintingFlags TTF_GetFontHinting(TTF_Font* font);
+/// Enable Signed Distance Field rendering for a font.
+extern bool TTF_SetFontSDF(TTF_Font* font, bool enabled);
+/// Query whether Signed Distance Field rendering is enabled for a font.
+extern bool TTF_GetFontSDF(TTF_Font* font);
+/// Query a font's weight, in terms of the lightness/heaviness of the strokes.
+extern c_int TTF_GetFontWeight(TTF_Font* font);
+/// Set a font's current wrap alignment option.
+extern void TTF_SetFontWrapAlignment(TTF_Font* font, TTF_HorizontalAlignment align);
+/// Query a font's current wrap alignment option.
+extern TTF_HorizontalAlignment TTF_GetFontWrapAlignment(TTF_Font* font);
+/// Query the total height of a font.
+extern c_int TTF_GetFontHeight(TTF_Font* font);
+/// Query the offset from the baseline to the top of a font.
+extern c_int TTF_GetFontAscent(TTF_Font* font);
+/// Query the offset from the baseline to the bottom of a font.
+extern c_int TTF_GetFontDescent(TTF_Font* font);
+/// Set the spacing between lines of text for a font.
+extern void TTF_SetFontLineSkip(TTF_Font* font, c_int lineskip);
+/// Query the spacing between lines of text for a font.
+extern c_int TTF_GetFontLineSkip(TTF_Font* font);
+/// Set if kerning is enabled for a font.
+extern void TTF_SetFontKerning(TTF_Font* font, bool enabled);
+/// Query whether or not kerning is enabled for a font.
+extern bool TTF_GetFontKerning(TTF_Font* font);
+/// Query whether a font is fixed-width.
+extern bool TTF_FontIsFixedWidth(TTF_Font* font);
+/// Query whether a font is scalable.
+extern bool TTF_FontIsScalable(TTF_Font* font);
+/// Query a font's family name.
+extern char* TTF_GetFontFamilyName(TTF_Font* font);
+/// Query a font's style name.
+extern char* TTF_GetFontStyleName(TTF_Font* font);
+/// Set the direction to be used for text shaping by a font.
+extern bool TTF_SetFontDirection(TTF_Font* font, TTF_Direction direction);
+/// Get the direction to be used for text shaping by a font.
+extern TTF_Direction TTF_GetFontDirection(TTF_Font* font);
+/// Convert from a 4 character string to a 32-bit tag.
+extern Uint32 TTF_StringToTag(char* string);
+/// Convert from a 32-bit tag to a 4 character string.
+extern void TTF_TagToString(Uint32 tag, char* string, c_size_t size);
+/// Set the script to be used for text shaping by a font.
+extern bool TTF_SetFontScript(TTF_Font* font, Uint32 script);
+/// Get the script used for text shaping a font.
+extern Uint32 TTF_GetFontScript(TTF_Font* font);
+/// Get the script used by a 32-bit codepoint.
+extern Uint32 TTF_GetGlyphScript(Uint32 ch);
+/// Set language to be used for text shaping by a font.
+extern bool TTF_SetFontLanguage(TTF_Font* font, char*? language_bcp47);
+/// Check whether a glyph is provided by the font for a UNICODE codepoint.
+extern bool TTF_FontHasGlyph(TTF_Font* font, Uint32 ch);
+/// Get the pixel image for a UNICODE codepoint.
+extern SDL_Surface*? TTF_GetGlyphImage(TTF_Font* font, Uint32 ch, TTF_ImageType*? image_type);
+/// Get the pixel image for a character index.
+extern SDL_Surface*? TTF_GetGlyphImageForIndex(TTF_Font* font, Uint32 glyph_index, TTF_ImageType*? image_type);
+/// Query the metrics (dimensions) of a font's glyph for a UNICODE codepoint.
+extern bool TTF_GetGlyphMetrics(TTF_Font* font, Uint32 ch, c_int* minx, c_int* maxx, c_int* miny, c_int* maxy, c_int* advance);
+/// Query the kerning size between the glyphs of two UNICODE codepoints.
+extern bool TTF_GetGlyphKerning(TTF_Font* font, Uint32 previous_ch, Uint32 ch, c_int*? kerning);
+/// Calculate the dimensions of a rendered string of UTF-8 text.
+extern bool TTF_GetStringSize(TTF_Font* font, char* text, c_size_t length, c_int* w, c_int* h);
+/// Calculate the dimensions of word-wrapped rendered UTF-8 text.
+extern bool TTF_GetStringSizeWrapped(TTF_Font* font, char* text, c_size_t length, c_int wrap_width, c_int* w, c_int* h);
+/// Calculate how much of a UTF-8 string will fit in a given width.
+extern bool TTF_MeasureString(TTF_Font* font, char* text, c_size_t length, c_int max_width, c_int*? measured_width, c_size_t*? measured_length);
+/// Render UTF-8 text at fast quality to a new 8-bit surface.
+extern SDL_Surface*? TTF_RenderText_Solid(TTF_Font* font, char* text, c_size_t length, SDL_Color fg);
+/// Render word-wrapped UTF-8 text at fast quality to a new 8-bit surface.
+extern SDL_Surface*? TTF_RenderText_Solid_Wrapped(TTF_Font* font, char* text, c_size_t length, SDL_Color fg, c_int wrapLength);
+/// Render a single 32-bit glyph at fast quality to a new 8-bit surface.
+extern SDL_Surface*? TTF_RenderGlyph_Solid(TTF_Font* font, Uint32 ch, SDL_Color fg);
+/// Render UTF-8 text at high quality to a new 8-bit surface.
+extern SDL_Surface*? TTF_RenderText_Shaded(TTF_Font* font, char* text, c_size_t length, SDL_Color fg, SDL_Color bg);
+/// Render word-wrapped UTF-8 text at high quality to a new 8-bit surface.
+extern SDL_Surface*? TTF_RenderText_Shaded_Wrapped(TTF_Font* font, char* text, c_size_t length, SDL_Color fg, SDL_Color bg, c_int wrap_width);
+/// Render a single UNICODE codepoint at high quality to a new 8-bit surface.
+extern SDL_Surface*? TTF_RenderGlyph_Shaded(TTF_Font* font, Uint32 ch, SDL_Color fg, SDL_Color bg);
+/// Render UTF-8 text at high quality to a new ARGB surface.
+extern SDL_Surface*? TTF_RenderText_Blended(TTF_Font* font, char* text, c_size_t length, SDL_Color fg);
+/// Render word-wrapped UTF-8 text at high quality to a new ARGB surface.
+extern SDL_Surface*? TTF_RenderText_Blended_Wrapped(TTF_Font* font, char* text, c_size_t length, SDL_Color fg, c_int wrap_width);
+/// Render a single UNICODE codepoint at high quality to a new ARGB surface.
+extern SDL_Surface*? TTF_RenderGlyph_Blended(TTF_Font* font, Uint32 ch, SDL_Color fg);
+/// Render UTF-8 text at LCD subpixel quality to a new ARGB surface.
+extern SDL_Surface*? TTF_RenderText_LCD(TTF_Font* font, char* text, c_size_t length, SDL_Color fg, SDL_Color bg);
+/// Render word-wrapped UTF-8 text at LCD subpixel quality to a new ARGB surface.
+extern SDL_Surface*? TTF_RenderText_LCD_Wrapped(TTF_Font* font, char* text, c_size_t length, SDL_Color fg, SDL_Color bg, c_int wrap_width);
+/// Render a single UNICODE codepoint at LCD subpixel quality to a new ARGB surface.
+extern SDL_Surface*? TTF_RenderGlyph_LCD(TTF_Font* font, Uint32 ch, SDL_Color fg, SDL_Color bg);
+/// Create a text engine for drawing text on SDL surfaces.
+extern TTF_TextEngine*? TTF_CreateSurfaceTextEngine();
+/// Draw text to an SDL surface.
+extern bool TTF_DrawSurfaceText(TTF_Text* text, c_int x, c_int y, SDL_Surface* surface);
+/// Destroy a text engine created for drawing text on SDL surfaces.
+extern void TTF_DestroySurfaceTextEngine(TTF_TextEngine* engine);
+/// Create a text engine for drawing text on an SDL renderer.
+extern TTF_TextEngine*? TTF_CreateRendererTextEngine(SDL_Renderer* renderer);
+/// Create a text engine for drawing text on an SDL renderer, with properties.
+extern TTF_TextEngine*? TTF_CreateRendererTextEngineWithProperties(SDL_PropertiesID props);
+/// Draw text to an SDL renderer.
+extern bool TTF_DrawRendererText(TTF_Text* text, float32 x, float32 y);
+/// Destroy a text engine created for drawing text on an SDL renderer.
+extern void TTF_DestroyRendererTextEngine(TTF_TextEngine* engine);
+/// Create a text engine for drawing text with the SDL GPU API.
+extern TTF_TextEngine*? TTF_CreateGPUTextEngine(SDL_GPUDevice* device);
+/// Create a text engine for drawing text with the SDL GPU API, with properties.
+extern TTF_TextEngine*? TTF_CreateGPUTextEngineWithProperties(SDL_PropertiesID props);
+/// Get the geometry data needed for drawing the text.
+extern TTF_GPUAtlasDrawSequence*? TTF_GetGPUTextDrawData(TTF_Text* text);
+/// Destroy a text engine created for drawing text with the SDL GPU API.
+extern void TTF_DestroyGPUTextEngine(TTF_TextEngine* engine);
+/// Set the winding order of the vertices returned by TTF_GetGPUTextDrawData.
+extern void TTF_SetGPUTextEngineWinding(TTF_TextEngine* engine, TTF_GPUTextEngineWinding winding);
+/// Get the winding order of the vertices returned by TTF_GetGPUTextDrawData.
+extern TTF_GPUTextEngineWinding TTF_GetGPUTextEngineWinding(TTF_TextEngine* engine);
+/// Create a text object from UTF-8 text and a text engine.
+extern TTF_Text*? TTF_CreateText(TTF_TextEngine*? engine, TTF_Font* font, char* text, c_size_t length);
+/// Get the properties associated with a text object.
+extern SDL_PropertiesID TTF_GetTextProperties(TTF_Text* text);
+/// Set the text engine used by a text object.
+extern bool TTF_SetTextEngine(TTF_Text* text, TTF_TextEngine* engine);
+/// Get the text engine used by a text object.
+extern TTF_TextEngine*? TTF_GetTextEngine(TTF_Text* text);
+/// Set the font used by a text object.
+extern bool TTF_SetTextFont(TTF_Text* text, TTF_Font*? font);
+/// Get the font used by a text object.
+extern TTF_Font*? TTF_GetTextFont(TTF_Text* text);
+/// Set the direction to be used for text shaping a text object.
+extern bool TTF_SetTextDirection(TTF_Text* text, TTF_Direction direction);
+/// Get the direction to be used for text shaping a text object.
+extern TTF_Direction TTF_GetTextDirection(TTF_Text* text);
+/// Set the script to be used for text shaping a text object.
+extern bool TTF_SetTextScript(TTF_Text* text, Uint32 script);
+/// Get the script used for text shaping a text object.
+extern Uint32 TTF_GetTextScript(TTF_Text* text);
+/// Set the color of a text object.
+extern bool TTF_SetTextColor(TTF_Text* text, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+/// Set the color of a text object, with float components.
+extern bool TTF_SetTextColorFloat(TTF_Text* text, float32 r, float32 g, float32 b, float32 a);
+/// Get the color of a text object.
+extern bool TTF_GetTextColor(TTF_Text* text, Uint8*? r, Uint8*? g, Uint8*? b, Uint8*? a);
+/// Get the color of a text object, with float components.
+extern bool TTF_GetTextColorFloat(TTF_Text* text, float32*? r, float32*? g, float32*? b, float32*? a);
+/// Set the position of a text object.
+extern bool TTF_SetTextPosition(TTF_Text* text, c_int x, c_int y);
+/// Get the position of a text object.
+extern bool TTF_GetTextPosition(TTF_Text* text, c_int*? x, c_int*? y);
+/// Set whether wrapping is enabled on a text object.
+extern bool TTF_SetTextWrapWidth(TTF_Text* text, c_int wrap_width);
+/// Get whether wrapping is enabled on a text object.
+extern bool TTF_GetTextWrapWidth(TTF_Text* text, c_int* wrap_width);
+/// Set whether whitespace should be visible when wrapping a text object.
+extern bool TTF_SetTextWrapWhitespaceVisible(TTF_Text* text, bool visible);
+/// Return whether whitespace is shown when wrapping a text object.
+extern bool TTF_TextWrapWhitespaceVisible(TTF_Text* text);
+/// Set the UTF-8 text used by a text object.
+extern bool TTF_SetTextString(TTF_Text* text, char*? string, c_size_t length);
+/// Insert UTF-8 text into a text object.
+extern bool TTF_InsertTextString(TTF_Text* text, c_int offset, char* string, c_size_t length);
+/// Append UTF-8 text to a text object.
+extern bool TTF_AppendTextString(TTF_Text* text, char* string, c_size_t length);
+/// Delete UTF-8 text from a text object.
+extern bool TTF_DeleteTextString(TTF_Text* text, c_int offset, c_int length);
+/// Get the size of a text object.
+extern bool TTF_GetTextSize(TTF_Text* text, c_int*? w, c_int*? h);
+/// Get the substring of a text object that surrounds a text offset.
+extern bool TTF_GetTextSubString(TTF_Text* text, c_int offset, TTF_SubString* substring);
+/// Get the substring of a text object that contains the given line.
+extern bool TTF_GetTextSubStringForLine(TTF_Text* text, c_int line, TTF_SubString* substring);
+/// Get the substrings of a text object that contain a range of text.
+extern TTF_SubString*[*]? TTF_GetTextSubStringsForRange(TTF_Text* text, c_int offset, c_int length, c_int*? count);
+/// Get the portion of a text string that is closest to a point.
+extern bool TTF_GetTextSubStringForPoint(TTF_Text* text, c_int x, c_int y, TTF_SubString* substring);
+/// Get the previous substring in a text object.
+extern bool TTF_GetPreviousTextSubString(TTF_Text* text, TTF_SubString* substring, TTF_SubString* previous);
+/// Get the next substring in a text object.
+extern bool TTF_GetNextTextSubString(TTF_Text* text, TTF_SubString* substring, TTF_SubString* next);
+/// Update the layout of a text object.
+extern bool TTF_UpdateText(TTF_Text* text);
+/// Destroy a text object created by a text engine.
+extern void TTF_DestroyText(TTF_Text* text);
+/// Dispose of a previously-created font.
+extern void TTF_CloseFont(TTF_Font*? font);
+/// Deinitialize SDL_ttf.
+extern void TTF_Quit();
+/// Check if SDL_ttf is initialized.
+extern c_int TTF_WasInit();
+
+/// Determine if the SDL_ttf version is at least X.Y.Z.
+bool SDL_TTF_VERSION_ATLEAST(c_int x, c_int y, c_int z) {
+    return SDL_TTF_MAJOR_VERSION >= x && (SDL_TTF_MAJOR_VERSION > x || SDL_TTF_MINOR_VERSION >= y) && (SDL_TTF_MAJOR_VERSION > x || SDL_TTF_MINOR_VERSION > y || SDL_TTF_MICRO_VERSION >= z);
+}
