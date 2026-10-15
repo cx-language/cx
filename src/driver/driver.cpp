@@ -257,6 +257,15 @@ static void applyImportedVendorLinkSettings(CompileOptions& options, Module& mai
     llvm::SmallString<256> vendorPrefix(rootDir + "/vendor/");
     llvm::sys::fs::make_absolute(vendorPrefix);
     llvm::StringSet<> applied;
+    // Vendored modules can share flags through pkg-config Requires edges
+    // (sdl3_ttf pulls sdl3's flags): apply each flag once so repeated -l,
+    // -L, and -rpath entries don't warn at link time.
+    auto appendUnique = [](std::vector<std::string>& dest, const std::string& value) {
+        for (const auto& existing : dest) {
+            if (existing == value) return;
+        }
+        dest.push_back(value);
+    };
     // Walk from the main module rather than the process-wide registry, so
     // multitarget builds only link what each target imports.
     std::vector<Module*> worklist = mainModule.getImportedModules();
@@ -280,28 +289,28 @@ static void applyImportedVendorLinkSettings(CompileOptions& options, Module& mai
         BuildConfig packageConfig(vendorPrefix.str().str() + package.str(), {defines.begin(), defines.end()});
         auto split = queryPkgConfigFlagsOrAbort(packageConfig.pkgConfigDependencies);
         for (auto& path : split.librarySearchPaths) {
-            librarySearchPaths.push_back(path);
+            appendUnique(librarySearchPaths, path);
         }
         for (auto& library : split.libraries) {
-            libraries.push_back(library);
+            appendUnique(libraries, library);
         }
         for (auto& path : split.frameworkSearchPaths) {
-            frameworkSearchPaths.push_back(path);
+            appendUnique(frameworkSearchPaths, path);
         }
         for (auto& framework : split.frameworks) {
-            frameworks.push_back(framework);
+            appendUnique(frameworks, framework);
         }
         for (auto& flag : split.cflags) {
-            options.cflags.push_back(flag);
+            appendUnique(options.cflags, flag);
         }
         for (auto& path : packageConfig.librarySearchPaths) {
-            librarySearchPaths.push_back(absolutizePackagePath(packageConfig.rootDirectory, path));
+            appendUnique(librarySearchPaths, absolutizePackagePath(packageConfig.rootDirectory, path));
         }
         for (auto& library : packageConfig.libraries) {
-            libraries.push_back(absolutizeLibraryPath(packageConfig.rootDirectory, library));
+            appendUnique(libraries, absolutizeLibraryPath(packageConfig.rootDirectory, library));
         }
         for (auto& framework : packageConfig.frameworks) {
-            frameworks.push_back(framework);
+            appendUnique(frameworks, framework);
         }
     }
 }
