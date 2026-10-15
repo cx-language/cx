@@ -320,7 +320,10 @@ struct IRGenerator {
     void endTempScope();
     void destroyTempScope();
     void destroyAllTempScopes();
+    void destroyTempDestructors(llvm::SmallVectorImpl<IRGenScope::DeferredDestructor>& temps);
     void unwindTempScopesTo(size_t depth);
+    void unwindScopeFramesTo(size_t depth);
+    bool insertBlockIsTerminated() const;
     void registerTempDestructor(Value* base, Type type, std::vector<int> indexes = {});
     Value* maybeRegisterResultTemp(Value* result, const Expr& expr);
     Value* createTempGuard();
@@ -344,6 +347,10 @@ struct IRGenerator {
     // destroyed in reverse order at the end of the enclosing statement. Saved and
     // restored across lambda bodies like scopes; see beginTempScope/endTempScope.
     std::vector<llvm::SmallVector<IRGenScope::DeferredDestructor, 4>> tempScopes;
+    // Push order of scopes and temp scopes, so break/continue can destroy them
+    // newest first. Saved and restored across lambda bodies with the two stacks.
+    enum class ScopeFrame : uint8_t { Scope, Temp };
+    llvm::SmallVector<ScopeFrame, 16> scopeFrames;
     // Guard flag of the conditional region (ternary/switch arm, `??` default)
     // currently being emitted, or null in unconditional code. Attached to
     // temporaries at registration so untaken regions destroy nothing.
@@ -365,11 +372,11 @@ struct IRGenerator {
     /// The basic blocks to branch to on a 'break'/'continue' statement.
     llvm::SmallVector<BasicBlock*, 4> breakTargets;
     llvm::SmallVector<BasicBlock*, 4> continueTargets;
-    // tempScopes size at each break/continue target: break/continue destroy temporaries
-    // created inside the loop or switch body while leaving outer ones (e.g. an if
-    // condition a loop body borrows from) alive.
-    llvm::SmallVector<size_t, 4> breakTempScopeDepths;
-    llvm::SmallVector<size_t, 4> continueTempScopeDepths;
+    // scopeFrames size at each break/continue target. The jump destroys scopes and
+    // temporaries entered inside the loop or switch, leaving outer ones (e.g. an
+    // if condition a loop body borrows from) alive.
+    llvm::SmallVector<size_t, 4> breakFrameDepths;
+    llvm::SmallVector<size_t, 4> continueFrameDepths;
     BasicBlock* insertBlock;
     Function* currentFunction = nullptr;
     // The hidden context parameter of the function being emitted (or the

@@ -1,0 +1,274 @@
+// RUN: %cx run -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c -Werror %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// break and continue leave scopes, so locals and defers there must run before
+// the jump. Fall-through still destroys each value once.
+
+struct C {
+    int i;
+    ~C() {
+        println("dtor {i}");
+    }
+}
+
+void sink(C c) {}
+
+void continueInIf() {
+    var outer = C(i = 9);
+    for i in 0..2 {
+        var _inner = C(i = 10 + i);
+        if i == 0 {
+            continue;
+        }
+        println("body {i}");
+    }
+    println("outer {outer.i}");
+}
+
+void directContinue() {
+    for _ in 0..1 {
+        var _a = C(i = 3);
+        continue;
+    }
+    println("direct-done");
+}
+
+void nestedBlock() {
+    for _ in 0..1 {
+        var _a = C(i = 4);
+        {
+            var _b = C(i = 5);
+            continue;
+        }
+    }
+    println("nested-done");
+}
+
+void nestedLoops() {
+    for _ in 0..1 {
+        var a = C(i = 6);
+        for _ in 0..2 {
+            var _b = C(i = 7);
+            continue;
+        }
+        println("outer-live {a.i}");
+    }
+    println("loops-done");
+}
+
+void breakInIf() {
+    var outer = C(i = 8);
+    for i in 0..5 {
+        var _a = C(i = 20 + i);
+        if i == 1 {
+            break;
+        }
+    }
+    println("after-break {outer.i}");
+}
+
+void switchBreak() {
+    var a = C(i = 11);
+    switch 1 {
+    case 1: {
+        var _b = C(i = 12);
+        break;
+    }
+    }
+    println("after-switch {a.i}");
+}
+
+void continueInSwitch() {
+    for _ in 0..1 {
+        var _a = C(i = 13);
+        switch 1 {
+        case 1: {
+            var _b = C(i = 14);
+            continue;
+        }
+        }
+        println("unreachable");
+    }
+    println("switch-continue-done");
+}
+
+void deferOnContinue() {
+    for i in 0..2 {
+        defer println("defer {i}");
+        var _a = C(i = 30 + i);
+        if i == 0 {
+            continue;
+        }
+        println("defer-body {i}");
+    }
+    println("defer-done");
+}
+
+void destroyOrder() {
+    for _ in 0..1 {
+        if C(i = 15).i > 0 {
+            var _b = C(i = 16);
+            continue;
+        }
+    }
+    println("order-done");
+}
+
+void bothArms() {
+    for _ in 0..1 {
+        if C(i = 17).i > 0 {
+            continue;
+        } else {
+            continue;
+        }
+    }
+    println("both-done");
+}
+
+void movedContinue() {
+    for _ in 0..1 {
+        var a = C(i = 18);
+        sink(a);
+        continue;
+    }
+    println("moved-done");
+}
+
+void forVarLives() {
+    for (var x = C(i = 1); x.i < 3; x.i = x.i + 1) {
+        var _y = C(i = 40 + x.i);
+        if x.i == 1 {
+            continue;
+        }
+    }
+    println("for-var-done");
+}
+
+void whileContinue() {
+    var i = 0;
+    while i < 2 {
+        var _a = C(i = 19);
+        i = i + 1;
+        if i == 1 {
+            continue;
+        }
+    }
+    println("while-done");
+}
+
+void doWhileContinue() {
+    var i = 0;
+    do {
+        var _a = C(i = 21);
+        i = i + 1;
+        if i < 2 {
+            continue;
+        }
+    } while i < 2;
+    println("do-done");
+}
+
+void nestedReturn() {
+    var _a = C(i = 22);
+    {
+        var _b = C(i = 23);
+        println("returning");
+        return;
+    }
+}
+
+void afterNestedContinue() {
+    for _ in 0..1 {
+        {
+            var _a = C(i = 50);
+            continue;
+        }
+        var _b = C(i = 51);
+    }
+    println("after-nested-done");
+}
+
+void listContinue() {
+    for i in 0..10 {
+        var xs = List<int>();
+        xs.push(1);
+        if i < 9 {
+            continue;
+        }
+    }
+    println("list-done");
+}
+
+void main() {
+    // CHECK:dtor 10
+    // CHECK-NEXT:body 1
+    // CHECK-NEXT:dtor 11
+    // CHECK-NEXT:outer 9
+    // CHECK-NEXT:dtor 9
+    continueInIf();
+    // CHECK-NEXT:dtor 3
+    // CHECK-NEXT:direct-done
+    directContinue();
+    // CHECK-NEXT:dtor 5
+    // CHECK-NEXT:dtor 4
+    // CHECK-NEXT:nested-done
+    nestedBlock();
+    // CHECK-NEXT:dtor 7
+    // CHECK-NEXT:dtor 7
+    // CHECK-NEXT:outer-live 6
+    // CHECK-NEXT:dtor 6
+    // CHECK-NEXT:loops-done
+    nestedLoops();
+    // CHECK-NEXT:dtor 20
+    // CHECK-NEXT:dtor 21
+    // CHECK-NEXT:after-break 8
+    // CHECK-NEXT:dtor 8
+    breakInIf();
+    // CHECK-NEXT:dtor 12
+    // CHECK-NEXT:after-switch 11
+    // CHECK-NEXT:dtor 11
+    switchBreak();
+    // CHECK-NEXT:dtor 14
+    // CHECK-NEXT:dtor 13
+    // CHECK-NEXT:switch-continue-done
+    continueInSwitch();
+    // CHECK-NEXT:defer 0
+    // CHECK-NEXT:dtor 30
+    // CHECK-NEXT:defer-body 1
+    // CHECK-NEXT:defer 1
+    // CHECK-NEXT:dtor 31
+    // CHECK-NEXT:defer-done
+    deferOnContinue();
+    // CHECK-NEXT:dtor 16
+    // CHECK-NEXT:dtor 15
+    // CHECK-NEXT:order-done
+    destroyOrder();
+    // CHECK-NEXT:dtor 17
+    // CHECK-NEXT:both-done
+    bothArms();
+    // CHECK-NEXT:dtor 18
+    // CHECK-NEXT:moved-done
+    movedContinue();
+    // CHECK-NEXT:dtor 41
+    // CHECK-NEXT:dtor 42
+    // CHECK-NEXT:for-var-done
+    // CHECK-NEXT:dtor 3
+    forVarLives();
+    // CHECK-NEXT:dtor 19
+    // CHECK-NEXT:dtor 19
+    // CHECK-NEXT:while-done
+    whileContinue();
+    // CHECK-NEXT:dtor 21
+    // CHECK-NEXT:dtor 21
+    // CHECK-NEXT:do-done
+    doWhileContinue();
+    // CHECK-NEXT:returning
+    // CHECK-NEXT:dtor 23
+    // CHECK-NEXT:dtor 22
+    nestedReturn();
+    // CHECK-NEXT:dtor 50
+    // CHECK-NEXT:after-nested-done
+    afterNestedContinue();
+    // CHECK-NEXT:list-done
+    listContinue();
+}

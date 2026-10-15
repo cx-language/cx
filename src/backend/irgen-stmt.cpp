@@ -45,9 +45,7 @@ void IRGenerator::emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuatio
     emitStmts(stmts);
     endScope();
 
-    if (insertBlock->body.empty() || !insertBlock->body.back()->isTerminator()) {
-        createBr(continuation);
-    }
+    if (!insertBlockIsTerminated()) createBr(continuation);
 }
 
 template<typename EmitThen, typename EmitElse> static void emitIfDiamond(IRGenerator& ir, Value* condition, EmitThen&& emitThen, EmitElse&& emitElse) {
@@ -98,12 +96,12 @@ struct BreakTargetScope {
     IRGenerator& ir;
     explicit BreakTargetScope(IRGenerator& ir, BasicBlock* end) : ir(ir) {
         ir.breakTargets.push_back(end);
-        ir.breakTempScopeDepths.push_back(ir.tempScopes.size());
+        ir.breakFrameDepths.push_back(ir.scopeFrames.size());
     }
     BreakTargetScope(const BreakTargetScope&) = delete;
     ~BreakTargetScope() {
         ir.breakTargets.pop_back();
-        ir.breakTempScopeDepths.pop_back();
+        ir.breakFrameDepths.pop_back();
     }
 };
 
@@ -112,15 +110,15 @@ struct LoopTargetScope {
     LoopTargetScope(IRGenerator& ir, BasicBlock* end, BasicBlock* continueTarget) : ir(ir) {
         ir.breakTargets.push_back(end);
         ir.continueTargets.push_back(continueTarget);
-        ir.breakTempScopeDepths.push_back(ir.tempScopes.size());
-        ir.continueTempScopeDepths.push_back(ir.tempScopes.size());
+        ir.breakFrameDepths.push_back(ir.scopeFrames.size());
+        ir.continueFrameDepths.push_back(ir.scopeFrames.size());
     }
     LoopTargetScope(const LoopTargetScope&) = delete;
     ~LoopTargetScope() {
         ir.breakTargets.pop_back();
         ir.continueTargets.pop_back();
-        ir.breakTempScopeDepths.pop_back();
-        ir.continueTempScopeDepths.pop_back();
+        ir.breakFrameDepths.pop_back();
+        ir.continueFrameDepths.pop_back();
     }
 };
 
@@ -334,13 +332,13 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
 
 void IRGenerator::emitBreakStmt(const BreakStmt&) {
     ASSERT(!breakTargets.empty());
-    unwindTempScopesTo(breakTempScopeDepths.back());
+    unwindScopeFramesTo(breakFrameDepths.back());
     createBr(breakTargets.back());
 }
 
 void IRGenerator::emitContinueStmt(const ContinueStmt&) {
     ASSERT(!continueTargets.empty());
-    unwindTempScopesTo(continueTempScopeDepths.back());
+    unwindScopeFramesTo(continueFrameDepths.back());
     createBr(continueTargets.back());
 }
 
@@ -401,7 +399,9 @@ void IRGenerator::emitStmt(const Stmt& stmt) {
 
 void IRGenerator::emitStmts(llvm::ArrayRef<Stmt*> stmts) {
     for (Stmt* stmt : stmts) {
+        // A nested break, continue, or return already terminated this block.
+        // Later statements are unreachable; emitting them would follow the terminator.
+        if (insertBlockIsTerminated()) break;
         emitStmt(*stmt);
-        if (stmt->isReturnStmt() || stmt->isBreakStmt() || stmt->isContinueStmt()) break;
     }
 }

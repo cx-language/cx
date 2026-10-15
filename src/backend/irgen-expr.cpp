@@ -1680,6 +1680,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     auto currentFunctionBackup = currentFunction;
     auto insertBlockBackup = insertBlock;
     auto scopesBackup = std::move(scopes);
+    auto scopeFramesBackup = std::move(scopeFrames);
     auto tempScopesBackup = std::move(tempScopes);
     auto tempGuardBackup = tempGuard;
     tempGuard = nullptr;
@@ -1690,6 +1691,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
 
     currentFunction = currentFunctionBackup;
     scopes = std::move(scopesBackup);
+    scopeFrames = std::move(scopeFramesBackup);
     tempScopes = std::move(tempScopesBackup);
     tempGuard = tempGuardBackup;
     emittingReceiver = emittingReceiverBackup;

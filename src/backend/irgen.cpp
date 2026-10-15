@@ -34,7 +34,7 @@ void IRGenScope::clear() {
 }
 
 IRGenerator::IRGenerator(const CompileOptions& options) : options(options) {
-    scopes.push_back(IRGenScope(*this));
+    beginScope();
 }
 
 IRGenerator::~IRGenerator() {
@@ -98,25 +98,41 @@ Value* IRGenerator::getThis(IRType* targetType) {
 
 void IRGenerator::beginScope() {
     scopes.push_back(IRGenScope(*this));
+    scopeFrames.push_back(ScopeFrame::Scope);
 }
 
 void IRGenerator::endScope() {
-    scopes.back().onScopeEnd();
+    // A break, continue, or return already emitted this cleanup before its
+    // terminator. Emitting again would land after that terminator.
+    if (!insertBlockIsTerminated()) scopes.back().onScopeEnd();
     scopes.pop_back();
+    ASSERT(!scopeFrames.empty() && scopeFrames.back() == ScopeFrame::Scope);
+    scopeFrames.pop_back();
 }
 
 void IRGenerator::beginTempScope() {
     tempScopes.emplace_back();
+    scopeFrames.push_back(ScopeFrame::Temp);
 }
 
 void IRGenerator::destroyTempScope() {
     if (tempScopes.empty()) return;
+    if (insertBlockIsTerminated()) {
+        tempScopes.back().clear();
+        return;
+    }
     unwindTempScopesTo(tempScopes.size() - 1);
 }
 
 void IRGenerator::endTempScope() {
     destroyTempScope();
     tempScopes.pop_back();
+    ASSERT(!scopeFrames.empty() && scopeFrames.back() == ScopeFrame::Temp);
+    scopeFrames.pop_back();
+}
+
+bool IRGenerator::insertBlockIsTerminated() const {
+    return insertBlock && !insertBlock->body.empty() && insertBlock->body.back()->isTerminator();
 }
 
 // Destroys every pending temporary: the calls emitted here cover the return
@@ -127,26 +143,55 @@ void IRGenerator::destroyAllTempScopes() {
     unwindTempScopesTo(0);
 }
 
-// Destroys temporaries created after a loop or switch body was entered, keeping
-// outer ones alive. Only the jumping statement's own scope is cleared: emitting
-// here covers the taken path, while outer scopes still emit for paths that fall
-// through. Every frame still pops normally at emission time.
+void IRGenerator::destroyTempDestructors(llvm::SmallVectorImpl<IRGenScope::DeferredDestructor>& temps) {
+    for (auto& temp : reverse(temps)) {
+        Value* receiver = temp.value;
+        for (int index : temp.indexes) {
+            receiver = createGEP(receiver, index);
+        }
+        if (temp.guard) {
+            createGuardedDestructorCall(temp.function, receiver, temp.guard);
+        } else {
+            createDestructorCall(temp.function, receiver);
+        }
+    }
+}
+
+// Emits destructor calls for temporaries in scopes `[depth, end)` and clears
+// only the newest of those scopes. Outer scopes stay intact so a fall-through
+// path can emit them when they end.
 void IRGenerator::unwindTempScopesTo(size_t depth) {
     ASSERT(depth <= tempScopes.size());
     for (auto it = tempScopes.begin() + depth; it != tempScopes.end(); ++it) {
-        for (auto& temp : reverse(*it)) {
-            Value* receiver = temp.value;
-            for (int index : temp.indexes) {
-                receiver = createGEP(receiver, index);
-            }
-            if (temp.guard) {
-                createGuardedDestructorCall(temp.function, receiver, temp.guard);
-            } else {
-                createDestructorCall(temp.function, receiver);
-            }
-        }
+        destroyTempDestructors(*it);
     }
     if (tempScopes.size() > depth) tempScopes.back().clear();
+}
+
+// Destroys every scope and temporary entered after `depth`, newest first.
+// Only the jumping statement's frame is cleared: emission here covers the
+// taken path, and outer frames still emit when they end on a fall-through
+// path. An end call in the jump's block sees the terminator and skips.
+void IRGenerator::unwindScopeFramesTo(size_t depth) {
+    ASSERT(depth <= scopeFrames.size());
+    size_t scopeIndex = scopes.size();
+    size_t tempIndex = tempScopes.size();
+    for (size_t i = scopeFrames.size(); i > depth; --i) {
+        if (scopeFrames[i - 1] == ScopeFrame::Scope) {
+            ASSERT(scopeIndex > 0);
+            scopes[--scopeIndex].onScopeEnd();
+        } else {
+            ASSERT(tempIndex > 0);
+            destroyTempDestructors(tempScopes[--tempIndex]);
+        }
+    }
+    if (scopeFrames.size() > depth) {
+        if (scopeFrames.back() == ScopeFrame::Temp) {
+            tempScopes.back().clear();
+        } else {
+            scopes.back().clear();
+        }
+    }
 }
 
 // Visits each element of a fixed array whose element type needs destruction.
