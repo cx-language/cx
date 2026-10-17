@@ -1372,6 +1372,10 @@ int cx::driverMain(int argc, const char** argv) {
         cl::PrintHelpMessage(false, true);
         return 0;
     }
+    if (noSubcommand && !inputs.empty() && inputs.front() == "version") {
+        cl::PrintVersionMessage();
+        return 0;
+    }
     if (noSubcommand && inputs.empty() && isCxProjectDirectory()) implicitRun = true;
     if (!programArgs.empty() && !isRunSelected()) {
         ABORT("program arguments require the 'run' subcommand");
