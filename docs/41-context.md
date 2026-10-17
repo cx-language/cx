@@ -53,7 +53,7 @@ converted to a C callback.
 
 </details>
 
-Allocators must return 16-aligned pointers and tolerate freeing null.
+Allocators must return 16-aligned pointers.
 
 <details>
 <summary>Reentrancy rule and Arena exception</summary>
