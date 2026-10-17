@@ -1,8 +1,9 @@
 // RUN: cd %S && %cx 2>&1 | %FileCheck -match-full-lines --check-prefix=IMPLICIT %s
 // RUN: cd %S && %cx -- hello 2>&1 | %FileCheck -match-full-lines --check-prefix=ARGS %s
 // RUN: %cx help 2>&1 | %FileCheck --check-prefix=HELP %s
-// RUN: mkdir -p %T/cx-implicit-empty && cd %T/cx-implicit-empty && %cx 2>&1 | %FileCheck --check-prefix=HELP %s
-// RUN: mkdir -p %T/cx-implicit-nested/sub && echo 'void main() {}' > %T/cx-implicit-nested/sub/nested.cx && cd %T/cx-implicit-nested && %cx 2>&1 | %FileCheck --check-prefix=HELP %s
+// RUN: mkdir -p %T/cx-implicit-empty && cd %T/cx-implicit-empty && %cx 2>&1 | %FileCheck --check-prefix=BARE %s
+// RUN: cd %T/cx-implicit-empty && %cx 2>&1 | %FileCheck --check-prefix=SHORT %s
+// RUN: mkdir -p %T/cx-implicit-nested/sub && echo 'void main() {}' > %T/cx-implicit-nested/sub/nested.cx && cd %T/cx-implicit-nested && %cx 2>&1 | %FileCheck --check-prefix=BARE %s
 
 int main(string[] args) {
     println("implicit-run"); // IMPLICIT: implicit-run
@@ -17,3 +18,12 @@ int main(string[] args) {
 
 // HELP: OVERVIEW: cx compiler
 // HELP: USAGE: cx{{(\.exe)?}} [subcommand]
+// HELP: OPTIONS:
+
+// BARE: OVERVIEW: cx compiler
+// BARE: USAGE: cx{{(\.exe)?}} [subcommand]
+// BARE: SUBCOMMANDS:
+// BARE: build - Build a cx project
+// BARE: Run 'cx{{(\.exe)?}} help' for the full option list.
+
+// SHORT-NOT: OPTIONS:

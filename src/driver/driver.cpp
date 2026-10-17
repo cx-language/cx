@@ -1,5 +1,6 @@
 #include "driver.h"
 #include "cx_version.h"
+#include <algorithm>
 #include <bit>
 #include <cctype>
 #include <cstdio>
@@ -142,10 +143,35 @@ static bool isRunSelected() {
     return run || implicitRun;
 }
 
+// Bare `cx` outside a project prints this short overview instead of the full
+// option list (`cx help` still prints everything). The subcommand block
+// mirrors llvm::cl::PrintHelpMessage so the two stay visually consistent.
+static void printOverview(const char* argv0) {
+    llvm::StringRef prog = llvm::sys::path::filename(argv0);
+    auto& os = llvm::outs();
+    os << "OVERVIEW: cx compiler\n\n";
+    os << "USAGE: " << prog << " [subcommand] [options] <input files>\n\n";
+    os << "SUBCOMMANDS:\n\n";
+    llvm::SmallVector<std::pair<llvm::StringRef, llvm::StringRef>, 8> subcommands;
+    size_t maxLength = 0;
+    for (cl::SubCommand* sub : cl::getRegisteredSubcommands()) {
+        if (sub->getName().empty()) continue;
+        subcommands.emplace_back(sub->getName(), sub->getDescription());
+        maxLength = std::max(maxLength, sub->getName().size());
+    }
+    std::sort(subcommands.begin(), subcommands.end());
+    for (auto& [name, description] : subcommands) {
+        os.indent(2) << name;
+        os.indent(maxLength - name.size() + 1) << "- " << description << "\n";
+    }
+    os << "\n  Type \"" << prog << " <subcommand> --help\" to get more help on a specific subcommand\n";
+    os << "\nRun '" << prog << " help' for the full option list.\n";
+}
+
 // True when the current directory looks like a cx project: any .cx file
 // directly inside it (a lone build.cx marks multitarget projects, whose
 // sources live in subdirectories). Non-recursive, so container directories
-// holding nested projects still print the help.
+// holding nested projects still print the overview.
 static bool isCxProjectDirectory() {
     std::error_code error;
     for (llvm::sys::fs::directory_iterator it(".", error), end; it != end; it.increment(error)) {
@@ -1402,7 +1428,7 @@ int cx::driverMain(int argc, const char** argv) {
         if (executionFailed) ABORT("couldn't start the language server: " << errorMessage);
         return status;
     } else {
-        cl::PrintHelpMessage(false, true);
+        printOverview(argv[0]);
         return 0;
     }
 }
