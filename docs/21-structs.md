@@ -106,7 +106,8 @@ See [Move semantics](./move-semantics) for how values are copied and moved.
 
 Structs print generically: `print` renders the struct name followed by
 each field, so no boilerplate is needed for logging and debugging.
-The struct also gains `toString` through the `Printable` interface.
+Calling `.toString()` works too: both are provided automatically,
+with no `: Printable` declaration needed.
 
 ```cs
 struct Point {
