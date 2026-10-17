@@ -185,26 +185,6 @@ void main() {
 }
 ```
 
-### `sizeof`
-
-`sizeof(T)` and `sizeof(x)` are constant integer expressions. When the type
-has to be inferred, as in `var s = sizeof(T)`, it is `int`. In an arithmetic
-expression the sizeof operand takes the other operand's numeric type, so
-`sizeof(Element) * size` has the type of `size`.
-
-```cs
-void main() {
-    int n = 3;
-    int64 wide = 3;
-    var bytes = sizeof(int); // int
-    var scaled = sizeof(int) * n; // int
-    var scaledWide = sizeof(int) * wide; // int64
-    println(bytes); // prints 4
-    println(scaled); // prints 12
-    println(scaledWide); // prints 12
-}
-```
-
 ### Planned features
 
 - Declaring pointers non-aliasing, either individually or globally with a compiler flag,
