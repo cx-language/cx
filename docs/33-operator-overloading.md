@@ -8,25 +8,23 @@ also fill `T*` parameters without an explicit `&`. Ordinary function calls
 still require `&` for a `T*` parameter.
 
 ```cs
-struct Vec2 {
-    int x;
-    int y;
+struct Money {
+    int cents;
 }
 
-Vec2 operator+(Vec2 a, Vec2 b) {
-    return Vec2(a.x + b.x, a.y + b.y);
+Money operator+(Money a, Money b) {
+    return Money(a.cents + b.cents);
 }
 
-bool operator==(Vec2 a, Vec2 b) {
-    return a.x == b.x && a.y == b.y;
+bool operator==(Money a, Money b) {
+    return a.cents == b.cents;
 }
 
 void main() {
-    var a = Vec2(1, 2);
-    var b = Vec2(3, 4);
+    var a = Money(100);
+    var b = Money(250);
     var c = a + b;
-    println(c.x); // prints 4
-    println(c.y); // prints 6
+    println(c.cents); // prints 350
     println(a + b == c); // prints true
 }
 ```
@@ -46,35 +44,35 @@ The subscript operator is overloaded with a method,
 so it can access the instance through `this`:
 
 ```cs
-struct Vec3 {
-    int x;
-    int y;
-    int z;
+struct Date {
+    int year;
+    int month;
+    int day;
 
     int operator[](int index) {
         if index == 0 {
-            return x;
+            return year;
         } else if index == 1 {
-            return y;
+            return month;
         }
-        return z;
+        return day;
     }
 
     void operator[]=(int index, int value) {
         if index == 0 {
-            x = value;
+            year = value;
         } else if index == 1 {
-            y = value;
+            month = value;
         } else {
-            z = value;
+            day = value;
         }
     }
 }
 
 void main() {
-    var v = Vec3(1, 2, 3);
-    println(v[0] + v[1] + v[2]); // prints 6
-    v[1] = 20; // calls operator[]=
-    println(v.y); // prints 20
+    var v = Date(2024, 1, 31);
+    println(v[0] + v[1] + v[2]); // prints 2056
+    v[1] = 2; // calls operator[]=
+    println(v.month); // prints 2
 }
 ```
